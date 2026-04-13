@@ -112,10 +112,32 @@ EOF
 
 # ── systemd service ───────────────────────────────────────────────────────────
 install_service() {
+  # Resolve the real node binary — works whether installed via nvm, nodesource, or system package
   local node_bin
-  node_bin=$(command -v node)
-  local npm_bin
-  npm_bin=$(command -v npm)
+  node_bin=$(command -v node 2>/dev/null || true)
+
+  # If node is a shim/symlink (nvm), resolve to the real binary
+  if [[ -n "$node_bin" ]]; then
+    node_bin=$(readlink -f "$node_bin")
+  fi
+
+  [[ -z "$node_bin" || ! -x "$node_bin" ]] && die "Cannot locate node binary"
+
+  local node_dir
+  node_dir=$(dirname "$node_bin")
+
+  # Use `node server.js` directly — more reliable than npm start under systemd
+  # Next.js standalone output is at .next/standalone/server.js
+  # If not standalone, fall back to npx next start
+  local next_bin="${node_dir}/npx"
+  local exec_start="${node_bin} ${node_dir}/npx next start --port ${PORT}"
+
+  # Check if next binary exists directly
+  if [[ -f "${node_dir}/next" ]]; then
+    exec_start="${node_bin} ${node_dir}/next start --port ${PORT}"
+  elif [[ -f "${INSTALL_DIR}/nexus/node_modules/.bin/next" ]]; then
+    exec_start="${node_bin} ${INSTALL_DIR}/nexus/node_modules/.bin/next start --port ${PORT}"
+  fi
 
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
@@ -126,12 +148,12 @@ Wants=pve-cluster.service
 [Service]
 Type=simple
 WorkingDirectory=${INSTALL_DIR}/nexus
-ExecStart=${npm_bin} start -- --port ${PORT}
+ExecStart=${exec_start}
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
+Environment=PATH=${node_dir}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 EnvironmentFile=${INSTALL_DIR}/nexus/.env.local
-# Run as root so we can reach localhost:8006 without extra networking setup
 User=root
 
 [Install]
