@@ -112,13 +112,20 @@ EOF
 
 # ── systemd service ───────────────────────────────────────────────────────────
 install_service() {
-  # Resolve the real node binary — works whether installed via nvm, nodesource, or system package
+  # Find the real node binary — nvm installs a shell script shim, not a real binary.
+  # We need the actual versioned binary path for systemd (which has no shell env).
   local node_bin
-  node_bin=$(command -v node 2>/dev/null || true)
 
-  # If node is a shim/symlink (nvm), resolve to the real binary
-  if [[ -n "$node_bin" ]]; then
-    node_bin=$(readlink -f "$node_bin")
+  # 1. Check nvm's current version directory directly
+  if [[ -d "$HOME/.nvm/versions/node" ]]; then
+    node_bin=$(find "$HOME/.nvm/versions/node" -name "node" -type f 2>/dev/null | sort -V | tail -1)
+  fi
+
+  # 2. Fall back to which/command -v (works for nodesource / system installs)
+  if [[ -z "$node_bin" || ! -x "$node_bin" ]]; then
+    node_bin=$(command -v node 2>/dev/null || true)
+    # Resolve symlinks (nodesource puts a symlink at /usr/bin/node)
+    [[ -n "$node_bin" ]] && node_bin=$(readlink -f "$node_bin")
   fi
 
   [[ -z "$node_bin" || ! -x "$node_bin" ]] && die "Cannot locate node binary"
@@ -126,18 +133,8 @@ install_service() {
   local node_dir
   node_dir=$(dirname "$node_bin")
 
-  # Use `node server.js` directly — more reliable than npm start under systemd
-  # Next.js standalone output is at .next/standalone/server.js
-  # If not standalone, fall back to npx next start
-  local next_bin="${node_dir}/npx"
-  local exec_start="${node_bin} ${node_dir}/npx next start --port ${PORT}"
-
-  # Check if next binary exists directly
-  if [[ -f "${node_dir}/next" ]]; then
-    exec_start="${node_bin} ${node_dir}/next start --port ${PORT}"
-  elif [[ -f "${INSTALL_DIR}/nexus/node_modules/.bin/next" ]]; then
-    exec_start="${node_bin} ${INSTALL_DIR}/nexus/node_modules/.bin/next start --port ${PORT}"
-  fi
+  # Use node + local next binary directly — avoids npm/npx shim issues under systemd
+  local exec_start="${node_bin} ${INSTALL_DIR}/nexus/node_modules/.bin/next start --port ${PORT}"
 
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
@@ -165,6 +162,24 @@ EOF
   systemctl restart "$SERVICE_NAME"
 
   success "Systemd service '${SERVICE_NAME}' installed and started"
+}
+
+# ── Firewall ──────────────────────────────────────────────────────────────────
+open_firewall() {
+  if command -v pvesh &>/dev/null; then
+    # Check if a rule for this port already exists
+    local existing
+    existing=$(pvesh get "/nodes/$(hostname)/firewall/rules" 2>/dev/null | grep -c "${PORT}" || true)
+    if [[ "$existing" -eq 0 ]]; then
+      info "Opening port ${PORT} in PVE host firewall…"
+      pvesh create "/nodes/$(hostname)/firewall/rules" \
+        --action ACCEPT --type in --proto tcp --dport "${PORT}" --enable 1 2>/dev/null && \
+        success "Firewall rule added for port ${PORT}" || \
+        warn "Could not add firewall rule — open port ${PORT} manually if needed"
+    else
+      info "Firewall rule for port ${PORT} already exists"
+    fi
+  fi
 }
 
 # ── Firewall hint ─────────────────────────────────────────────────────────────
@@ -207,6 +222,7 @@ main() {
   write_env
   build_app
   install_service
+  open_firewall
   firewall_hint
 }
 
