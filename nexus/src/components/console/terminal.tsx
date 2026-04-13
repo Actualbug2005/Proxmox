@@ -43,7 +43,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         throw new Error(data.error ?? 'Failed to get terminal ticket');
       }
 
-      const { wsUrl, ticket, pveAuthCookie } = await res.json();
+      const { relayUrl, pveHost, pvePort, pveWsPath, ticket, port: ticketPort, pveAuthCookie } = await res.json();
 
       // Init xterm
       if (termRef.current) {
@@ -96,18 +96,17 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
       termRef.current = term;
 
-      // Connect WebSocket
-      // PVE termproxy uses a specific binary protocol
-      const ws = new WebSocket(wsUrl, ['binary']);
+      // Connect to our server-side WS relay (plain ws://) which proxies to PVE over TLS.
+      // This avoids browser cert errors with PVE's self-signed cert.
+      const relayWsUrl = `${relayUrl}?pveHost=${encodeURIComponent(pveHost)}&pvePort=${pvePort ?? 8006}&pveWsPath=${encodeURIComponent(pveWsPath)}&ticket=${encodeURIComponent(ticket)}&port=${ticketPort}&pveAuthCookie=${encodeURIComponent(pveAuthCookie)}`;
+
+      const ws = new WebSocket(relayWsUrl, ['binary']);
       wsRef.current = ws;
       ws.binaryType = 'arraybuffer';
 
       ws.onopen = () => {
         setStatus('connected');
-        // PVE expects username:ticket as first frame
-        ws.send(`${pveAuthCookie}:${ticket}\n`);
-
-        // Resize notification
+        // Send initial resize
         const { cols, rows } = term;
         ws.send(`1:${cols}:${rows}:`);
       };
@@ -116,12 +115,14 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         if (event.data instanceof ArrayBuffer) {
           const buf = new Uint8Array(event.data);
           const text = new TextDecoder().decode(buf);
-          // PVE termproxy prefixes data with type byte
+          // PVE termproxy prefixes data with type byte: '0' = data, '1' = resize ack
           if (text.startsWith('0')) {
             term.write(text.slice(1));
           }
-        } else {
-          term.write(event.data);
+        } else if (typeof event.data === 'string') {
+          if (event.data.startsWith('0')) {
+            term.write(event.data.slice(1));
+          }
         }
       };
 
@@ -137,7 +138,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         }
       };
 
-      // Send terminal input to WS
+      // Send terminal input — PVE termproxy format: "0:<len>:<data>"
       term.onData((data) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(`0:${data.length}:${data}`);

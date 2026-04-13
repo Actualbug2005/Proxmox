@@ -1,10 +1,7 @@
 /**
- * WebSocket proxy for Proxmox VNC/TERM websockets.
- * Next.js does not support native WS upgrades from route handlers,
- * so we expose a ticket-based URL builder here and let the client
- * connect directly to the PVE WS endpoint using the PVEAuthCookie.
- *
- * This route returns the WS URL + ticket for the client to use.
+ * termproxy ticket endpoint.
+ * Returns the ticket + port so the Next.js WS relay server can connect to PVE.
+ * The browser connects to /api/ws-relay?... (our plain-WS relay, see server.ts).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
@@ -24,15 +21,13 @@ export async function POST(req: NextRequest) {
   const host = session.proxmoxHost;
   const base = `https://${host}:8006/api2/json`;
 
-  let vncUrl: string;
-  if (type === 'node') {
-    vncUrl = `${base}/nodes/${node}/termproxy`;
-  } else {
-    vncUrl = `${base}/nodes/${node}/${type}/${vmid}/termproxy`;
-  }
+  const termUrl =
+    type === 'node'
+      ? `${base}/nodes/${node}/termproxy`
+      : `${base}/nodes/${node}/${type}/${vmid}/termproxy`;
 
-  // termproxy takes no body params — unlike vncproxy it doesn't accept 'websocket'
-  const res = await fetch(vncUrl, {
+  // termproxy accepts no body params
+  const res = await fetch(termUrl, {
     method: 'POST',
     headers: {
       Cookie: `PVEAuthCookie=${session.ticket}`,
@@ -49,19 +44,20 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
   const { ticket, port, upid } = data.data;
 
-  // Build the WS URL the client will connect to directly
-  const wsProto = 'wss';
-  let wsPath: string;
-  if (type === 'node') {
-    wsPath = `/nodes/${node}/termproxy/ws`;
-  } else {
-    wsPath = `/nodes/${node}/${type}/${vmid}/termproxy/ws`;
-  }
+  // The WS path PVE expects the client to connect to (via port 8006)
+  const pveWsPath =
+    type === 'node'
+      ? `/api2/json/nodes/${node}/termproxy/ws`
+      : `/api2/json/nodes/${node}/${type}/${vmid}/termproxy/ws`;
 
-  const wsUrl = `${wsProto}://${host}:8006/api2/json${wsPath}?port=${port}&vncticket=${encodeURIComponent(ticket)}`;
-
+  // Return everything the relay needs — browser connects to our plain-WS relay
   return NextResponse.json({
-    wsUrl,
+    // Our relay endpoint (plain ws://, no cert issues)
+    relayUrl: `ws://${req.headers.get('host')}/api/ws-relay`,
+    // PVE connection details for the relay
+    pveHost: host,
+    pvePort: 8006,
+    pveWsPath,
     ticket,
     port,
     upid,
