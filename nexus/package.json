@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "tsx server.ts",
+    "start": "node --experimental-strip-types server.ts",
     "lint": "eslint"
   },
   "dependencies": {

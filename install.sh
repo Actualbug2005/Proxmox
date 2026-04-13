@@ -133,10 +133,8 @@ install_service() {
   local node_dir
   node_dir=$(dirname "$node_bin")
 
-  # Use node + local tsx to run the custom server (handles WS relay)
-  # tsx and next are both local to the project — never rely on global/PATH binaries
-  local tsx_bin="${INSTALL_DIR}/nexus/node_modules/.bin/tsx"
-  local exec_start="${node_bin} ${tsx_bin} server.ts"
+  # Use node's built-in TypeScript strip-types (Node 22+) — no tsx needed
+  local exec_start="${node_bin} --experimental-strip-types ${INSTALL_DIR}/nexus/server.ts"
 
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
