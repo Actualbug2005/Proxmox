@@ -69,10 +69,10 @@ build_app() {
   [[ -d "$app_dir" ]] || die "nexus/ directory not found inside $INSTALL_DIR"
 
   info "Installing npm dependencies (including devDependencies for build)…"
-  npm --prefix "$app_dir" ci 2>&1 | tail -3
+  npm --prefix "$app_dir" install 2>&1 | tail -3
 
   info "Building Next.js app…"
-  npm --prefix "$app_dir" run build 2>&1 | tail -10
+  npm --prefix "$app_dir" run build 2>&1 | tail -15
 
   info "Pruning devDependencies after build…"
   npm --prefix "$app_dir" prune --omit=dev 2>&1 | tail -3
