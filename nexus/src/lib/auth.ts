@@ -64,9 +64,11 @@ export async function verifySession(token: string): Promise<PVEAuthSession | nul
 export async function setSessionCookie(session: PVEAuthSession): Promise<void> {
   const token = await createSession(session);
   const cookieStore = await cookies();
+  // Don't force Secure flag — app runs over plain HTTP on the Proxmox host.
+  // Secure cookies over HTTP are rejected by Chrome; Safari is more lenient.
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     sameSite: 'lax',
     maxAge: MAX_AGE,
     path: '/',
