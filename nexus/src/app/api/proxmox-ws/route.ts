@@ -1,10 +1,14 @@
 /**
- * termproxy ticket endpoint.
- * Returns the ticket + port so the Next.js WS relay server can connect to PVE.
- * The browser connects to /api/ws-relay?... (our plain-WS relay, see server.ts).
+ * termproxy ticket + eager WS relay session creator.
+ *
+ * 1. Acquires a PVE termproxy ticket
+ * 2. Immediately opens a server-side WS to PVE (before the 10s ticket timeout)
+ * 3. Returns a session ID the browser uses to join via ws://host/api/ws-relay?session=<id>
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { createRelaySession } from '@/lib/relay-sessions';
+import { randomUUID } from 'crypto';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -26,7 +30,6 @@ export async function POST(req: NextRequest) {
       ? `${base}/nodes/${node}/termproxy`
       : `${base}/nodes/${node}/${type}/${vmid}/termproxy`;
 
-  // termproxy accepts no body params
   const res = await fetch(termUrl, {
     method: 'POST',
     headers: {
@@ -44,23 +47,34 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
   const { ticket, port, upid } = data.data;
 
-  // The WS path PVE expects the client to connect to (via port 8006)
   const pveWsPath =
     type === 'node'
       ? `/api2/json/nodes/${node}/termproxy/ws`
       : `/api2/json/nodes/${node}/${type}/${vmid}/termproxy/ws`;
 
-  // Return everything the relay needs — browser connects to our plain-WS relay
+  const sessionId = randomUUID();
+
+  // Open the PVE WebSocket NOW (server-side) before the ticket expires.
+  // The browser will join this already-open connection via the relay.
+  try {
+    await createRelaySession({
+      sessionId,
+      pveHost: host,
+      pvePort: 8006,
+      pveWsPath,
+      ticket,
+      ticketPort: String(port),
+      pveAuthCookie: session.ticket,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Failed to open PVE terminal connection: ${String(err)}` },
+      { status: 502 },
+    );
+  }
+
   return NextResponse.json({
-    // Our relay endpoint (plain ws://, no cert issues)
-    relayUrl: `ws://${req.headers.get('host')}/api/ws-relay`,
-    // PVE connection details for the relay
-    pveHost: host,
-    pvePort: 8006,
-    pveWsPath,
-    ticket,
-    port,
+    sessionId,
     upid,
-    pveAuthCookie: session.ticket,
   });
 }

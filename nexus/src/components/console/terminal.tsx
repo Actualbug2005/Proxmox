@@ -43,7 +43,8 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         throw new Error(data.error ?? 'Failed to get terminal ticket');
       }
 
-      const { relayUrl, pveHost, pvePort, pveWsPath, ticket, port: ticketPort, pveAuthCookie } = await res.json();
+      // Server has already opened the PVE WS connection — we just need the session ID
+      const { sessionId } = await res.json();
 
       // Init xterm
       if (termRef.current) {
@@ -96,9 +97,9 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
       termRef.current = term;
 
-      // Connect to our server-side WS relay (plain ws://) which proxies to PVE over TLS.
-      // This avoids browser cert errors with PVE's self-signed cert.
-      const relayWsUrl = `${relayUrl}?pveHost=${encodeURIComponent(pveHost)}&pvePort=${pvePort ?? 8006}&pveWsPath=${encodeURIComponent(pveWsPath)}&ticket=${encodeURIComponent(ticket)}&port=${ticketPort}&pveAuthCookie=${encodeURIComponent(pveAuthCookie)}`;
+      // Join the already-open PVE connection via our relay (plain ws://, no cert issues)
+      const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const relayWsUrl = `${wsProto}://${window.location.host}/api/ws-relay?session=${encodeURIComponent(sessionId)}`;
 
       const ws = new WebSocket(relayWsUrl, ['binary']);
       wsRef.current = ws;
@@ -106,7 +107,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
       ws.onopen = () => {
         setStatus('connected');
-        // Send initial resize
+        // Tell PVE the terminal dimensions
         const { cols, rows } = term;
         ws.send(`1:${cols}:${rows}:`);
       };

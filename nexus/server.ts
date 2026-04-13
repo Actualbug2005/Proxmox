@@ -1,14 +1,18 @@
 /**
  * Custom Next.js server with WebSocket relay for Proxmox termproxy.
  *
- * The browser connects to ws://nexus-host:3000/api/ws-relay?...
- * This server proxies that connection to wss://pve-host:8006/... (self-signed cert OK server-side).
+ * Flow:
+ * 1. Browser POSTs to /api/proxmox-ws — server acquires PVE termproxy ticket
+ *    AND immediately opens a server-side WS to PVE (before the ticket expires).
+ *    Returns a relay session ID.
+ * 2. Browser opens ws://nexus:3000/api/ws-relay?session=<id>
+ * 3. Server bridges the already-open PVE connection to the browser.
  */
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { WebSocketServer, WebSocket } from 'ws';
-import * as tls from 'tls';
+import { relaySessions } from './src/lib/relay-sessions';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -16,6 +20,17 @@ const port = parseInt(process.env.PORT ?? '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
+
+// Clean up stale sessions older than 2 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, session] of relaySessions) {
+    if (now - session.createdAt > 120_000) {
+      session.pveWs.terminate();
+      relaySessions.delete(id);
+    }
+  }
+}, 30_000);
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -34,34 +49,29 @@ app.prepare().then(() => {
     }
 
     wss.handleUpgrade(req, socket, head, (clientWs) => {
-      const {
-        pveHost,
-        pvePort,
-        pveWsPath,
-        ticket,
-        port: ticketPort,
-        pveAuthCookie,
-      } = query as Record<string, string>;
+      const sessionId = query.session as string;
 
-      if (!pveHost || !pveWsPath || !ticket) {
-        clientWs.close(4000, 'Missing required params');
+      if (!sessionId) {
+        clientWs.close(4000, 'Missing session ID');
         return;
       }
 
-      // Connect to PVE over TLS (self-signed cert allowed via NODE_TLS_REJECT_UNAUTHORIZED=0)
-      const pveWsUrl = `wss://${pveHost}:${pvePort ?? 8006}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
+      const session = relaySessions.get(sessionId);
+      if (!session) {
+        clientWs.close(4004, 'Session not found or expired');
+        return;
+      }
 
-      const pveWs = new WebSocket(pveWsUrl, ['binary'], {
-        headers: {
-          Cookie: `PVEAuthCookie=${pveAuthCookie}`,
-        },
-        rejectUnauthorized: false,
-      });
+      session.clientWs = clientWs;
+      const { pveWs, buffer } = session;
 
-      pveWs.on('open', () => {
-        // PVE termproxy expects username:ticket as first message
-        pveWs.send(`${pveAuthCookie}:${ticket}\n`);
-      });
+      // Flush buffered data that arrived before browser connected
+      for (const chunk of buffer) {
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(chunk);
+        }
+      }
+      session.buffer = [];
 
       // Relay PVE → browser
       pveWs.on('message', (data) => {
@@ -77,27 +87,26 @@ app.prepare().then(() => {
         }
       });
 
-      pveWs.on('close', (code, reason) => {
-        clientWs.close(code, reason);
-      });
-
-      pveWs.on('error', (err) => {
-        console.error('[ws-relay] PVE WS error:', err.message);
-        clientWs.close(4001, 'PVE connection error');
-      });
-
       clientWs.on('close', () => {
         pveWs.close();
+        relaySessions.delete(sessionId);
       });
 
-      clientWs.on('error', (err) => {
-        console.error('[ws-relay] Client WS error:', err.message);
+      clientWs.on('error', () => {
         pveWs.close();
+        relaySessions.delete(sessionId);
+      });
+
+      pveWs.on('close', () => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.close(1000, 'PVE connection closed');
+        }
+        relaySessions.delete(sessionId);
       });
     });
   });
 
   httpServer.listen(port, () => {
-    console.log(`▲ Next.js ready on http://localhost:${port}`);
+    console.log(`▲ Next.js + WS relay ready on http://localhost:${port}`);
   });
 });
