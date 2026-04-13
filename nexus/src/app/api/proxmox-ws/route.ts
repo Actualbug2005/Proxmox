@@ -31,14 +31,14 @@ export async function POST(req: NextRequest) {
     vncUrl = `${base}/nodes/${node}/${type}/${vmid}/termproxy`;
   }
 
+  // termproxy takes no body params — unlike vncproxy it doesn't accept 'websocket'
   const res = await fetch(vncUrl, {
     method: 'POST',
     headers: {
       Cookie: `PVEAuthCookie=${session.ticket}`,
       CSRFPreventionToken: session.csrfToken,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Length': '0',
     },
-    body: new URLSearchParams({ websocket: '1' }).toString(),
   });
 
   if (!res.ok) {
