@@ -1,0 +1,349 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Command } from 'cmdk';
+import {
+  LayoutDashboard,
+  Server,
+  Terminal,
+  Code2,
+  HardDrive,
+  Activity,
+  Monitor,
+  Box,
+  Play,
+  Square,
+  RotateCcw,
+  LogOut,
+  Search,
+} from 'lucide-react';
+import { useClusterResources } from '@/hooks/use-cluster';
+import { api } from '@/lib/proxmox-client';
+import { cn } from '@/lib/utils';
+
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const router = useRouter();
+  const { data: resources } = useClusterResources();
+
+  const vms = resources?.filter((r) => r.type === 'vm') ?? [];
+  const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
+  const nodes = resources?.filter((r) => r.type === 'node') ?? [];
+
+  // Listen for CMD+K / Ctrl+K
+  useEffect(() => {
+    function onKeydown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+      if (e.key === 'Escape') setOpen(false);
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  }, []);
+
+  const navigate = useCallback(
+    (href: string) => {
+      setOpen(false);
+      router.push(href);
+    },
+    [router],
+  );
+
+  async function handleVMAction(
+    action: 'start' | 'stop' | 'reboot',
+    node: string,
+    vmid: number,
+    type: 'vm' | 'lxc',
+  ) {
+    setOpen(false);
+    try {
+      if (type === 'vm') {
+        if (action === 'start') await api.vms.start(node, vmid);
+        if (action === 'stop') await api.vms.stop(node, vmid);
+        if (action === 'reboot') await api.vms.reboot(node, vmid);
+      } else {
+        if (action === 'start') await api.containers.start(node, vmid);
+        if (action === 'stop') await api.containers.stop(node, vmid);
+        if (action === 'reboot') await api.containers.reboot(node, vmid);
+      }
+    } catch {
+      // silently fail — could toast here in future
+    }
+  }
+
+  async function handleLogout() {
+    setOpen(false);
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="w-full max-w-xl mx-4 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Command
+          className="[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:text-gray-600 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2"
+          shouldFilter={false}
+        >
+          {/* Search input */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-800">
+            <Search className="w-4 h-4 text-gray-500 shrink-0" />
+            <Command.Input
+              value={search}
+              onValueChange={setSearch}
+              placeholder="Search pages, VMs, containers…"
+              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+              autoFocus
+            />
+            <kbd className="text-xs text-gray-600 border border-gray-700 rounded px-1.5 py-0.5">
+              ESC
+            </kbd>
+          </div>
+
+          <Command.List className="max-h-96 overflow-y-auto py-2">
+            <Command.Empty className="py-8 text-center text-sm text-gray-600">
+              No results for &ldquo;{search}&rdquo;
+            </Command.Empty>
+
+            {/* Navigation */}
+            {(!search || 'navigation pages'.includes(search.toLowerCase())) && (
+              <Command.Group heading="Navigation">
+                {[
+                  { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+                  { label: 'Nodes', href: '/dashboard/nodes', icon: Server },
+                  { label: 'Storage', href: '/dashboard/storage', icon: HardDrive },
+                  { label: 'Tasks', href: '/dashboard/tasks', icon: Activity },
+                  { label: 'Console', href: '/console', icon: Terminal },
+                  { label: 'Community Scripts', href: '/scripts', icon: Code2 },
+                ]
+                  .filter(
+                    (item) =>
+                      !search || item.label.toLowerCase().includes(search.toLowerCase()),
+                  )
+                  .map(({ label, href, icon: Icon }) => (
+                    <CommandItem
+                      key={href}
+                      onSelect={() => navigate(href)}
+                      icon={<Icon className="w-4 h-4" />}
+                      label={label}
+                      hint="Go to"
+                    />
+                  ))}
+              </Command.Group>
+            )}
+
+            {/* VMs */}
+            {vms.length > 0 && (
+              <Command.Group heading="Virtual Machines">
+                {vms
+                  .filter(
+                    (v) =>
+                      !search ||
+                      v.name?.toLowerCase().includes(search.toLowerCase()) ||
+                      String(v.vmid).includes(search),
+                  )
+                  .slice(0, 6)
+                  .map((vm) => (
+                    <div key={vm.id} className="px-2">
+                      <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg group">
+                        <Monitor className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="flex-1 text-sm text-gray-300">
+                          {vm.name ?? vm.vmid}
+                          <span className="text-gray-600 text-xs ml-1">({vm.vmid})</span>
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                          {vm.status !== 'running' && (
+                            <ActionButton
+                              icon={<Play className="w-3 h-3" />}
+                              label="Start"
+                              onClick={() => handleVMAction('start', vm.node!, vm.vmid!, 'vm')}
+                            />
+                          )}
+                          {vm.status === 'running' && (
+                            <>
+                              <ActionButton
+                                icon={<RotateCcw className="w-3 h-3" />}
+                                label="Reboot"
+                                onClick={() => handleVMAction('reboot', vm.node!, vm.vmid!, 'vm')}
+                              />
+                              <ActionButton
+                                icon={<Square className="w-3 h-3" />}
+                                label="Stop"
+                                onClick={() => handleVMAction('stop', vm.node!, vm.vmid!, 'vm')}
+                                danger
+                              />
+                            </>
+                          )}
+                          <ActionButton
+                            icon={<Terminal className="w-3 h-3" />}
+                            label="Console"
+                            onClick={() => navigate('/console')}
+                          />
+                        </div>
+                        <span
+                          className={cn(
+                            'text-xs shrink-0',
+                            vm.status === 'running' ? 'text-emerald-400' : 'text-gray-600',
+                          )}
+                        >
+                          {vm.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </Command.Group>
+            )}
+
+            {/* Containers */}
+            {cts.length > 0 && (
+              <Command.Group heading="Containers">
+                {cts
+                  .filter(
+                    (c) =>
+                      !search ||
+                      c.name?.toLowerCase().includes(search.toLowerCase()) ||
+                      String(c.vmid).includes(search),
+                  )
+                  .slice(0, 6)
+                  .map((ct) => (
+                    <div key={ct.id} className="px-2">
+                      <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg group">
+                        <Box className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="flex-1 text-sm text-gray-300">
+                          {ct.name ?? ct.vmid}
+                          <span className="text-gray-600 text-xs ml-1">({ct.vmid})</span>
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                          {ct.status !== 'running' && (
+                            <ActionButton
+                              icon={<Play className="w-3 h-3" />}
+                              label="Start"
+                              onClick={() => handleVMAction('start', ct.node!, ct.vmid!, 'lxc')}
+                            />
+                          )}
+                          {ct.status === 'running' && (
+                            <>
+                              <ActionButton
+                                icon={<RotateCcw className="w-3 h-3" />}
+                                label="Reboot"
+                                onClick={() => handleVMAction('reboot', ct.node!, ct.vmid!, 'lxc')}
+                              />
+                              <ActionButton
+                                icon={<Square className="w-3 h-3" />}
+                                label="Stop"
+                                onClick={() => handleVMAction('stop', ct.node!, ct.vmid!, 'lxc')}
+                                danger
+                              />
+                            </>
+                          )}
+                        </div>
+                        <span
+                          className={cn(
+                            'text-xs shrink-0',
+                            ct.status === 'running' ? 'text-emerald-400' : 'text-gray-600',
+                          )}
+                        >
+                          {ct.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </Command.Group>
+            )}
+
+            {/* Account */}
+            <Command.Group heading="Account">
+              <CommandItem
+                onSelect={handleLogout}
+                icon={<LogOut className="w-4 h-4" />}
+                label="Sign out"
+                hint="Logout"
+                danger
+              />
+            </Command.Group>
+          </Command.List>
+
+          <div className="px-4 py-2 border-t border-gray-800 flex items-center gap-4">
+            <span className="text-xs text-gray-600">
+              <kbd className="border border-gray-700 rounded px-1">↑↓</kbd> navigate
+            </span>
+            <span className="text-xs text-gray-600">
+              <kbd className="border border-gray-700 rounded px-1">↵</kbd> select
+            </span>
+            <span className="text-xs text-gray-600">
+              <kbd className="border border-gray-700 rounded px-1">ESC</kbd> close
+            </span>
+          </div>
+        </Command>
+      </div>
+    </div>
+  );
+}
+
+function CommandItem({
+  onSelect,
+  icon,
+  label,
+  hint,
+  danger,
+}: {
+  onSelect: () => void;
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  danger?: boolean;
+}) {
+  return (
+    <Command.Item
+      onSelect={onSelect}
+      className={cn(
+        'flex items-center gap-3 px-4 py-2 cursor-pointer transition',
+        'data-[selected=true]:bg-gray-800',
+        danger ? 'text-red-400 data-[selected=true]:text-red-400' : 'text-gray-300',
+      )}
+    >
+      <span className="text-gray-500">{icon}</span>
+      <span className="flex-1 text-sm">{label}</span>
+      {hint && <span className="text-xs text-gray-600">{hint}</span>}
+    </Command.Item>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={cn(
+        'p-1 rounded transition text-xs',
+        danger
+          ? 'text-red-500 hover:bg-red-500/20'
+          : 'text-gray-500 hover:bg-gray-700 hover:text-gray-300',
+      )}
+    >
+      {icon}
+    </button>
+  );
+}
