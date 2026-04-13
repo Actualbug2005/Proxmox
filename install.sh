@@ -68,11 +68,14 @@ build_app() {
   local app_dir="$INSTALL_DIR/nexus"
   [[ -d "$app_dir" ]] || die "nexus/ directory not found inside $INSTALL_DIR"
 
-  info "Installing npm dependencies…"
-  npm --prefix "$app_dir" ci --omit=dev 2>&1 | tail -3
+  info "Installing npm dependencies (including devDependencies for build)…"
+  npm --prefix "$app_dir" ci 2>&1 | tail -3
 
   info "Building Next.js app…"
   npm --prefix "$app_dir" run build 2>&1 | tail -10
+
+  info "Pruning devDependencies after build…"
+  npm --prefix "$app_dir" prune --omit=dev 2>&1 | tail -3
 
   success "Build complete"
 }
