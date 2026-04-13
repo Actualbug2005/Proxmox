@@ -133,8 +133,10 @@ install_service() {
   local node_dir
   node_dir=$(dirname "$node_bin")
 
-  # Use node + local next binary directly — avoids npm/npx shim issues under systemd
-  local exec_start="${node_bin} ${INSTALL_DIR}/nexus/node_modules/.bin/next start --port ${PORT}"
+  # Use node + local tsx to run the custom server (handles WS relay)
+  # tsx and next are both local to the project — never rely on global/PATH binaries
+  local tsx_bin="${INSTALL_DIR}/nexus/node_modules/.bin/tsx"
+  local exec_start="${node_bin} ${tsx_bin} server.ts"
 
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
