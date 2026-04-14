@@ -10,6 +10,7 @@ import { parse } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import next from 'next';
 import { WebSocketServer, WebSocket } from 'ws';
+import type { ClientOptions } from 'ws';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -48,7 +49,7 @@ export function createRelaySession(params: {
     const pveWs = new WebSocket(pveWsUrl, ['binary'], {
       headers: { Cookie: `PVEAuthCookie=${pveAuthCookie}` },
       rejectUnauthorized: false,
-    } as Parameters<typeof WebSocket>[2]);
+    } as ClientOptions);
 
     const session: RelaySession = {
       pveWs,
