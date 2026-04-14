@@ -27,8 +27,12 @@ export default function PackagesPage() {
   const { data: upgradable, isLoading: sysLoading, refetch: refetchSys } = useQuery({
     queryKey: ['apt', 'upgradable', node],
     queryFn: () => api.apt.upgradable(node),
-    enabled: !!node && tab === 'system',
+    enabled: !!node,
   });
+
+  // Map upgradable package name → new version for cross-referencing with /apt/versions
+  const newVersionByPkg = new Map<string, string>();
+  (upgradable ?? []).forEach((p) => newVersionByPkg.set(p.Package, p.Version));
 
   const refreshM = useMutation({
     mutationFn: () => api.apt.update(node),
@@ -121,7 +125,12 @@ export default function PackagesPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
-              {pvePackages?.length ?? 0} PVE packages installed
+              {(() => {
+                const count = (pvePackages ?? []).filter((p) => newVersionByPkg.has(p.Package)).length;
+                return count > 0
+                  ? `${count} update${count !== 1 ? 's' : ''} available · ${pvePackages?.length ?? 0} PVE packages installed`
+                  : `${pvePackages?.length ?? 0} PVE packages installed · all up to date`;
+              })()}
             </p>
             <button
               onClick={() => installM.mutate([])}
@@ -143,20 +152,27 @@ export default function PackagesPage() {
                 <thead>
                   <tr className="border-b border-gray-800">
                     <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Version</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">State</th>
+                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Current</th>
+                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Available</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(pvePackages ?? []).map((pkg) => (
-                    <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
-                      <td className="px-4 py-2.5 font-mono text-gray-400 text-xs">{pkg.Version}</td>
-                      <td className="px-4 py-2.5">
-                        <Badge variant="outline" className="text-xs">{pkg.CurrentState ?? 'Installed'}</Badge>
-                      </td>
-                    </tr>
-                  ))}
+                  {(pvePackages ?? []).map((pkg) => {
+                    const newVersion = newVersionByPkg.get(pkg.Package);
+                    return (
+                      <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
+                        <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.Version}</td>
+                        <td className="px-4 py-2.5">
+                          {newVersion ? (
+                            <Badge variant="warning" className="font-mono text-xs">{newVersion}</Badge>
+                          ) : (
+                            <Badge variant="success" className="text-xs">current</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
