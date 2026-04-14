@@ -382,6 +382,7 @@ export interface CreateVMParams {
   onboot?: number;
   pool?: string;
   storage?: string;
+  [key: string]: unknown;
 }
 
 export interface CreateCTParams {
@@ -400,6 +401,7 @@ export interface CreateCTParams {
   onboot?: number;
   pool?: string;
   storage?: string;
+  [key: string]: unknown;
 }
 
 export interface CloneVMParams {
@@ -408,24 +410,28 @@ export interface CloneVMParams {
   target?: string;
   full?: number;
   pool?: string;
+  [key: string]: unknown;
 }
 
 export interface CloneCTParams {
   newid: number;
   hostname?: string;
   pool?: string;
+  [key: string]: unknown;
 }
 
 export interface MigrateVMParams {
   target: string;
   online?: number;
   with_local_disks?: number;
+  [key: string]: unknown;
 }
 
 export interface MigrateCTParams {
   target: string;
   restart?: number;
   online?: number;
+  [key: string]: unknown;
 }
 
 export interface UpdateVMConfigParams {
