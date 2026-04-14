@@ -40,12 +40,15 @@ export function createRelaySession(params: {
   return new Promise((resolve, reject) => {
     const { sessionId, ticket, ticketPort, pveAuthCookie } = params;
 
-    // Connect directly to the termproxy port on localhost (plain WS, no TLS).
-    // termproxy binds to 127.0.0.1:<port> and speaks WebSocket natively.
-    // This works because server.ts runs on the PVE host itself.
-    const pveWsUrl = `ws://127.0.0.1:${ticketPort}`;
+    // Connect through pveproxy's vncwebsocket endpoint (not termproxy/ws which returns 501,
+    // and not ws://127.0.0.1:<port> directly which is raw TCP, not WebSocket).
+    // pveproxy validates the vncticket query param then bridges to the local termproxy TCP port.
+    const pveWsUrl = `wss://${pveHost}:${pvePort}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
 
-    const pveWs = new WebSocket(pveWsUrl, ['binary']);
+    const pveWs = new WebSocket(pveWsUrl, ['binary'], {
+      headers: { Cookie: `PVEAuthCookie=${pveAuthCookie}` },
+      rejectUnauthorized: false,
+    } as Parameters<typeof WebSocket>[2]);
 
     const session: RelaySession = {
       pveWs,
@@ -55,7 +58,7 @@ export function createRelaySession(params: {
     };
 
     pveWs.on('open', () => {
-      pveWs.send(`${pveAuthCookie}:${ticket}\n`);
+      // No auth handshake needed — pveproxy validates via vncticket URL param
       relaySessions.set(sessionId, session);
       resolve();
     });

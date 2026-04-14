@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
 
   const pveWsPath =
     type === 'node'
-      ? `/api2/json/nodes/${node}/termproxy/ws`
-      : `/api2/json/nodes/${node}/${type}/${vmid}/termproxy/ws`;
+      ? `/api2/json/nodes/${node}/vncwebsocket`
+      : `/api2/json/nodes/${node}/${type}/${vmid}/vncwebsocket`;
 
   const sessionId = randomUUID();
 
