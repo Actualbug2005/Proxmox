@@ -17,6 +17,7 @@ type CreateRelaySession = (params: {
   ticket: string;
   ticketPort: string;
   pveAuthCookie: string;
+  username: string;
 }) => Promise<void>;
 
 function getCreateRelaySession(): CreateRelaySession {
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
       ticket,
       ticketPort: String(port),
       pveAuthCookie: session.ticket,
+      username: session.username,
     });
   } catch (err) {
     return NextResponse.json(

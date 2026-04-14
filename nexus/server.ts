@@ -37,9 +37,10 @@ export function createRelaySession(params: {
   ticket: string;
   ticketPort: string;
   pveAuthCookie: string;
+  username: string;
 }): Promise<void> {
   return new Promise((resolve, reject) => {
-    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie } = params;
+    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie, username } = params;
 
     // Connect through pveproxy's vncwebsocket endpoint (not termproxy/ws which returns 501,
     // and not ws://127.0.0.1:<port> directly which is raw TCP, not WebSocket).
@@ -59,11 +60,10 @@ export function createRelaySession(params: {
     };
 
     pveWs.on('open', () => {
-      // pveproxy acts as a transparent relay — it does NOT forward the vncticket
-      // URL param to termproxy automatically. The first WS message we send gets
-      // forwarded to termproxy as its ticket. Without this, termproxy times out
-      // waiting for the ticket.
-      pveWs.send(ticket);
+      // pveproxy is a transparent WS<->TCP bridge. termproxy (Rust) expects the
+      // first line to be "user:ticket\n" (see proxmox-termproxy/src/main.rs
+      // read_ticket()). Without this exact format, termproxy times out.
+      pveWs.send(`${username}:${ticket}\n`);
       relaySessions.set(sessionId, session);
       resolve();
     });
