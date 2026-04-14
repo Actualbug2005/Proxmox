@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import { useSystemNode } from '@/app/dashboard/system/layout';
+import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ScrollText, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';

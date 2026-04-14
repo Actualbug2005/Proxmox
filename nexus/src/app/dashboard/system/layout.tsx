@@ -1,22 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNodes } from '@/hooks/use-cluster';
 import { Loader2 } from 'lucide-react';
-
-interface SystemNodeContextValue {
-  node: string;
-  setNode: (n: string) => void;
-}
-
-export const SystemNodeContext = createContext<SystemNodeContextValue>({
-  node: '',
-  setNode: () => {},
-});
-
-export function useSystemNode() {
-  return useContext(SystemNodeContext);
-}
+import { SystemNodeContext } from './node-context';
 
 export default function SystemLayout({ children }: { children: React.ReactNode }) {
   const { data: nodes, isLoading } = useNodes();

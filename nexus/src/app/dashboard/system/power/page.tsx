@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import { useSystemNode } from '@/app/dashboard/system/layout';
+import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { formatUptime } from '@/lib/utils';
 import { PowerOff, RotateCcw, Loader2, Clock } from 'lucide-react';
