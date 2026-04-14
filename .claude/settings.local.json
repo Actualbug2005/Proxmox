@@ -9,7 +9,13 @@
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(curl -s https://pve.proxmox.com/pve-docs/api-viewer/apidoc.js)",
+      "Bash(awk '/\"name\" : \"versions\"/,/\\\\}\\\\],/')",
+      "Bash(awk '/\"name\" : \"journal\"/,/\"text\" : \"journal\"/')",
+      "Bash(awk '/\"path\" : \"\\\\/cluster\\\\/resources\"/,/\"text\" : \"resources\"/')",
+      "Bash(awk '/\"name\" : \"resources\"/,/\"text\" : \"resources\"/')",
+      "Bash(echo \"EXIT:$?\")"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
