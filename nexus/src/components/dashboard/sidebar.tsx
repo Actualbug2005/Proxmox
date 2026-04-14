@@ -11,12 +11,16 @@ import {
   ChevronRight,
   Activity,
   HardDrive,
+  Monitor,
+  Box,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/nodes', label: 'Nodes', icon: Server },
+  { href: '/dashboard/vms', label: 'Virtual Machines', icon: Monitor },
+  { href: '/dashboard/cts', label: 'Containers', icon: Box },
   { href: '/dashboard/storage', label: 'Storage', icon: HardDrive },
   { href: '/dashboard/tasks', label: 'Tasks', icon: Activity },
   { href: '/console', label: 'Console', icon: Terminal },

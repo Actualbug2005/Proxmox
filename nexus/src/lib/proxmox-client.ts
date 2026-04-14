@@ -100,31 +100,30 @@ import type {
   VNCProxyResponse,
   NodeRRDData,
   VMConfig,
+  VMConfigFull,
+  CTConfig,
+  StorageContent,
+  NodeNetwork,
+  CreateVMParams,
+  CreateCTParams,
+  CloneVMParams,
+  CloneCTParams,
+  MigrateVMParams,
+  MigrateCTParams,
+  UpdateVMConfigParams,
+  UpdateCTConfigParams,
 } from '@/types/proxmox';
 
 export const api = {
-  // Cluster
-  cluster: {
-    resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
-    tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
-  },
-
-  // Nodes
-  nodes: {
-    list: () => proxmox.get<PVENode[]>('nodes'),
-    status: (node: string) => proxmox.get<NodeStatus>(`nodes/${node}/status`),
-    rrd: (node: string, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
-      proxmox.get<NodeRRDData[]>(`nodes/${node}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
-    tasks: (node: string) => proxmox.get<PVETask[]>(`nodes/${node}/tasks`),
-  },
-
   // VMs (QEMU)
   vms: {
     list: (node: string) => proxmox.get<PVEVM[]>(`nodes/${node}/qemu`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVEVM>(`nodes/${node}/qemu/${vmid}/status/current`),
     config: (node: string, vmid: number) =>
-      proxmox.get<VMConfig>(`nodes/${node}/qemu/${vmid}/config`),
+      proxmox.get<VMConfigFull>(`nodes/${node}/qemu/${vmid}/config`),
+    updateConfig: (node: string, vmid: number, params: UpdateVMConfigParams) =>
+      proxmox.put<null>(`nodes/${node}/qemu/${vmid}/config`, params as Record<string, unknown>),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -133,10 +132,22 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/shutdown`),
     reboot: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/reboot`),
+    suspend: (node: string, vmid: number) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/suspend`),
+    resume: (node: string, vmid: number) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/resume`),
+    delete: (node: string, vmid: number, purge = true) =>
+      proxmox.delete<string>(`nodes/${node}/qemu/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
+    clone: (node: string, vmid: number, params: CloneVMParams) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, params as Record<string, unknown>),
+    migrate: (node: string, vmid: number, params: MigrateVMParams) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, params as Record<string, unknown>),
+    create: (node: string, params: Omit<CreateVMParams, 'node'>) =>
+      proxmox.post<string>(`nodes/${node}/qemu`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
-      proxmox.post<VNCProxyResponse>(`nodes/${node}/qemu/${vmid}/vncproxy`, {
-        websocket: 1,
-      }),
+      proxmox.post<VNCProxyResponse>(`nodes/${node}/qemu/${vmid}/vncproxy`, { websocket: 1 }),
+    rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
+      proxmox.get<NodeRRDData[]>(`nodes/${node}/qemu/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
   },
 
   // LXC Containers
@@ -144,6 +155,10 @@ export const api = {
     list: (node: string) => proxmox.get<PVECT[]>(`nodes/${node}/lxc`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVECT>(`nodes/${node}/lxc/${vmid}/status/current`),
+    config: (node: string, vmid: number) =>
+      proxmox.get<CTConfig>(`nodes/${node}/lxc/${vmid}/config`),
+    updateConfig: (node: string, vmid: number, params: UpdateCTConfigParams) =>
+      proxmox.put<null>(`nodes/${node}/lxc/${vmid}/config`, params as Record<string, unknown>),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -152,15 +167,46 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/shutdown`),
     reboot: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/reboot`),
+    suspend: (node: string, vmid: number) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/suspend`),
+    resume: (node: string, vmid: number) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/resume`),
+    delete: (node: string, vmid: number, purge = true) =>
+      proxmox.delete<string>(`nodes/${node}/lxc/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
+    clone: (node: string, vmid: number, params: CloneCTParams) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/clone`, params as Record<string, unknown>),
+    migrate: (node: string, vmid: number, params: MigrateCTParams) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, params as Record<string, unknown>),
+    create: (node: string, params: Omit<CreateCTParams, 'node'>) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
-      proxmox.post<VNCProxyResponse>(`nodes/${node}/lxc/${vmid}/vncproxy`, {
-        websocket: 1,
-      }),
+      proxmox.post<VNCProxyResponse>(`nodes/${node}/lxc/${vmid}/vncproxy`, { websocket: 1 }),
+    rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
+      proxmox.get<NodeRRDData[]>(`nodes/${node}/lxc/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
   },
 
   // Storage
   storage: {
     list: (node: string) => proxmox.get<PVEStorage[]>(`nodes/${node}/storage`),
+    listWithContent: (node: string, content: string) =>
+      proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`),
+    content: (node: string, storage: string, content?: string) =>
+      proxmox.get<StorageContent[]>(
+        `nodes/${node}/storage/${storage}/content${content ? `?content=${content}` : ''}`,
+      ),
+  },
+
+  // Network
+  network: {
+    list: (node: string, type?: string) =>
+      proxmox.get<NodeNetwork[]>(`nodes/${node}/network${type ? `?type=${type}` : ''}`),
+  },
+
+  // Cluster
+  cluster: {
+    resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
+    tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
+    nextid: () => proxmox.get<number>('cluster/nextid'),
   },
 
   // Tasks
@@ -171,6 +217,15 @@ export const api = {
       proxmox.get<{ n: number; t: string }[]>(
         `nodes/${node}/tasks/${encodeURIComponent(upid)}/log`,
       ),
+  },
+
+  // Nodes
+  nodes: {
+    list: () => proxmox.get<PVENode[]>('nodes'),
+    status: (node: string) => proxmox.get<NodeStatus>(`nodes/${node}/status`),
+    rrd: (node: string, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
+      proxmox.get<NodeRRDData[]>(`nodes/${node}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
+    tasks: (node: string) => proxmox.get<PVETask[]>(`nodes/${node}/tasks`),
   },
 
   // Node exec (for community scripts)

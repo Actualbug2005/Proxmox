@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Server,
   Monitor,
@@ -9,7 +10,7 @@ import {
   ChevronRight,
   Circle,
 } from 'lucide-react';
-import { cn, cpuPercent, formatBytes, memPercent } from '@/lib/utils';
+import { cn, cpuPercent, formatBytes } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { ClusterResource } from '@/types/proxmox';
 
@@ -58,19 +59,9 @@ function ResourceRow({
     resource.type === 'node' ? Server : resource.type === 'vm' ? Monitor : Box;
 
   const cpu = cpuPercent(resource.cpu);
-  const mem = memPercent(resource.mem, resource.maxmem);
 
-  return (
-    <button
-      onClick={() => onSelect?.(resource)}
-      className={cn(
-        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition group',
-        indent && 'ml-5',
-        selected
-          ? 'bg-orange-500/10 text-orange-400'
-          : 'hover:bg-gray-800 text-gray-300',
-      )}
-    >
+  const inner = (
+    <>
       <Icon className="w-3.5 h-3.5 shrink-0 text-gray-500 group-hover:text-gray-400" />
       <span className="flex-1 text-sm truncate">
         {resource.name ?? resource.id}
@@ -78,8 +69,6 @@ function ResourceRow({
           <span className="text-gray-600 text-xs ml-1">({resource.vmid})</span>
         )}
       </span>
-
-      {/* Mini metrics */}
       {resource.status === 'running' && resource.cpu !== undefined && (
         <span className="text-xs text-gray-600 tabular-nums">{cpu.toFixed(0)}%</span>
       )}
@@ -88,11 +77,37 @@ function ResourceRow({
           {formatBytes(resource.mem)}
         </span>
       )}
-
       <Badge variant={statusVariant(resource.status)}>
         <Circle className="w-1.5 h-1.5 mr-1 fill-current" />
         {resource.status ?? 'unknown'}
       </Badge>
+    </>
+  );
+
+  const cls = cn(
+    'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition group',
+    indent && 'ml-5',
+    selected ? 'bg-orange-500/10 text-orange-400' : 'hover:bg-gray-800 text-gray-300',
+  );
+
+  // VMs and CTs navigate to their detail pages; nodes stay as selectable buttons
+  if (resource.type === 'vm' && resource.node && resource.vmid) {
+    return (
+      <Link href={`/dashboard/vms/${resource.node}/${resource.vmid}`} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  if (resource.type === 'lxc' && resource.node && resource.vmid) {
+    return (
+      <Link href={`/dashboard/cts/${resource.node}/${resource.vmid}`} className={cls}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button onClick={() => onSelect?.(resource)} className={cls}>
+      {inner}
     </button>
   );
 }

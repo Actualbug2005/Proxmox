@@ -8,6 +8,9 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git push:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
     ]
   }
 }

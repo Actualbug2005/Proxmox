@@ -266,3 +266,194 @@ export interface ScriptExecutionPayload {
   scriptUrl: string;
   scriptName: string;
 }
+
+// ─── CT Config ────────────────────────────────────────────────────────────────
+
+export interface CTConfig {
+  hostname?: string;
+  cores?: number;
+  memory?: number;
+  swap?: number;
+  rootfs?: string;
+  net0?: string;
+  net1?: string;
+  net2?: string;
+  net3?: string;
+  ostype?: string;
+  arch?: string;
+  description?: string;
+  tags?: string;
+  onboot?: number;
+  startup?: string;
+  unprivileged?: number;
+  features?: string;
+  nameserver?: string;
+  searchdomain?: string;
+  mp0?: string;
+  mp1?: string;
+  lxc?: [string, string][];
+}
+
+// ─── Full VM Config (extends VMConfig with all disk/net slots) ────────────────
+
+export interface VMConfigFull extends VMConfig {
+  vmid?: number;
+  cores?: number;
+  sockets?: number;
+  cpu?: string;
+  memory?: number;
+  balloon?: number;
+  bios?: string;
+  machine?: string;
+  ostype?: string;
+  agent?: string;
+  onboot?: number;
+  description?: string;
+  tags?: string;
+  boot?: string;
+  bootdisk?: string;
+  // disks
+  scsi0?: string; scsi1?: string; scsi2?: string; scsi3?: string;
+  scsi4?: string; scsi5?: string; scsi6?: string; scsi7?: string;
+  ide0?: string; ide1?: string; ide2?: string; ide3?: string;
+  sata0?: string; sata1?: string; sata2?: string;
+  virtio0?: string; virtio1?: string;
+  efidisk0?: string;
+  // nics
+  net0?: string; net1?: string; net2?: string; net3?: string;
+  // cloud-init
+  ciuser?: string;
+  cipassword?: string;
+  ipconfig0?: string;
+  ipconfig1?: string;
+  sshkeys?: string;
+  searchdomain?: string;
+  nameserver?: string;
+  // usb/serial
+  usb0?: string; serial0?: string;
+  // meta
+  lock?: string;
+  digest?: string;
+}
+
+// ─── Storage Content ──────────────────────────────────────────────────────────
+
+export interface StorageContent {
+  volid: string;
+  content: string;
+  format?: string;
+  size?: number;
+  vmid?: number;
+  name?: string;
+  ctime?: number;
+}
+
+// ─── Node Network ─────────────────────────────────────────────────────────────
+
+export interface NodeNetwork {
+  iface: string;
+  type: string;
+  bridge_ports?: string;
+  autostart?: number;
+  active?: number;
+  address?: string;
+  netmask?: string;
+  gateway?: string;
+  comments?: string;
+  cidr?: string;
+}
+
+// ─── Create / Clone / Migrate params ─────────────────────────────────────────
+
+export interface CreateVMParams {
+  vmid: number;
+  name: string;
+  node: string;
+  cores: number;
+  sockets: number;
+  cpu?: string;
+  memory: number;
+  net0: string;
+  scsi0?: string;
+  ide2?: string;
+  ostype?: string;
+  bios?: string;
+  agent?: number;
+  onboot?: number;
+  pool?: string;
+  storage?: string;
+}
+
+export interface CreateCTParams {
+  vmid: number;
+  hostname: string;
+  node: string;
+  ostemplate: string;
+  password: string;
+  cores: number;
+  memory: number;
+  swap: number;
+  rootfs: string;
+  net0: string;
+  unprivileged: number;
+  nameserver?: string;
+  onboot?: number;
+  pool?: string;
+  storage?: string;
+}
+
+export interface CloneVMParams {
+  newid: number;
+  name?: string;
+  target?: string;
+  full?: number;
+  pool?: string;
+}
+
+export interface CloneCTParams {
+  newid: number;
+  hostname?: string;
+  pool?: string;
+}
+
+export interface MigrateVMParams {
+  target: string;
+  online?: number;
+  with_local_disks?: number;
+}
+
+export interface MigrateCTParams {
+  target: string;
+  restart?: number;
+  online?: number;
+}
+
+export interface UpdateVMConfigParams {
+  cores?: number;
+  sockets?: number;
+  memory?: number;
+  balloon?: number;
+  name?: string;
+  description?: string;
+  onboot?: number;
+  agent?: string;
+  tags?: string;
+  boot?: string;
+  cpu?: string;
+  bios?: string;
+  machine?: string;
+  [key: string]: unknown;
+}
+
+export interface UpdateCTConfigParams {
+  hostname?: string;
+  cores?: number;
+  memory?: number;
+  swap?: number;
+  description?: string;
+  onboot?: number;
+  tags?: string;
+  nameserver?: string;
+  searchdomain?: string;
+  [key: string]: unknown;
+}
