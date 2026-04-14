@@ -88,16 +88,18 @@ export function createRelaySession(params: {
 // Expose createRelaySession to Next.js route handlers via globalThis
 (globalThis as Record<string, unknown>).__nexusCreateRelaySession = createRelaySession;
 
-// Clean up stale sessions
+// Clean up ABANDONED pre-connection sessions — ones where the browser never
+// joined the relay within 30s. Once a client is attached, lifecycle is handled
+// by the clientWs close/error handlers — never terminate an active session here.
 setInterval(() => {
   const now = Date.now();
   for (const [id, s] of relaySessions) {
-    if (now - s.createdAt > 120_000) {
+    if (s.clientWs === null && now - s.createdAt > 30_000) {
       s.pveWs.terminate();
       relaySessions.delete(id);
     }
   }
-}, 30_000);
+}, 15_000);
 
 // ── Start server ──────────────────────────────────────────────────────────────
 app.prepare().then(() => {
