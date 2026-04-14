@@ -38,7 +38,7 @@ export function createRelaySession(params: {
   pveAuthCookie: string;
 }): Promise<void> {
   return new Promise((resolve, reject) => {
-    const { sessionId, ticket, ticketPort, pveAuthCookie } = params;
+    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie } = params;
 
     // Connect through pveproxy's vncwebsocket endpoint (not termproxy/ws which returns 501,
     // and not ws://127.0.0.1:<port> directly which is raw TCP, not WebSocket).
