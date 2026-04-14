@@ -2,17 +2,14 @@
  * Custom Next.js server with WebSocket relay for Proxmox termproxy.
  *
  * Flow:
- * 1. Browser POSTs to /api/proxmox-ws — server acquires PVE termproxy ticket
- *    AND immediately opens a server-side WS to PVE (before the ticket expires).
- *    Returns a relay session ID.
- * 2. Browser opens ws://nexus:3000/api/ws-relay?session=<id>
- * 3. Server bridges the already-open PVE connection to the browser.
+ * 1. POST /api/proxmox-ws → acquires PVE ticket + opens server-side WS to PVE immediately
+ * 2. Browser opens ws://host/api/ws-relay?session=<id> → bridged to already-open PVE connection
  */
-import { createServer } from 'http';
-import { parse } from 'url';
+import { createServer } from 'node:http';
+import { parse } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import next from 'next';
 import { WebSocketServer, WebSocket } from 'ws';
-import { relaySessions } from './src/lib/relay-sessions';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -21,17 +18,80 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-// Clean up stale sessions older than 2 minutes
+// ── Relay session store (shared via module singleton) ─────────────────────────
+interface RelaySession {
+  pveWs: WebSocket;
+  clientWs: WebSocket | null;
+  buffer: (Buffer | string)[];
+  createdAt: number;
+}
+
+export const relaySessions = new Map<string, RelaySession>();
+
+export function createRelaySession(params: {
+  sessionId: string;
+  pveHost: string;
+  pvePort: number;
+  pveWsPath: string;
+  ticket: string;
+  ticketPort: string;
+  pveAuthCookie: string;
+}): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie } = params;
+
+    const pveWsUrl = `wss://${pveHost}:${pvePort}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
+
+    const pveWs = new WebSocket(pveWsUrl, ['binary'], {
+      headers: { Cookie: `PVEAuthCookie=${pveAuthCookie}` },
+      rejectUnauthorized: false,
+    });
+
+    const session: RelaySession = {
+      pveWs,
+      clientWs: null,
+      buffer: [],
+      createdAt: Date.now(),
+    };
+
+    pveWs.on('open', () => {
+      pveWs.send(`${pveAuthCookie}:${ticket}\n`);
+      relaySessions.set(sessionId, session);
+      resolve();
+    });
+
+    pveWs.on('message', (data) => {
+      if (!session.clientWs) {
+        session.buffer.push(data as Buffer | string);
+      }
+    });
+
+    pveWs.on('error', reject);
+
+    setTimeout(() => {
+      if (pveWs.readyState !== WebSocket.OPEN) {
+        pveWs.terminate();
+        reject(new Error('PVE WebSocket timed out'));
+      }
+    }, 8_000);
+  });
+}
+
+// Expose createRelaySession to Next.js route handlers via globalThis
+(globalThis as Record<string, unknown>).__nexusCreateRelaySession = createRelaySession;
+
+// Clean up stale sessions
 setInterval(() => {
   const now = Date.now();
-  for (const [id, session] of relaySessions) {
-    if (now - session.createdAt > 120_000) {
-      session.pveWs.terminate();
+  for (const [id, s] of relaySessions) {
+    if (now - s.createdAt > 120_000) {
+      s.pveWs.terminate();
       relaySessions.delete(id);
     }
   }
 }, 30_000);
 
+// ── Start server ──────────────────────────────────────────────────────────────
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url!, true);
@@ -42,65 +102,34 @@ app.prepare().then(() => {
 
   httpServer.on('upgrade', (req, socket, head) => {
     const { pathname, query } = parse(req.url ?? '', true);
-
-    if (pathname !== '/api/ws-relay') {
-      socket.destroy();
-      return;
-    }
+    if (pathname !== '/api/ws-relay') { socket.destroy(); return; }
 
     wss.handleUpgrade(req, socket, head, (clientWs) => {
       const sessionId = query.session as string;
-
-      if (!sessionId) {
-        clientWs.close(4000, 'Missing session ID');
-        return;
-      }
+      if (!sessionId) { clientWs.close(4000, 'Missing session'); return; }
 
       const session = relaySessions.get(sessionId);
-      if (!session) {
-        clientWs.close(4004, 'Session not found or expired');
-        return;
-      }
+      if (!session) { clientWs.close(4004, 'Session expired'); return; }
 
       session.clientWs = clientWs;
       const { pveWs, buffer } = session;
 
-      // Flush buffered data that arrived before browser connected
+      // Flush buffered data
       for (const chunk of buffer) {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(chunk);
-        }
+        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(chunk);
       }
       session.buffer = [];
 
-      // Relay PVE → browser
       pveWs.on('message', (data) => {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(data);
-        }
+        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(data);
       });
-
-      // Relay browser → PVE
       clientWs.on('message', (data) => {
-        if (pveWs.readyState === WebSocket.OPEN) {
-          pveWs.send(data);
-        }
+        if (pveWs.readyState === WebSocket.OPEN) pveWs.send(data);
       });
-
-      clientWs.on('close', () => {
-        pveWs.close();
-        relaySessions.delete(sessionId);
-      });
-
-      clientWs.on('error', () => {
-        pveWs.close();
-        relaySessions.delete(sessionId);
-      });
-
+      clientWs.on('close', () => { pveWs.close(); relaySessions.delete(sessionId); });
+      clientWs.on('error', () => { pveWs.close(); relaySessions.delete(sessionId); });
       pveWs.on('close', () => {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.close(1000, 'PVE connection closed');
-        }
+        if (clientWs.readyState === WebSocket.OPEN) clientWs.close(1000, 'PVE closed');
         relaySessions.delete(sessionId);
       });
     });

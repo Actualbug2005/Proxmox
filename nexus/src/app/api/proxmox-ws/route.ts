@@ -7,7 +7,23 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { createRelaySession } from '@/lib/relay-sessions';
+// createRelaySession is injected into globalThis by server.ts at startup.
+// Both run in the same Node.js process so the reference is always live.
+type CreateRelaySession = (params: {
+  sessionId: string;
+  pveHost: string;
+  pvePort: number;
+  pveWsPath: string;
+  ticket: string;
+  ticketPort: string;
+  pveAuthCookie: string;
+}) => Promise<void>;
+
+function getCreateRelaySession(): CreateRelaySession {
+  const fn = (globalThis as Record<string, unknown>).__nexusCreateRelaySession as CreateRelaySession | undefined;
+  if (!fn) throw new Error('WS relay not available — is the custom server running?');
+  return fn;
+}
 import { randomUUID } from 'crypto';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -57,6 +73,7 @@ export async function POST(req: NextRequest) {
   // Open the PVE WebSocket NOW (server-side) before the ticket expires.
   // The browser will join this already-open connection via the relay.
   try {
+    const createRelaySession = getCreateRelaySession();
     await createRelaySession({
       sessionId,
       pveHost: host,
