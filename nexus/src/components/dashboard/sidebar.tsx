@@ -13,6 +13,13 @@ import {
   HardDrive,
   Monitor,
   Box,
+  Settings,
+  Zap,
+  Package,
+  Network,
+  ShieldCheck,
+  ScrollText,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +34,14 @@ const nav = [
   { href: '/scripts', label: 'Community Scripts', icon: Code2 },
 ];
 
+const systemNav = [
+  { href: '/dashboard/system/power', label: 'Power', icon: Zap },
+  { href: '/dashboard/system/packages', label: 'Packages', icon: Package },
+  { href: '/dashboard/system/network', label: 'Network', icon: Network },
+  { href: '/dashboard/system/certificates', label: 'Certificates', icon: ShieldCheck },
+  { href: '/dashboard/system/logs', label: 'Logs', icon: ScrollText },
+];
+
 interface SidebarProps {
   username?: string;
 }
@@ -34,6 +49,8 @@ interface SidebarProps {
 export function Sidebar({ username }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const systemActive = pathname.startsWith('/dashboard/system');
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -86,6 +103,46 @@ export function Sidebar({ username }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* System group */}
+        <div>
+          <Link
+            href="/dashboard/system/power"
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition w-full',
+              systemActive
+                ? 'bg-orange-500/10 text-orange-400'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+            )}
+          >
+            <Settings className="w-4 h-4 shrink-0" />
+            <span className="flex-1">System</span>
+            <ChevronDown className={cn('w-3 h-3 opacity-60 transition-transform', systemActive && 'rotate-180')} />
+          </Link>
+
+          {systemActive && (
+            <div className="ml-3 pl-3 border-l border-gray-800 mt-0.5 space-y-0.5">
+              {systemNav.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href || pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition',
+                      active
+                        ? 'bg-orange-500/10 text-orange-400'
+                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* User */}
