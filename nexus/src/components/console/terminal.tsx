@@ -113,17 +113,13 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
       };
 
       ws.onmessage = (event) => {
+        // termproxy sends raw PTY bytes back — no framing prefix.
+        // Only the client→server direction uses 0:len:data (input) and
+        // 1:cols:rows: (resize) framing.
         if (event.data instanceof ArrayBuffer) {
-          const buf = new Uint8Array(event.data);
-          const text = new TextDecoder().decode(buf);
-          // PVE termproxy prefixes data with type byte: '0' = data, '1' = resize ack
-          if (text.startsWith('0')) {
-            term.write(text.slice(1));
-          }
+          term.write(new Uint8Array(event.data));
         } else if (typeof event.data === 'string') {
-          if (event.data.startsWith('0')) {
-            term.write(event.data.slice(1));
-          }
+          term.write(event.data);
         }
       };
 
