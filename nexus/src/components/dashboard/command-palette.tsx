@@ -28,7 +28,7 @@ export function CommandPalette() {
   const router = useRouter();
   const { data: resources } = useClusterResources();
 
-  const vms = resources?.filter((r) => r.type === 'vm') ?? [];
+  const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
 

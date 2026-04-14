@@ -56,7 +56,7 @@ function ResourceRow({
   indent?: boolean;
 }) {
   const Icon =
-    resource.type === 'node' ? Server : resource.type === 'vm' ? Monitor : Box;
+    resource.type === 'node' ? Server : resource.type === 'qemu' ? Monitor : Box;
 
   const cpu = cpuPercent(resource.cpu);
 
@@ -91,7 +91,7 @@ function ResourceRow({
   );
 
   // VMs and CTs navigate to their detail pages; nodes stay as selectable buttons
-  if (resource.type === 'vm' && resource.node && resource.vmid) {
+  if (resource.type === 'qemu' && resource.node && resource.vmid) {
     return (
       <Link href={`/dashboard/vms/${resource.node}/${resource.vmid}`} className={cls}>
         {inner}
@@ -120,7 +120,7 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
     if (r.type === 'node') {
       if (!acc[r.node ?? r.id]) acc[r.node ?? r.id] = { vms: [], containers: [] };
       acc[r.node ?? r.id].node = r;
-    } else if (r.type === 'vm') {
+    } else if (r.type === 'qemu') {
       const n = r.node ?? 'unknown';
       if (!acc[n]) acc[n] = { vms: [], containers: [] };
       acc[n].vms.push(r);

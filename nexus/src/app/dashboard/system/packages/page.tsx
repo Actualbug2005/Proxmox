@@ -50,13 +50,11 @@ export default function PackagesPage() {
     },
   });
 
-  const pveUpgradable = pvePackages?.filter((p) => p.new_version) ?? [];
-
   const filteredSystem = (upgradable ?? []).filter(
     (p) =>
       !search ||
-      p.package.toLowerCase().includes(search.toLowerCase()) ||
-      p.description?.toLowerCase().includes(search.toLowerCase()),
+      p.Package.toLowerCase().includes(search.toLowerCase()) ||
+      p.Description?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const toggleSelect = (pkg: string) => {
@@ -123,20 +121,16 @@ export default function PackagesPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-400">
-              {pveUpgradable.length > 0
-                ? `${pveUpgradable.length} update${pveUpgradable.length !== 1 ? 's' : ''} available`
-                : 'All PVE packages up to date'}
+              {pvePackages?.length ?? 0} PVE packages installed
             </p>
-            {pveUpgradable.length > 0 && (
-              <button
-                onClick={() => installM.mutate([])}
-                disabled={installM.isPending}
-                className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
-              >
-                {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
-                Upgrade All PVE
-              </button>
-            )}
+            <button
+              onClick={() => installM.mutate([])}
+              disabled={installM.isPending}
+              className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+            >
+              {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
+              Upgrade All PVE
+            </button>
           </div>
 
           {pveLoading ? (
@@ -149,21 +143,17 @@ export default function PackagesPage() {
                 <thead>
                   <tr className="border-b border-gray-800">
                     <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Available</th>
+                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Version</th>
+                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">State</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(pvePackages ?? []).map((pkg) => (
-                    <tr key={pkg.package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.package}</td>
-                      <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.version}</td>
+                    <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-400 text-xs">{pkg.Version}</td>
                       <td className="px-4 py-2.5">
-                        {pkg.new_version ? (
-                          <Badge variant="warning" className="font-mono text-xs">{pkg.new_version}</Badge>
-                        ) : (
-                          <Badge variant="success" className="text-xs">current</Badge>
-                        )}
+                        <Badge variant="outline" className="text-xs">{pkg.CurrentState ?? 'Installed'}</Badge>
                       </td>
                     </tr>
                   ))}
@@ -225,19 +215,19 @@ export default function PackagesPage() {
                 </thead>
                 <tbody>
                   {filteredSystem.map((pkg) => (
-                    <tr key={pkg.package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                       <td className="px-4 py-2.5">
                         <input
                           type="checkbox"
-                          checked={selected.has(pkg.package)}
-                          onChange={() => toggleSelect(pkg.package)}
+                          checked={selected.has(pkg.Package)}
+                          onChange={() => toggleSelect(pkg.Package)}
                           className="rounded border-gray-600"
                         />
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.package}</td>
-                      <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.version}</td>
-                      <td className="px-4 py-2.5 font-mono text-orange-400 text-xs">{pkg.new_version ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-gray-500 text-xs">{pkg.section ?? '—'}</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
+                      <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.OldVersion}</td>
+                      <td className="px-4 py-2.5 font-mono text-orange-400 text-xs">{pkg.Version}</td>
+                      <td className="px-4 py-2.5 text-gray-500 text-xs">{pkg.Section ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

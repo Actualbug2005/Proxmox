@@ -22,7 +22,7 @@ export interface PVEAuthSession {
 
 // ─── Cluster ──────────────────────────────────────────────────────────────────
 
-export type ResourceType = 'node' | 'vm' | 'lxc' | 'storage' | 'pool';
+export type ResourceType = 'node' | 'qemu' | 'lxc' | 'storage' | 'pool' | 'sdn' | 'network';
 
 export interface ClusterResource {
   id: string;
@@ -458,14 +458,40 @@ export interface UpdateCTConfigParams {
 
 export type NodePowerCommand = 'reboot' | 'shutdown';
 
-export interface AptPackage {
-  package: string;
-  version: string;
-  new_version?: string;
-  section?: string;
-  description?: string;
-  priority?: string;
+// From GET /nodes/{node}/apt/versions — installed PVE packages
+export interface AptInstalledPackage {
+  Package: string;
+  Title: string;
+  Version: string;
+  OldVersion?: string;
+  Origin?: string;
+  Arch?: string;
+  Description?: string;
+  Section?: string;
+  Priority?: string;
+  CurrentState?: string;
+  ManagerVersion?: string;
+  NotifyStatus?: string;
+  RunningVersion?: string;
+  [key: string]: unknown;
 }
+
+// From GET /nodes/{node}/apt/update — upgradable packages
+export interface AptUpdatablePackage {
+  Package: string;
+  Title: string;
+  Version: string;       // new available version
+  OldVersion: string;    // currently installed version
+  Origin?: string;
+  Arch?: string;
+  Description?: string;
+  Section?: string;
+  Priority?: string;
+  [key: string]: unknown;
+}
+
+/** @deprecated Use AptInstalledPackage or AptUpdatablePackage */
+export type AptPackage = AptUpdatablePackage;
 
 export interface NetworkIface {
   iface: string;
@@ -521,12 +547,8 @@ export interface AcmeAccount {
   location?: string;
 }
 
-export interface JournalEntry {
-  t: string;
-  m: string;
-  p?: string;
-  u?: string;
-}
+/** PVE /journal returns raw journalctl lines as strings. */
+export type JournalEntry = string;
 
 export interface JournalParams {
   lastentries?: number;

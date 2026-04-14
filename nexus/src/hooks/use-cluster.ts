@@ -19,7 +19,7 @@ export function useNodes() {
 export function useNodeVMs(nodeName: string) {
   const { data: resources } = useClusterResources();
   return (
-    resources?.filter((r) => r.type === 'vm' && r.node === nodeName) ?? []
+    resources?.filter((r) => r.type === 'qemu' && r.node === nodeName) ?? []
   );
 }
 

@@ -97,7 +97,7 @@ export default function VMsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [, setTick] = useState(0); // force re-render after mutation
 
-  const vms = (resources ?? []).filter((r) => r.type === 'vm');
+  const vms = (resources ?? []).filter((r) => r.type === 'qemu');
 
   const filtered = vms.filter((vm) => {
     if (!search) return true;

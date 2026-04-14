@@ -20,7 +20,7 @@ export default function NodesPage() {
   const selectedNode = selected ?? nodes?.[0]?.node ?? nodes?.[0]?.id ?? null;
 
   const vmsByNode = (name: string) =>
-    resources?.filter((r) => r.type === 'vm' && r.node === name) ?? [];
+    resources?.filter((r) => r.type === 'qemu' && r.node === name) ?? [];
   const ctsByNode = (name: string) =>
     resources?.filter((r) => r.type === 'lxc' && r.node === name) ?? [];
 

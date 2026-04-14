@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const [selected, setSelected] = useState<ClusterResource | null>(null);
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
-  const vms = resources?.filter((r) => r.type === 'vm') ?? [];
+  const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
 
   const vmsByNode = (nodeName: string) => vms.filter((v) => v.node === nodeName);

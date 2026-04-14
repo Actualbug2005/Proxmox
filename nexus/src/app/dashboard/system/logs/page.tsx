@@ -1,44 +1,30 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useSystemNode } from '@/app/dashboard/system/node-context';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, ScrollText, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { JournalEntry } from '@/types/proxmox';
 
 type Mode = 'table' | 'tail';
-type Priority = 'all' | 'err' | 'warning' | 'info';
 
-const PRIORITY_VARIANTS: Record<string, 'danger' | 'warning' | 'outline'> = {
-  '0': 'danger', '1': 'danger', '2': 'danger', '3': 'danger',
-  emerg: 'danger', alert: 'danger', crit: 'danger', err: 'danger',
-  '4': 'warning', warning: 'warning',
-  '5': 'outline', '6': 'outline', '7': 'outline',
-  notice: 'outline', info: 'outline', debug: 'outline',
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  '0': 'emerg', '1': 'alert', '2': 'crit', '3': 'err',
-  '4': 'warn', '5': 'notice', '6': 'info', '7': 'debug',
-};
-
-function priorityLabel(p?: string) {
-  return p ? (PRIORITY_LABELS[p] ?? p) : 'info';
+interface ParsedEntry {
+  raw: string;
+  time: string;
+  host: string;
+  unit: string;
+  message: string;
 }
 
-function priorityVariant(p?: string): 'danger' | 'warning' | 'outline' {
-  return p ? (PRIORITY_VARIANTS[p] ?? 'outline') : 'outline';
-}
-
-function matchesPriorityFilter(entry: JournalEntry, filter: Priority): boolean {
-  if (filter === 'all') return true;
-  const p = entry.p ?? '6';
-  if (filter === 'err') return ['0','1','2','3','emerg','alert','crit','err'].includes(p);
-  if (filter === 'warning') return ['0','1','2','3','4','emerg','alert','crit','err','warning'].includes(p);
-  return true;
+// Parse a journalctl text line: "Apr 14 23:06:22 pve pveproxy[12345]: message"
+// Falls back gracefully if format doesn't match.
+function parseEntry(raw: string): ParsedEntry {
+  const m = raw.match(/^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:]+?):\s+(.*)$/);
+  if (!m) return { raw, time: '', host: '', unit: '', message: raw };
+  const [, time, host, unitWithPid, message] = m;
+  const unit = unitWithPid.replace(/\[\d+\]$/, '');
+  return { raw, time, host, unit, message };
 }
 
 export default function LogsPage() {
@@ -46,7 +32,6 @@ export default function LogsPage() {
   const [mode, setMode] = useState<Mode>('table');
   const [search, setSearch] = useState('');
   const [unitFilter, setUnitFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<Priority>('all');
   const [page, setPage] = useState(1);
   const [paused, setPaused] = useState(false);
   const tailRef = useRef<HTMLPreElement>(null);
@@ -61,7 +46,7 @@ export default function LogsPage() {
 
   const { data: tailEntries } = useQuery({
     queryKey: ['journal', node, 'tail'],
-    queryFn: () => api.nodes.journal(node, { lastentries: 100, ...(unitFilter ? { unit: unitFilter } : {}) }),
+    queryFn: () => api.nodes.journal(node, { lastentries: 100 }),
     enabled: !!node && mode === 'tail' && !paused,
     refetchInterval: 2_000,
   });
@@ -72,12 +57,19 @@ export default function LogsPage() {
     }
   }, [tailEntries, mode, paused]);
 
-  const allUnits = [...new Set((entries ?? []).map((e) => e.u).filter(Boolean))] as string[];
+  const parsed = useMemo(() => (entries ?? []).map(parseEntry), [entries]);
 
-  const filtered = (entries ?? []).filter((e) => {
-    if (!matchesPriorityFilter(e, priorityFilter)) return false;
-    if (unitFilter && e.u !== unitFilter) return false;
-    if (search && !e.m.toLowerCase().includes(search.toLowerCase()) && !e.u?.toLowerCase().includes(search.toLowerCase())) return false;
+  const allUnits = useMemo(
+    () => [...new Set(parsed.map((p) => p.unit).filter(Boolean))].sort(),
+    [parsed],
+  );
+
+  const filtered = parsed.filter((e) => {
+    if (unitFilter && e.unit !== unitFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!e.message.toLowerCase().includes(q) && !e.unit.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -122,15 +114,6 @@ export default function LogsPage() {
               className="flex-1 min-w-48 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
             />
             <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value as Priority)}
-              className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
-            >
-              <option value="all">All priorities</option>
-              <option value="err">Errors only</option>
-              <option value="warning">Warnings+</option>
-            </select>
-            <select
               value={unitFilter}
               onChange={(e) => setUnitFilter(e.target.value)}
               className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
@@ -148,21 +131,17 @@ export default function LogsPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-800">
-                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-44">Time</th>
-                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-32">Unit</th>
-                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-20">Priority</th>
+                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-40">Time</th>
+                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-40">Unit</th>
                       <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Message</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.slice(0, PAGE_SIZE * page).map((entry, i) => (
                       <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20">
-                        <td className="px-4 py-1.5 font-mono text-gray-500 whitespace-nowrap">{entry.t}</td>
-                        <td className="px-4 py-1.5 font-mono text-gray-400 truncate max-w-[8rem]">{entry.u ?? '—'}</td>
-                        <td className="px-4 py-1.5">
-                          <Badge variant={priorityVariant(entry.p)} className="text-xs">{priorityLabel(entry.p)}</Badge>
-                        </td>
-                        <td className="px-4 py-1.5 text-gray-300 break-all">{entry.m}</td>
+                        <td className="px-4 py-1.5 font-mono text-gray-500 whitespace-nowrap">{entry.time || '—'}</td>
+                        <td className="px-4 py-1.5 font-mono text-gray-400 truncate max-w-[10rem]" title={entry.unit}>{entry.unit || '—'}</td>
+                        <td className="px-4 py-1.5 text-gray-300 break-all">{entry.message}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -188,7 +167,7 @@ export default function LogsPage() {
             <input
               value={unitFilter}
               onChange={(e) => setUnitFilter(e.target.value)}
-              placeholder="Filter by unit (e.g. pveproxyd)"
+              placeholder="Filter by unit (e.g. pveproxy)"
               className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
             />
             <button
@@ -216,9 +195,11 @@ export default function LogsPage() {
             ref={tailRef}
             className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-xs text-gray-400 font-mono overflow-y-auto h-[28rem] whitespace-pre-wrap"
           >
-            {(tailEntries ?? []).map((e) =>
-              `${e.t}  [${(e.u ?? '').padEnd(20)}]  ${e.m}\n`
-            ).join('')}
+            {(tailEntries ?? [])
+              .map((raw) => parseEntry(raw))
+              .filter((e) => !unitFilter || e.unit === unitFilter)
+              .map((e) => e.raw)
+              .join('\n')}
           </pre>
         </div>
       )}

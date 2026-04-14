@@ -118,7 +118,8 @@ import type {
   UpdateVMConfigParams,
   UpdateCTConfigParams,
   NodePowerCommand,
-  AptPackage,
+  AptInstalledPackage,
+  AptUpdatablePackage,
   NetworkIface,
   NetworkIfaceParams,
   CertificateInfo,
@@ -259,12 +260,11 @@ export const api = {
 
   apt: {
     versions: (node: string) =>
-      proxmox.get<AptPackage[]>(`nodes/${node}/apt/versions`),
+      proxmox.get<AptInstalledPackage[]>(`nodes/${node}/apt/versions`),
     update: (node: string) =>
       proxmox.post<string>(`nodes/${node}/apt/update`),
     upgradable: (node: string) =>
-      proxmox.get<AptPackage[]>(`nodes/${node}/apt/update`),
-    // PVE has no apt/install endpoint; run apt-get via node execute
+      proxmox.get<AptUpdatablePackage[]>(`nodes/${node}/apt/update`),
     install: (node: string, packages: string[]) =>
       proxmox.post<string>(`nodes/${node}/execute`, {
         commands: packages.length > 0

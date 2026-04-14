@@ -21,7 +21,7 @@ export default function ConsolePage() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
-  const vms = resources?.filter((r) => r.type === 'vm') ?? [];
+  const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
 
   function openConsole(resource: ClusterResource) {
@@ -36,7 +36,7 @@ export default function ConsolePage() {
       label: resource.name ?? resource.id,
       node: resource.node ?? resource.id,
       vmid: resource.vmid,
-      type: resource.type === 'vm' ? 'qemu' : resource.type === 'lxc' ? 'lxc' : 'node',
+      type: resource.type === 'qemu' ? 'qemu' : resource.type === 'lxc' ? 'lxc' : 'node',
     };
 
     setTabs((prev) => [...prev, tab]);
