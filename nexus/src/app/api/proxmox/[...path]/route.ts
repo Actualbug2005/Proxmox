@@ -53,12 +53,20 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
 
     const responseText = await pveRes.text();
 
-    return new NextResponse(responseText, {
+    const response = new NextResponse(responseText, {
       status: pveRes.status,
       headers: {
         'Content-Type': pveRes.headers.get('Content-Type') ?? 'application/json',
       },
     });
+
+    // PVE ticket expired while our JWT is still valid — clear the stale session
+    // so the browser drops it and the next navigation triggers a fresh login.
+    if (pveRes.status === 401) {
+      response.cookies.set('nexus_session', '', { httpOnly: true, maxAge: 0, path: '/' });
+    }
+
+    return response;
   } catch (err) {
     console.error('[Proxmox Proxy Error]', err);
     return NextResponse.json(

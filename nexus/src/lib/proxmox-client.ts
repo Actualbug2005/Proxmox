@@ -62,6 +62,11 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     } catch {
       // ignore parse errors
     }
+    // 401 from the proxy means either no session or an expired PVE ticket.
+    // The proxy has already cleared the cookie — send the user to login.
+    if (res.status === 401 && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login';
+    }
     throw new ProxmoxAPIError(res.status, res.statusText, message);
   }
 
