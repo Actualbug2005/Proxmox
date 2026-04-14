@@ -463,3 +463,84 @@ export interface UpdateCTConfigParams {
   searchdomain?: string;
   [key: string]: unknown;
 }
+
+// ─── Tier 4 — System ─────────────────────────────────────────────────────────
+
+export type NodePowerCommand = 'reboot' | 'shutdown';
+
+export interface AptPackage {
+  package: string;
+  version: string;
+  new_version?: string;
+  section?: string;
+  description?: string;
+  priority?: string;
+}
+
+export interface NetworkIface {
+  iface: string;
+  type: string;
+  active?: number;
+  autostart?: number;
+  address?: string;
+  netmask?: string;
+  gateway?: string;
+  bridge_ports?: string;
+  bond_mode?: string;
+  bond_slaves?: string;
+  comments?: string;
+  cidr?: string;
+  'vlan-raw-device'?: string;
+  'vlan-id'?: number;
+  pending?: Record<string, string>;
+}
+
+export interface NetworkIfaceParams {
+  type: 'bridge' | 'bond' | 'vlan' | 'eth';
+  iface?: string;
+  address?: string;
+  netmask?: string;
+  gateway?: string;
+  autostart?: number;
+  comments?: string;
+  bridge_ports?: string;
+  bridge_stp?: string;
+  bridge_fd?: number;
+  bond_mode?: string;
+  slaves?: string;
+  'vlan-raw-device'?: string;
+  'vlan-id'?: number;
+  [key: string]: unknown;
+}
+
+export interface CertificateInfo {
+  filename: string;
+  subject?: string;
+  san?: string[];
+  issuer?: string;
+  notbefore?: number;
+  notafter?: number;
+  fingerprint?: string;
+  pem?: string;
+}
+
+export interface AcmeAccount {
+  name: string;
+  contact?: string[];
+  status?: string;
+  location?: string;
+}
+
+export interface JournalEntry {
+  t: string;
+  m: string;
+  p?: string;
+  u?: string;
+}
+
+export interface JournalParams {
+  lastentries?: number;
+  since?: string;
+  until?: string;
+  [key: string]: unknown;
+}

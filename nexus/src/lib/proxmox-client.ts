@@ -112,6 +112,14 @@ import type {
   MigrateCTParams,
   UpdateVMConfigParams,
   UpdateCTConfigParams,
+  NodePowerCommand,
+  AptPackage,
+  NetworkIface,
+  NetworkIfaceParams,
+  CertificateInfo,
+  AcmeAccount,
+  JournalEntry,
+  JournalParams,
 } from '@/types/proxmox';
 
 export const api = {
@@ -226,11 +234,74 @@ export const api = {
     rrd: (node: string, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     tasks: (node: string) => proxmox.get<PVETask[]>(`nodes/${node}/tasks`),
+    power: (node: string, command: NodePowerCommand) =>
+      proxmox.post<string>(`nodes/${node}/status`, { command }),
+    journal: (node: string, params: JournalParams = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)])
+      ).toString();
+      return proxmox.get<JournalEntry[]>(`nodes/${node}/journal${qs ? `?${qs}` : ''}`);
+    },
   },
 
   // Node exec (for community scripts)
   exec: {
     shellCmd: (node: string, commands: string) =>
       proxmox.post<string>(`nodes/${node}/execute`, { commands }),
+  },
+
+  apt: {
+    versions: (node: string) =>
+      proxmox.get<AptPackage[]>(`nodes/${node}/apt/versions`),
+    update: (node: string) =>
+      proxmox.post<string>(`nodes/${node}/apt/update`),
+    upgradable: (node: string) =>
+      proxmox.get<AptPackage[]>(`nodes/${node}/apt/update`),
+    install: (node: string, packages: string[]) =>
+      proxmox.post<string>(`nodes/${node}/apt/install`, { packages: packages.join(' ') }),
+  },
+
+  // Note: named networkIfaces (not network) to avoid shadowing the existing api.network.list method
+  networkIfaces: {
+    list: (node: string) =>
+      proxmox.get<{ ifaces: NetworkIface[]; changes?: string }>(`nodes/${node}/network`),
+    get: (node: string, iface: string) =>
+      proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`),
+    create: (node: string, params: NetworkIfaceParams) =>
+      proxmox.post<string>(`nodes/${node}/network`, params as Record<string, unknown>),
+    update: (node: string, iface: string, params: Partial<NetworkIfaceParams>) =>
+      proxmox.put<string>(`nodes/${node}/network/${iface}`, params as Record<string, unknown>),
+    delete: (node: string, iface: string) =>
+      proxmox.delete<string>(`nodes/${node}/network/${iface}`),
+    apply: (node: string) =>
+      proxmox.put<string>(`nodes/${node}/network/apply`),
+    revert: (node: string) =>
+      proxmox.delete<string>(`nodes/${node}/network`),
+  },
+
+  certificates: {
+    list: (node: string) =>
+      proxmox.get<CertificateInfo[]>(`nodes/${node}/certificates`),
+    uploadCustom: (node: string, certificates: string, key: string) =>
+      proxmox.post<CertificateInfo[]>(`nodes/${node}/certificates/custom`, { certificates, key }),
+    deleteCustom: (node: string) =>
+      proxmox.delete<string>(`nodes/${node}/certificates/custom`),
+    orderAcme: (node: string) =>
+      proxmox.post<string>(`nodes/${node}/certificates/acme/certificate`),
+    renewAcme: (node: string) =>
+      proxmox.put<string>(`nodes/${node}/certificates/acme/certificate`),
+  },
+
+  acme: {
+    accounts: () =>
+      proxmox.get<AcmeAccount[]>('cluster/acme/account'),
+    registerAccount: (name: string, contact: string, directory?: string) =>
+      proxmox.post<string>('cluster/acme/account', {
+        name,
+        contact: `mailto:${contact}`,
+        directory: directory ?? 'https://acme-v02.api.letsencrypt.org/directory',
+      }),
   },
 };
