@@ -60,12 +60,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Input({ value, onChange, type = 'text', placeholder, min }: {
+function Input({ value, onChange, type = 'text', placeholder, min, max }: {
   value: string | number; onChange: (v: string) => void;
-  type?: string; placeholder?: string; min?: number;
+  type?: string; placeholder?: string; min?: number; max?: number;
 }) {
   return (
-    <input type={type} value={value} placeholder={placeholder} min={min}
+    <input type={type} value={value} placeholder={placeholder} min={min} max={max}
       onChange={(e) => onChange(e.target.value)}
       className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
   );
