@@ -259,14 +259,19 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/apt/update`),
     upgradable: (node: string) =>
       proxmox.get<AptPackage[]>(`nodes/${node}/apt/update`),
+    // PVE has no apt/install endpoint; run apt-get via node execute
     install: (node: string, packages: string[]) =>
-      proxmox.post<string>(`nodes/${node}/apt/install`, { packages: packages.join(' ') }),
+      proxmox.post<string>(`nodes/${node}/execute`, {
+        commands: packages.length > 0
+          ? `apt-get install -y ${packages.join(' ')}`
+          : `apt-get dist-upgrade -y`,
+      }),
   },
 
   // Note: named networkIfaces (not network) to avoid shadowing the existing api.network.list method
   networkIfaces: {
     list: (node: string) =>
-      proxmox.get<{ ifaces: NetworkIface[]; changes?: string }>(`nodes/${node}/network`),
+      proxmox.get<NetworkIface[]>(`nodes/${node}/network`),
     get: (node: string, iface: string) =>
       proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`),
     create: (node: string, params: NetworkIfaceParams) =>

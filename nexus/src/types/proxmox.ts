@@ -350,18 +350,8 @@ export interface StorageContent {
 
 // ─── Node Network ─────────────────────────────────────────────────────────────
 
-export interface NodeNetwork {
-  iface: string;
-  type: string;
-  bridge_ports?: string;
-  autostart?: number;
-  active?: number;
-  address?: string;
-  netmask?: string;
-  gateway?: string;
-  comments?: string;
-  cidr?: string;
-}
+/** @deprecated Use NetworkIface */
+export type NodeNetwork = NetworkIface;
 
 // ─── Create / Clone / Migrate params ─────────────────────────────────────────
 
