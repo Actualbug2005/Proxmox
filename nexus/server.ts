@@ -59,7 +59,11 @@ export function createRelaySession(params: {
     };
 
     pveWs.on('open', () => {
-      // No auth handshake needed — pveproxy validates via vncticket URL param
+      // pveproxy acts as a transparent relay — it does NOT forward the vncticket
+      // URL param to termproxy automatically. The first WS message we send gets
+      // forwarded to termproxy as its ticket. Without this, termproxy times out
+      // waiting for the ticket.
+      pveWs.send(ticket);
       relaySessions.set(sessionId, session);
       resolve();
     });
