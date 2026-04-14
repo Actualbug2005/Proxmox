@@ -38,14 +38,14 @@ export function createRelaySession(params: {
   pveAuthCookie: string;
 }): Promise<void> {
   return new Promise((resolve, reject) => {
-    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie } = params;
+    const { sessionId, ticket, ticketPort, pveAuthCookie } = params;
 
-    const pveWsUrl = `wss://${pveHost}:${pvePort}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
+    // Connect directly to the termproxy port on localhost (plain WS, no TLS).
+    // termproxy binds to 127.0.0.1:<port> and speaks WebSocket natively.
+    // This works because server.ts runs on the PVE host itself.
+    const pveWsUrl = `ws://127.0.0.1:${ticketPort}`;
 
-    const pveWs = new WebSocket(pveWsUrl, ['binary'], {
-      headers: { Cookie: `PVEAuthCookie=${pveAuthCookie}` },
-      rejectUnauthorized: false,
-    });
+    const pveWs = new WebSocket(pveWsUrl, ['binary']);
 
     const session: RelaySession = {
       pveWs,
