@@ -19,10 +19,13 @@ import type { PveBool } from '@/types/proxmox';
 export function toPveBool(v: boolean): PveBool;
 export function toPveBool(v: boolean | undefined): PveBool | undefined;
 export function toPveBool(v: boolean | undefined): PveBool | undefined {
-  return v === undefined ? undefined : v ? 1 : 0;
+  return v === undefined ? undefined : v ? (1 as PveBool) : (0 as PveBool);
 }
 
-export function fromPveBool(v: PveBool | boolean | null | undefined): boolean {
+// Signature accepts raw number so defensive decoding from unknown wire
+// payloads (and test-literal inputs like `fromPveBool(1)`) still typechecks.
+// The branded PveBool is a subtype of number so prior call sites are unaffected.
+export function fromPveBool(v: number | boolean | null | undefined): boolean {
   return v === 1 || v === true;
 }
 
@@ -38,7 +41,7 @@ export function encodeBoolFields<T extends object, K extends keyof T>(
   const out = { ...obj } as Record<PropertyKey, unknown>;
   for (const k of keys) {
     const v = obj[k];
-    out[k as PropertyKey] = v === undefined ? undefined : v ? 1 : 0;
+    out[k as PropertyKey] = v === undefined ? undefined : v ? (1 as PveBool) : (0 as PveBool);
   }
   return out as { [P in keyof T]: P extends K ? PveBool | undefined : T[P] };
 }
@@ -54,7 +57,7 @@ export function decodeBoolFields<T extends object, K extends keyof T>(
   const out = { ...obj } as Record<PropertyKey, unknown>;
   for (const k of keys) {
     const v = obj[k];
-    out[k as PropertyKey] = v === undefined ? undefined : v === 1 || v === true;
+    out[k as PropertyKey] = v === undefined ? undefined : (((v as unknown) === 1 || v === true) as boolean);
   }
   return out as { [P in keyof T]: P extends K ? boolean | undefined : T[P] };
 }

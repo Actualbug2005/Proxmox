@@ -4,11 +4,22 @@
 // heritage). `PveBool` is the wire representation; consumers should use native
 // `boolean` via the codec in `lib/proxmox-client.ts`.
 //
+// `PveBool` is NOMINALLY BRANDED — raw `0`/`1` literals are NOT assignable
+// to it. The only producers are `toPveBool` and `encodeBoolFields` in the
+// codec, both of which `as PveBool` cast internally. This guarantees that
+// every wire value flowing out of the UI layer has passed through the
+// codec at least once.
+//
 // `WireBool<T, K>` and `UnwireBool<T, K>` are mapped type helpers that flip
 // specified keys of an interface between the two representations, used during
 // the phased migration away from wire-shaped types in the UI layer.
 
-export type PveBool = 0 | 1;
+declare const __brand: unique symbol;
+
+/** Branded integer-boolean for the Proxmox HTTP wire protocol. Cannot be
+ *  assigned raw numbers or booleans; values must be produced by the codec
+ *  (`toPveBool`, `encodeBoolFields`) which `as PveBool` casts internally. */
+export type PveBool = (0 | 1) & { readonly [__brand]: 'PveBool' };
 
 // Homomorphic mapped types: iterating `keyof T` preserves optional markers,
 // readonly-ness, and index signatures. Only keys in `K` are retyped.
