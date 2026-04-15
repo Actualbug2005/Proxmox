@@ -8,31 +8,31 @@ import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/proxmox-client';
 import { Plus, Pencil, Trash2, Globe, Loader2, Save, X, RefreshCw } from 'lucide-react';
-import type { PVERealm, RealmParams, RealmType } from '@/types/proxmox';
+import type { PVERealmPublic, RealmParamsPublic, RealmType } from '@/types/proxmox';
 
 export function RealmsTab() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: realms, isLoading } = useQuery({ queryKey: ['access', 'realms'], queryFn: () => api.access.realms.list() });
 
-  const [edit, setEdit] = useState<PVERealm | null>(null);
+  const [edit, setEdit] = useState<PVERealmPublic | null>(null);
   const [showNew, setShowNew] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PVERealm | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PVERealmPublic | null>(null);
 
   const deleteM = useMutation({
-    mutationFn: (r: PVERealm) => api.access.realms.delete(r.realm),
+    mutationFn: (r: PVERealmPublic) => api.access.realms.delete(r.realm),
     onSuccess: () => { setDeleteTarget(null); qc.invalidateQueries({ queryKey: ['access', 'realms'] }); toast.success('Realm deleted'); },
     onError: (err) => toast.error('Delete failed', err instanceof Error ? err.message : String(err)),
   });
 
   const syncM = useMutation({
-    mutationFn: (r: PVERealm) => api.access.realms.sync(r.realm),
+    mutationFn: (r: PVERealmPublic) => api.access.realms.sync(r.realm),
     onSuccess: (_, vars) => { qc.invalidateQueries({ queryKey: ['access', 'users'] }); toast.success(`Sync queued for ${vars.realm}`); },
     onError: (err) => toast.error('Sync failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const canSync = (r: PVERealm) => r.type === 'ldap' || r.type === 'ad';
-  const canDelete = (r: PVERealm) => r.type !== 'pam' && r.realm !== 'pve';
+  const canSync = (r: PVERealmPublic) => r.type === 'ldap' || r.type === 'ad';
+  const canDelete = (r: PVERealmPublic) => r.type !== 'pam' && r.realm !== 'pve';
 
   return (
     <>
@@ -70,7 +70,7 @@ export function RealmsTab() {
                   <tr key={r.realm} className="border-b border-gray-800/40 hover:bg-gray-800/20">
                     <td className="px-4 py-2 font-mono text-gray-200">{r.realm}</td>
                     <td className="px-4 py-2"><Badge variant="outline" className="text-xs">{r.type}</Badge></td>
-                    <td className="px-4 py-2 text-xs text-gray-400">{r.default === 1 ? 'yes' : ''}</td>
+                    <td className="px-4 py-2 text-xs text-gray-400">{(r.default ?? false) ? 'yes' : ''}</td>
                     <td className="px-4 py-2 text-xs text-gray-400">{r.comment ?? '—'}</td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex gap-0.5 justify-end">
@@ -92,13 +92,13 @@ export function RealmsTab() {
   );
 }
 
-function RealmEditor({ initial, onClose, onSaved }: { initial: PVERealm | null; onClose: () => void; onSaved: () => void }) {
+function RealmEditor({ initial, onClose, onSaved }: { initial: PVERealmPublic | null; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const isEdit = !!initial;
   const [realm, setRealm] = useState(initial?.realm ?? '');
   const [type, setType] = useState<RealmType>(initial?.type ?? 'ldap');
   const [comment, setComment] = useState(initial?.comment ?? '');
-  const [isDefault, setIsDefault] = useState(initial?.default === 1);
+  const [isDefault, setIsDefault] = useState(initial?.default ?? false);
   // LDAP/AD fields
   const [server1, setServer1] = useState(initial?.server1 ?? '');
   const [server2, setServer2] = useState(initial?.server2 ?? '');
@@ -106,28 +106,28 @@ function RealmEditor({ initial, onClose, onSaved }: { initial: PVERealm | null; 
   const [userAttr, setUserAttr] = useState(initial?.user_attr ?? '');
   const [bindDn, setBindDn] = useState(initial?.bind_dn ?? '');
   const [port, setPort] = useState(String(initial?.port ?? ''));
-  const [secure, setSecure] = useState(initial?.secure === 1);
+  const [secure, setSecure] = useState(initial?.secure ?? false);
   // OpenID
   const [issuer, setIssuer] = useState(initial?.['issuer-url'] ?? '');
   const [clientId, setClientId] = useState(initial?.['client-id'] ?? '');
   const [clientKey, setClientKey] = useState(initial?.['client-key'] ?? '');
-  const [autocreate, setAutocreate] = useState(initial?.autocreate === 1);
+  const [autocreate, setAutocreate] = useState(initial?.autocreate ?? false);
 
   const saveM = useMutation({
-    mutationFn: (params: RealmParams) => isEdit && initial ? api.access.realms.update(initial.realm, params) : api.access.realms.create(params),
+    mutationFn: (params: RealmParamsPublic) => isEdit && initial ? api.access.realms.update(initial.realm, params) : api.access.realms.create(params),
     onSuccess: () => { toast.success(isEdit ? 'Realm updated' : 'Realm created'); onSaved(); },
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
   const submit = () => {
-    const base: RealmParams = { realm, type, comment, default: isDefault ? 1 : 0 };
+    const base: RealmParamsPublic = { realm, type, comment, default: isDefault };
     if (type === 'ldap' || type === 'ad') {
       Object.assign(base, {
         server1, ...(server2 ? { server2 } : {}),
         base_dn: baseDn, user_attr: userAttr,
         ...(bindDn ? { bind_dn: bindDn } : {}),
         ...(port ? { port: Number(port) } : {}),
-        secure: secure ? 1 : 0,
+        secure,
       });
     }
     if (type === 'openid') {
@@ -135,7 +135,7 @@ function RealmEditor({ initial, onClose, onSaved }: { initial: PVERealm | null; 
         'issuer-url': issuer,
         'client-id': clientId,
         ...(clientKey ? { 'client-key': clientKey } : {}),
-        autocreate: autocreate ? 1 : 0,
+        autocreate,
       });
     }
     saveM.mutate(base);

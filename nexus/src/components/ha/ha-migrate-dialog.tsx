@@ -17,7 +17,7 @@ interface HAMigrateDialogProps {
 export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigrateDialogProps) {
   const toast = useToast();
   const { data: status } = useQuery({ queryKey: ['cluster', 'status'], queryFn: () => api.cluster.status() });
-  const nodes = (status ?? []).filter((s) => s.type === 'node' && s.online === 1);
+  const nodes = (status ?? []).filter((s) => s.type === 'node' && (s.online ?? false));
 
   const [target, setTarget] = useState('');
 

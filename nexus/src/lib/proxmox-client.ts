@@ -125,7 +125,7 @@ const HA_GROUP_BOOL_KEYS = ['restricted', 'nofailback'] as const satisfies
 const HA_STATUS_BOOL_KEYS = ['quorate'] as const satisfies
   readonly (keyof HAStatus)[];
 
-const CLUSTER_STATUS_BOOL_KEYS = ['quorate'] as const satisfies
+const CLUSTER_STATUS_BOOL_KEYS = ['quorate', 'online', 'local'] as const satisfies
   readonly (keyof ClusterStatus)[];
 
 const decodeHAGroup = (raw: HAGroup): HAGroupPublic =>
@@ -139,11 +139,41 @@ const encodeHAGroupParams = (
 const decodeHAStatus = (rows: HAStatus[]): HAStatusPublic[] =>
   rows.map((r) => decodeBoolFields(r, HA_STATUS_BOOL_KEYS) as HAStatusPublic);
 
-/** Only `quorate` is unwired this phase; `online` and `local` remain PveBool
- *  on the returned objects. Consumers continue to compare them against
- *  `=== 1` at read sites until a later phase broadens coverage. */
 const decodeClusterStatus = (rows: ClusterStatus[]): ClusterStatusPublic[] =>
   rows.map((r) => decodeBoolFields(r, CLUSTER_STATUS_BOOL_KEYS) as ClusterStatusPublic);
+
+// ─── Access Codec Bindings ────────────────────────────────────────────────────
+
+const USER_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof PVEUser)[];
+const REALM_BOOL_KEYS = ['default', 'secure', 'autocreate'] as const satisfies
+  readonly (keyof PVERealm)[];
+const ACL_BOOL_KEYS = ['propagate'] as const satisfies readonly (keyof PVEACL)[];
+const ACL_PARAMS_BOOL_KEYS = ['propagate', 'delete'] as const satisfies
+  readonly (keyof ACLParams)[];
+
+const decodeUser = (raw: PVEUser): PVEUserPublic =>
+  decodeBoolFields(raw, USER_BOOL_KEYS) as PVEUserPublic;
+
+const encodeUserParams = (
+  params: Partial<UserParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, USER_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeRealm = (raw: PVERealm): PVERealmPublic =>
+  decodeBoolFields(raw, REALM_BOOL_KEYS) as PVERealmPublic;
+
+const encodeRealmParams = (
+  params: Partial<RealmParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, REALM_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeAcl = (rows: PVEACL[]): PVEACLPublic[] =>
+  rows.map((r) => decodeBoolFields(r, ACL_BOOL_KEYS) as PVEACLPublic);
+
+const encodeAclParams = (
+  params: ACLParamsPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(params, ACL_PARAMS_BOOL_KEYS) as Record<string, unknown>;
 
 export class ProxmoxAPIError extends Error {
   constructor(
@@ -306,15 +336,19 @@ import type {
   DiskListEntryPublic,
   RestoreParamsPublic,
   PVEUser,
-  UserParams,
+  PVEUserPublic,
+  UserParamsPublic,
   PVEGroup,
   GroupParams,
   PVERole,
   RoleParams,
   PVERealm,
-  RealmParams,
+  PVERealmPublic,
+  RealmParamsPublic,
   PVEACL,
+  PVEACLPublic,
   ACLParams,
+  ACLParamsPublic,
   HAResource,
   HAResourceParams,
   HAGroup,
@@ -963,12 +997,21 @@ export const api = {
 
   access: {
     users: {
-      list: () => proxmox.get<PVEUser[]>('access/users'),
-      get: (userid: string) => proxmox.get<PVEUser>(`access/users/${encodeURIComponent(userid)}`),
-      create: (params: UserParams) =>
-        proxmox.post<null>('access/users', params as Record<string, unknown>),
-      update: (userid: string, params: Partial<UserParams>) =>
-        proxmox.put<null>(`access/users/${encodeURIComponent(userid)}`, params as Record<string, unknown>),
+      list: async (): Promise<PVEUserPublic[]> => {
+        const rows = await proxmox.get<PVEUser[]>('access/users');
+        return rows.map(decodeUser);
+      },
+      get: async (userid: string): Promise<PVEUserPublic> =>
+        decodeUser(
+          await proxmox.get<PVEUser>(`access/users/${encodeURIComponent(userid)}`),
+        ),
+      create: (params: UserParamsPublic) =>
+        proxmox.post<null>('access/users', encodeUserParams(params)),
+      update: (userid: string, params: Partial<UserParamsPublic>) =>
+        proxmox.put<null>(
+          `access/users/${encodeURIComponent(userid)}`,
+          encodeUserParams(params),
+        ),
       delete: (userid: string) =>
         proxmox.delete<null>(`access/users/${encodeURIComponent(userid)}`),
       resetPassword: (userid: string, password: string) =>
@@ -1006,21 +1049,31 @@ export const api = {
         proxmox.delete<null>(`access/roles/${encodeURIComponent(roleid)}`),
     },
     realms: {
-      list: () => proxmox.get<PVERealm[]>('access/domains'),
-      get: (realm: string) => proxmox.get<PVERealm>(`access/domains/${encodeURIComponent(realm)}`),
-      create: (params: RealmParams) =>
-        proxmox.post<null>('access/domains', params as Record<string, unknown>),
-      update: (realm: string, params: Partial<RealmParams>) =>
-        proxmox.put<null>(`access/domains/${encodeURIComponent(realm)}`, params as Record<string, unknown>),
+      list: async (): Promise<PVERealmPublic[]> => {
+        const rows = await proxmox.get<PVERealm[]>('access/domains');
+        return rows.map(decodeRealm);
+      },
+      get: async (realm: string): Promise<PVERealmPublic> =>
+        decodeRealm(
+          await proxmox.get<PVERealm>(`access/domains/${encodeURIComponent(realm)}`),
+        ),
+      create: (params: RealmParamsPublic) =>
+        proxmox.post<null>('access/domains', encodeRealmParams(params)),
+      update: (realm: string, params: Partial<RealmParamsPublic>) =>
+        proxmox.put<null>(
+          `access/domains/${encodeURIComponent(realm)}`,
+          encodeRealmParams(params),
+        ),
       delete: (realm: string) =>
         proxmox.delete<null>(`access/domains/${encodeURIComponent(realm)}`),
       sync: (realm: string) =>
         proxmox.post<string>(`access/domains/${encodeURIComponent(realm)}/sync`),
     },
     acl: {
-      list: () => proxmox.get<PVEACL[]>('access/acl'),
-      update: (params: ACLParams) =>
-        proxmox.put<null>('access/acl', params as Record<string, unknown>),
+      list: async (): Promise<PVEACLPublic[]> =>
+        decodeAcl(await proxmox.get<PVEACL[]>('access/acl')),
+      update: (params: ACLParamsPublic) =>
+        proxmox.put<null>('access/acl', encodeAclParams(params)),
     },
   },
 

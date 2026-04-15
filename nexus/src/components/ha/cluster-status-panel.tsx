@@ -15,7 +15,7 @@ export function ClusterStatusPanel() {
 
   const clusterEntry = data?.find((d) => d.type === 'cluster');
   const nodeEntries = (data ?? []).filter((d) => d.type === 'node');
-  const online = nodeEntries.filter((n) => n.online === 1).length;
+  const online = nodeEntries.filter((n) => n.online ?? false).length;
   const quorate = clusterEntry?.quorate ?? false;
 
   if (isLoading) {
@@ -57,13 +57,13 @@ export function ClusterStatusPanel() {
               key={n.name}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 border rounded-lg text-xs',
-                n.online === 1 ? 'border-emerald-500/30 text-emerald-300' : 'border-red-500/30 text-red-300',
+                n.online ?? false ? 'border-emerald-500/30 text-emerald-300' : 'border-red-500/30 text-red-300',
               )}
             >
-              <span className={cn('w-1.5 h-1.5 rounded-full', n.online === 1 ? 'bg-emerald-400' : 'bg-red-400')} />
+              <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-emerald-400' : 'bg-red-400')} />
               <span className="font-mono">{n.name}</span>
               {n.ip && <span className="text-gray-600 font-mono">{n.ip}</span>}
-              {n.local === 1 ? <span className="text-orange-400">(this node)</span> : null}
+              {(n.local ?? false) ? <span className="text-orange-400">(this node)</span> : null}
             </div>
           ))}
         </div>

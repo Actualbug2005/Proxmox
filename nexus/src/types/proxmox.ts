@@ -940,6 +940,13 @@ export interface UserParams {
   [key: string]: unknown;
 }
 
+/** Boolean-facing shapes of the user types. `enable` is unwired at the
+ *  HTTP boundary. Note PVE's convention: `enable === undefined` means
+ *  "enabled" (field wasn't set, defaults to enabled). Consumers must
+ *  distinguish that from an explicit `false`. */
+export type PVEUserPublic = UnwireBool<PVEUser, 'enable'>;
+export type UserParamsPublic = UnwireBool<UserParams, 'enable'>;
+
 export interface PVEGroup {
   groupid: string;
   comment?: string;
@@ -993,6 +1000,11 @@ export interface RealmParams extends Partial<PVERealm> {
   [key: string]: unknown;
 }
 
+/** Boolean-facing shapes of the realm types. `default`, `secure`, and
+ *  `autocreate` are unwired at the HTTP boundary. */
+export type PVERealmPublic = UnwireBool<PVERealm, 'default' | 'secure' | 'autocreate'>;
+export type RealmParamsPublic = UnwireBool<RealmParams, 'default' | 'secure' | 'autocreate'>;
+
 export interface PVEACL {
   path: string;
   type: 'user' | 'group' | 'token';
@@ -1000,6 +1012,9 @@ export interface PVEACL {
   roleid: string;
   propagate?: PveBool;
 }
+
+/** Boolean-facing shape of PVEACL — `propagate` unwired at the HTTP boundary. */
+export type PVEACLPublic = UnwireBool<PVEACL, 'propagate'>;
 
 export interface ACLParams {
   path: string;
@@ -1011,6 +1026,10 @@ export interface ACLParams {
   delete?: PveBool;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shape of ACLParams — `propagate` and `delete` are unwired
+ *  at the HTTP boundary. */
+export type ACLParamsPublic = UnwireBool<ACLParams, 'propagate' | 'delete'>;
 
 // ─── Tier 3 — HA + Cluster ───────────────────────────────────────────────────
 
@@ -1092,10 +1111,9 @@ export interface ClusterStatus {
   nodeid?: number;
 }
 
-/** Boolean-facing shape of ClusterStatus — only `quorate` is unwired this
- *  phase per scope. `online` and `local` remain PveBool and are compared
- *  against `=== 1` at read sites until a later phase broadens coverage. */
-export type ClusterStatusPublic = UnwireBool<ClusterStatus, 'quorate'>;
+/** Boolean-facing shape of ClusterStatus. `quorate`, `online`, and `local`
+ *  are unwired from PveBool at the HTTP boundary. */
+export type ClusterStatusPublic = UnwireBool<ClusterStatus, 'quorate' | 'online' | 'local'>;
 
 // ─── Tier 3 — Pools ──────────────────────────────────────────────────────────
 
