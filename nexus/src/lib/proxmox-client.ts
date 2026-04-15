@@ -145,6 +145,7 @@ const decodeClusterStatus = (rows: ClusterStatus[]): ClusterStatusPublic[] =>
 // ─── Access Codec Bindings ────────────────────────────────────────────────────
 
 const USER_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof PVEUser)[];
+const ROLE_BOOL_KEYS = ['special'] as const satisfies readonly (keyof PVERole)[];
 const REALM_BOOL_KEYS = ['default', 'secure', 'autocreate'] as const satisfies
   readonly (keyof PVERealm)[];
 const ACL_BOOL_KEYS = ['propagate'] as const satisfies readonly (keyof PVEACL)[];
@@ -158,6 +159,9 @@ const encodeUserParams = (
   params: Partial<UserParamsPublic>,
 ): Record<string, unknown> =>
   encodeBoolFields(params, USER_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeRole = (raw: PVERole): PVERolePublic =>
+  decodeBoolFields(raw, ROLE_BOOL_KEYS) as PVERolePublic;
 
 const decodeRealm = (raw: PVERealm): PVERealmPublic =>
   decodeBoolFields(raw, REALM_BOOL_KEYS) as PVERealmPublic;
@@ -174,6 +178,51 @@ const encodeAclParams = (
   params: ACLParamsPublic,
 ): Record<string, unknown> =>
   encodeBoolFields(params, ACL_PARAMS_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── VM / CT Codec Bindings ───────────────────────────────────────────────────
+//
+// Config flags (onboot, protection, template) default to *false* in PVE when
+// absent — opposite semantic from user.enable. Reads use `?? false`, not
+// `!== false`.
+
+const VM_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof VMConfig)[];
+const CT_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof CTConfig)[];
+const UPDATE_VM_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof UpdateVMConfigParams)[];
+const UPDATE_CT_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof UpdateCTConfigParams)[];
+const CLONE_VM_BOOL_KEYS = ['full'] as const satisfies readonly (keyof CloneVMParams)[];
+const MIGRATE_VM_BOOL_KEYS = ['online', 'with_local_disks'] as const satisfies
+  readonly (keyof MigrateVMParams)[];
+const MIGRATE_CT_BOOL_KEYS = ['online', 'restart'] as const satisfies
+  readonly (keyof MigrateCTParams)[];
+
+const decodeVMConfig = (raw: VMConfigFull): VMConfigFullPublic =>
+  decodeBoolFields(raw, VM_CONFIG_BOOL_KEYS) as VMConfigFullPublic;
+
+const decodeCTConfig = (raw: CTConfig): CTConfigPublic =>
+  decodeBoolFields(raw, CT_CONFIG_BOOL_KEYS) as CTConfigPublic;
+
+const encodeUpdateVMConfig = (
+  params: Partial<UpdateVMConfigParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, UPDATE_VM_CONFIG_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeUpdateCTConfig = (
+  params: Partial<UpdateCTConfigParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, UPDATE_CT_CONFIG_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeCloneVM = (params: CloneVMParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, CLONE_VM_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeMigrateVM = (params: MigrateVMParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, MIGRATE_VM_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeMigrateCT = (params: MigrateCTParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, MIGRATE_CT_BOOL_KEYS) as Record<string, unknown>;
 
 export class ProxmoxAPIError extends Error {
   constructor(
@@ -292,17 +341,24 @@ import type {
   NodeRRDData,
   VMConfig,
   VMConfigFull,
+  VMConfigFullPublic,
   CTConfig,
+  CTConfigPublic,
   StorageContent,
   NodeNetwork,
   CreateVMParams,
   CreateCTParams,
   CloneVMParams,
+  CloneVMParamsPublic,
   CloneCTParams,
   MigrateVMParams,
+  MigrateVMParamsPublic,
   MigrateCTParams,
+  MigrateCTParamsPublic,
   UpdateVMConfigParams,
+  UpdateVMConfigParamsPublic,
   UpdateCTConfigParams,
+  UpdateCTConfigParamsPublic,
   NodePowerCommand,
   AptInstalledPackage,
   AptUpdatablePackage,
@@ -345,6 +401,7 @@ import type {
   PVERealm,
   PVERealmPublic,
   RealmParamsPublic,
+  PVERolePublic,
   PVEACL,
   PVEACLPublic,
   ACLParams,
@@ -408,10 +465,15 @@ export const api = {
     list: (node: string) => proxmox.get<PVEVM[]>(`nodes/${node}/qemu`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVEVM>(`nodes/${node}/qemu/${vmid}/status/current`),
-    config: (node: string, vmid: number) =>
-      proxmox.get<VMConfigFull>(`nodes/${node}/qemu/${vmid}/config`),
-    updateConfig: (node: string, vmid: number, params: UpdateVMConfigParams) =>
-      proxmox.put<null>(`nodes/${node}/qemu/${vmid}/config`, params as Record<string, unknown>),
+    config: async (node: string, vmid: number): Promise<VMConfigFullPublic> =>
+      decodeVMConfig(
+        await proxmox.get<VMConfigFull>(`nodes/${node}/qemu/${vmid}/config`),
+      ),
+    updateConfig: (node: string, vmid: number, params: Partial<UpdateVMConfigParamsPublic>) =>
+      proxmox.put<null>(
+        `nodes/${node}/qemu/${vmid}/config`,
+        encodeUpdateVMConfig(params),
+      ),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -426,10 +488,10 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/resume`),
     delete: (node: string, vmid: number, purge = true) =>
       proxmox.delete<string>(`nodes/${node}/qemu/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
-    clone: (node: string, vmid: number, params: CloneVMParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, params as Record<string, unknown>),
-    migrate: (node: string, vmid: number, params: MigrateVMParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, params as Record<string, unknown>),
+    clone: (node: string, vmid: number, params: CloneVMParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, encodeCloneVM(params)),
+    migrate: (node: string, vmid: number, params: MigrateVMParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, encodeMigrateVM(params)),
     create: (node: string, params: Omit<CreateVMParams, 'node'>) =>
       proxmox.post<string>(`nodes/${node}/qemu`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
@@ -457,10 +519,15 @@ export const api = {
     list: (node: string) => proxmox.get<PVECT[]>(`nodes/${node}/lxc`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVECT>(`nodes/${node}/lxc/${vmid}/status/current`),
-    config: (node: string, vmid: number) =>
-      proxmox.get<CTConfig>(`nodes/${node}/lxc/${vmid}/config`),
-    updateConfig: (node: string, vmid: number, params: UpdateCTConfigParams) =>
-      proxmox.put<null>(`nodes/${node}/lxc/${vmid}/config`, params as Record<string, unknown>),
+    config: async (node: string, vmid: number): Promise<CTConfigPublic> =>
+      decodeCTConfig(
+        await proxmox.get<CTConfig>(`nodes/${node}/lxc/${vmid}/config`),
+      ),
+    updateConfig: (node: string, vmid: number, params: Partial<UpdateCTConfigParamsPublic>) =>
+      proxmox.put<null>(
+        `nodes/${node}/lxc/${vmid}/config`,
+        encodeUpdateCTConfig(params),
+      ),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -477,8 +544,8 @@ export const api = {
       proxmox.delete<string>(`nodes/${node}/lxc/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
     clone: (node: string, vmid: number, params: CloneCTParams) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/clone`, params as Record<string, unknown>),
-    migrate: (node: string, vmid: number, params: MigrateCTParams) =>
-      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, params as Record<string, unknown>),
+    migrate: (node: string, vmid: number, params: MigrateCTParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, encodeMigrateCT(params)),
     create: (node: string, params: Omit<CreateCTParams, 'node'>) =>
       proxmox.post<string>(`nodes/${node}/lxc`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
@@ -1039,8 +1106,14 @@ export const api = {
         proxmox.delete<null>(`access/groups/${encodeURIComponent(groupid)}`),
     },
     roles: {
-      list: () => proxmox.get<PVERole[]>('access/roles'),
-      get: (roleid: string) => proxmox.get<PVERole>(`access/roles/${encodeURIComponent(roleid)}`),
+      list: async (): Promise<PVERolePublic[]> => {
+        const rows = await proxmox.get<PVERole[]>('access/roles');
+        return rows.map(decodeRole);
+      },
+      get: async (roleid: string): Promise<PVERolePublic> =>
+        decodeRole(
+          await proxmox.get<PVERole>(`access/roles/${encodeURIComponent(roleid)}`),
+        ),
       create: (params: RoleParams) =>
         proxmox.post<null>('access/roles', params as Record<string, unknown>),
       update: (roleid: string, params: Partial<RoleParams>) =>

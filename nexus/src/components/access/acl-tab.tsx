@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/proxmox-client';
 import { Plus, Trash2, Key, Loader2, Save, X } from 'lucide-react';
-import type { PVEACLPublic, PVEUserPublic, PVEGroup, PVERole } from '@/types/proxmox';
+import type { PVEACLPublic, PVEUserPublic, PVEGroup, PVERolePublic } from '@/types/proxmox';
 
 export function ACLTab() {
   const qc = useQueryClient();
@@ -96,7 +96,7 @@ export function ACLTab() {
 }
 
 function ACLEditor({ users, groups, roles, onClose, onSaved }: {
-  users: PVEUserPublic[]; groups: PVEGroup[]; roles: PVERole[];
+  users: PVEUserPublic[]; groups: PVEGroup[]; roles: PVERolePublic[];
   onClose: () => void; onSaved: () => void;
 }) {
   const toast = useToast();

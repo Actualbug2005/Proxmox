@@ -169,7 +169,9 @@ export interface VMConfig {
   boot?: string;
   ostype?: string;
   agent?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   tags?: string;
   description?: string;
 }
@@ -429,7 +431,9 @@ export interface CTConfig {
   arch?: string;
   description?: string;
   tags?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   startup?: string;
   unprivileged?: number;
   features?: string;
@@ -453,7 +457,9 @@ export interface VMConfigFull extends VMConfig {
   machine?: string;
   ostype?: string;
   agent?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   description?: string;
   tags?: string;
   boot?: string;
@@ -544,7 +550,7 @@ export interface CloneVMParams {
   newid: number;
   name?: string;
   target?: string;
-  full?: number;
+  full?: PveBool;
   pool?: string;
   [key: string]: unknown;
 }
@@ -558,15 +564,15 @@ export interface CloneCTParams {
 
 export interface MigrateVMParams {
   target: string;
-  online?: number;
-  with_local_disks?: number;
+  online?: PveBool;
+  with_local_disks?: PveBool;
   [key: string]: unknown;
 }
 
 export interface MigrateCTParams {
   target: string;
-  restart?: number;
-  online?: number;
+  restart?: PveBool;
+  online?: PveBool;
   [key: string]: unknown;
 }
 
@@ -577,7 +583,9 @@ export interface UpdateVMConfigParams {
   balloon?: number;
   name?: string;
   description?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   agent?: string;
   tags?: string;
   boot?: string;
@@ -593,12 +601,30 @@ export interface UpdateCTConfigParams {
   memory?: number;
   swap?: number;
   description?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   tags?: string;
   nameserver?: string;
   searchdomain?: string;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shapes for the VM/CT boundary. `onboot`, `protection`,
+ *  `template` on configs; `full` on CloneVM; `online` on both Migrates and
+ *  `with_local_disks` on MigrateVM; `restart` on MigrateCT.
+ *
+ *  Note on semantics: unlike `PVEUser.enable` (which defaults to "enabled"
+ *  when absent), these fields all default to *false* when absent in PVE's
+ *  config schema. Read sites should use `?? false`, not `!== false`. */
+export type VMConfigPublic = UnwireBool<VMConfig, 'onboot' | 'protection' | 'template'>;
+export type VMConfigFullPublic = UnwireBool<VMConfigFull, 'onboot' | 'protection' | 'template'>;
+export type CTConfigPublic = UnwireBool<CTConfig, 'onboot' | 'protection' | 'template'>;
+export type UpdateVMConfigParamsPublic = UnwireBool<UpdateVMConfigParams, 'onboot' | 'protection' | 'template'>;
+export type UpdateCTConfigParamsPublic = UnwireBool<UpdateCTConfigParams, 'onboot' | 'protection' | 'template'>;
+export type CloneVMParamsPublic = UnwireBool<CloneVMParams, 'full'>;
+export type MigrateVMParamsPublic = UnwireBool<MigrateVMParams, 'online' | 'with_local_disks'>;
+export type MigrateCTParamsPublic = UnwireBool<MigrateCTParams, 'online' | 'restart'>;
 
 // ─── Tier 4 — System ─────────────────────────────────────────────────────────
 
@@ -970,6 +996,10 @@ export interface RoleParams {
   privs?: string;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shape of PVERole — `special` (built-in indicator) is
+ *  unwired at the HTTP boundary. */
+export type PVERolePublic = UnwireBool<PVERole, 'special'>;
 
 export type RealmType = 'pam' | 'pve' | 'ldap' | 'ad' | 'openid';
 

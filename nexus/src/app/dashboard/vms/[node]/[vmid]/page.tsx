@@ -20,7 +20,7 @@ import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
 import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
-import type { UpdateVMConfigParams } from '@/types/proxmox';
+import type { UpdateVMConfigParamsPublic } from '@/types/proxmox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   const [showClone, setShowClone] = useState(false);
   const [showMigrate, setShowMigrate] = useState(false);
   const [editConfig, setEditConfig] = useState(false);
-  const [configDraft, setConfigDraft] = useState<UpdateVMConfigParams>({});
+  const [configDraft, setConfigDraft] = useState<UpdateVMConfigParamsPublic>({});
 
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ['vm', node, vmid, 'status'],
@@ -216,12 +216,12 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   });
   const cloneM = useMutation({
     mutationFn: (p: { newid: number; name: string; full: boolean }) =>
-      api.vms.clone(node, vmid, { newid: p.newid, name: p.name, full: p.full ? 1 : 0 }),
+      api.vms.clone(node, vmid, { newid: p.newid, name: p.name, full: p.full }),
     onSuccess: () => { setShowClone(false); qc.invalidateQueries({ queryKey: ['cluster', 'resources'] }); },
   });
   const migrateM = useMutation({
     mutationFn: (p: { target: string; online: boolean }) =>
-      api.vms.migrate(node, vmid, { target: p.target, online: p.online ? 1 : 0 }),
+      api.vms.migrate(node, vmid, { target: p.target, online: p.online }),
     onSuccess: () => { setShowMigrate(false); router.push('/dashboard/vms'); },
   });
   const saveConfigM = useMutation({
@@ -502,12 +502,12 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                         field === 'onboot' ? (
                           <input type="checkbox"
                             checked={!!configDraft.onboot}
-                            onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked ? 1 : 0 }))}
+                            onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked }))}
                             className="rounded border-gray-600" />
                         ) : (
                           <input
                             type={['cores','sockets','memory'].includes(field) ? 'number' : 'text'}
-                            value={String(configDraft[field as keyof UpdateVMConfigParams] ?? '')}
+                            value={String(configDraft[field as keyof UpdateVMConfigParamsPublic] ?? '')}
                             onChange={(e) => setConfigDraft((d) => ({
                               ...d,
                               [field]: ['cores','sockets','memory'].includes(field) ? Number(e.target.value) : e.target.value,
