@@ -149,7 +149,7 @@ export default function TasksPage() {
                         <span className="text-xs text-gray-500 font-mono">{task.id}</span>
                       )}
                       <Badge variant={statusVariant(task)}>
-                        {task.exitstatus ?? (task.endtime ? 'unknown' : 'running')}
+                        {task.exitstatus ?? task.status ?? (task.endtime ? 'unknown' : 'running')}
                       </Badge>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5 truncate">
