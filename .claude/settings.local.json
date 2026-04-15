@@ -30,7 +30,27 @@
       "mcp__plugin_serena_serena__onboarding",
       "mcp__plugin_serena_serena__list_dir",
       "mcp__plugin_serena_serena__write_memory",
-      "mcp__plugin_serena_serena__list_memories"
+      "mcp__plugin_serena_serena__list_memories",
+      "mcp__plugin_serena_serena__get_current_config",
+      "mcp__plugin_serena_serena__initial_instructions",
+      "Bash(npx gitnexus *)",
+      "Bash(npm list *)",
+      "Bash(grep -n \"workers\\\\|Worker\\\\|worker_threads\\\\|Pool\\\\|concurren\" /Users/devlin/.npm-global/lib/node_modules/gitnexus/dist/core/embeddings/*.js)",
+      "Bash(sysctl -n machdep.cpu.brand_string)",
+      "Bash(rm -rf /Users/devlin/.npm-global/lib/node_modules/gitnexus/node_modules/@huggingface/transformers/node_modules/onnxruntime-node)",
+      "Bash(node -e \"const {createRequire} = require\\('module'\\); const path = require\\('path'\\); const transformersDir = path.dirname\\(require.resolve\\('@huggingface/transformers/package.json', {paths:['/Users/devlin/.npm-global/lib/node_modules/gitnexus']}\\)\\); const ortReq = createRequire\\(path.join\\(transformersDir, 'package.json'\\)\\); const ortPkg = ortReq.resolve\\('onnxruntime-node/package.json'\\); console.log\\('transformers.js will now load:', ortPkg\\); console.log\\('version:', require\\(ortPkg\\).version\\);\")",
+      "Bash(gitnexus analyze *)",
+      "Bash(gitnexus --help)",
+      "Bash(gitnexus query *)",
+      "Bash(grep -v \"DeprecationWarning\\\\|tree-sitter\\\\|Automatic extension\\\\|trace-deprecation\\\\|where the warning\\\\|Use \\\\`node\")",
+      "Bash(gitnexus impact *)",
+      "Bash(grep -v \"Deprecation\\\\|tree-sitter\\\\|Automatic\\\\|trace-deprecation\\\\|where the warning\\\\|Use \\\\`node\")",
+      "Bash(gitnexus context *)",
+      "Bash(python3 -c \"import json,sys; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('Total importers:', len\\(d.get\\('incoming',{}\\).get\\('imports',[]\\)\\)\\)\")",
+      "mcp__plugin_serena_serena__get_symbols_overview",
+      "Bash(git checkout *)",
+      "Bash(npm test *)",
+      "Bash(gitnexus detect_changes)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
