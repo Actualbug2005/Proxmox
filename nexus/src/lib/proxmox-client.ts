@@ -59,6 +59,32 @@ export function decodeBoolFields<T extends object, K extends keyof T>(
   return out as { [P in keyof T]: P extends K ? boolean | undefined : T[P] };
 }
 
+// ─── Firewall Codec Bindings ──────────────────────────────────────────────────
+
+/** Keys on FirewallOptions that carry PveBool on the wire. Kept beside the
+ *  codec so the encode/decode sites share a single source of truth. The
+ *  `satisfies` clause compile-errors if a key is misspelled or removed from
+ *  the interface. */
+const FIREWALL_OPTIONS_BOOL_KEYS = [
+  'enable',
+  'ebtables',
+  'nosmurfs',
+  'tcpflags',
+  'macfilter',
+  'dhcp',
+  'ipfilter',
+  'ndp',
+  'radv',
+] as const satisfies readonly (keyof FirewallOptions)[];
+
+const decodeFirewallOptions = (raw: FirewallOptions): FirewallOptionsPublic =>
+  decodeBoolFields(raw, FIREWALL_OPTIONS_BOOL_KEYS) as FirewallOptionsPublic;
+
+const encodeFirewallOptions = (
+  opts: Partial<FirewallOptionsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(opts, FIREWALL_OPTIONS_BOOL_KEYS) as Record<string, unknown>;
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -213,6 +239,7 @@ import type {
   FirewallIPSetEntry,
   FirewallGroup,
   FirewallOptions,
+  FirewallOptionsPublic,
   PVEUser,
   UserParams,
   PVEGroup,
@@ -741,9 +768,12 @@ export const api = {
           ),
       },
       options: {
-        get: () => proxmox.get<FirewallOptions>('cluster/firewall/options'),
-        update: (opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>('cluster/firewall/options', opts as Record<string, unknown>),
+        get: async (): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>('cluster/firewall/options'),
+          ),
+        update: (opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>('cluster/firewall/options', encodeFirewallOptions(opts)),
       },
     },
     node: {
@@ -764,9 +794,15 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string) => proxmox.get<FirewallOptions>(`nodes/${node}/firewall/options`),
-        update: (node: string, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(`nodes/${node}/firewall/options`),
+          ),
+        update: (node: string, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
     },
     vm: {
@@ -791,10 +827,17 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string, vmid: number) =>
-          proxmox.get<FirewallOptions>(`nodes/${node}/qemu/${vmid}/firewall/options`),
-        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/qemu/${vmid}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string, vmid: number): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(
+              `nodes/${node}/qemu/${vmid}/firewall/options`,
+            ),
+          ),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/qemu/${vmid}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
       aliases: {
         list: (node: string, vmid: number) =>
@@ -829,10 +872,17 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string, vmid: number) =>
-          proxmox.get<FirewallOptions>(`nodes/${node}/lxc/${vmid}/firewall/options`),
-        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/lxc/${vmid}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string, vmid: number): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(
+              `nodes/${node}/lxc/${vmid}/firewall/options`,
+            ),
+          ),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/lxc/${vmid}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
     },
   },

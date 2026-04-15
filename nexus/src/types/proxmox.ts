@@ -10,12 +10,15 @@
 
 export type PveBool = 0 | 1;
 
-export type WireBool<T, K extends keyof T> = Omit<T, K> & {
-  [P in K]: undefined extends T[P] ? PveBool | undefined : PveBool;
+// Homomorphic mapped types: iterating `keyof T` preserves optional markers,
+// readonly-ness, and index signatures. Only keys in `K` are retyped.
+
+export type WireBool<T, K extends keyof T> = {
+  [P in keyof T]: P extends K ? PveBool | undefined : T[P];
 };
 
-export type UnwireBool<T, K extends keyof T> = Omit<T, K> & {
-  [P in K]: undefined extends T[P] ? boolean | undefined : boolean;
+export type UnwireBool<T, K extends keyof T> = {
+  [P in keyof T]: P extends K ? boolean | undefined : T[P];
 };
 
 // ─── Proxmox API Response Types ───────────────────────────────────────────────
@@ -870,6 +873,22 @@ export interface FirewallOptions {
   digest?: string;
   [key: string]: unknown;
 }
+
+/** Public-facing shape of FirewallOptions with boolean flags unwired from
+ *  PveBool. The API client's firewall methods translate to/from the wire
+ *  shape at the HTTP boundary. */
+export type FirewallOptionsPublic = UnwireBool<
+  FirewallOptions,
+  | 'enable'
+  | 'ebtables'
+  | 'nosmurfs'
+  | 'tcpflags'
+  | 'macfilter'
+  | 'dhcp'
+  | 'ipfilter'
+  | 'ndp'
+  | 'radv'
+>;
 
 // ─── Tier 3 — Access control ─────────────────────────────────────────────────
 

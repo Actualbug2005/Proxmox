@@ -1,5 +1,9 @@
 import { api } from '@/lib/proxmox-client';
-import type { FirewallRule, FirewallRuleParams, FirewallOptions } from '@/types/proxmox';
+import type {
+  FirewallRule,
+  FirewallRuleParams,
+  FirewallOptionsPublic,
+} from '@/types/proxmox';
 
 export type FirewallScope =
   | { kind: 'cluster' }
@@ -70,7 +74,7 @@ export function moveRule(s: FirewallScope, pos: number, moveto: number, digest?:
   }
 }
 
-export function getOptions(s: FirewallScope): Promise<FirewallOptions> {
+export function getOptions(s: FirewallScope): Promise<FirewallOptionsPublic> {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.options.get();
     case 'node': return api.firewall.node.options.get(s.node);
@@ -79,7 +83,7 @@ export function getOptions(s: FirewallScope): Promise<FirewallOptions> {
   }
 }
 
-export function updateOptions(s: FirewallScope, opts: Partial<FirewallOptions>) {
+export function updateOptions(s: FirewallScope, opts: Partial<FirewallOptionsPublic>) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.options.update(opts);
     case 'node': return api.firewall.node.options.update(s.node, opts);

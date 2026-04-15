@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, Save } from 'lucide-react';
 import { getOptions, updateOptions, scopeKey, type FirewallScope } from './firewall-scope';
-import type { FirewallOptions } from '@/types/proxmox';
+import type { FirewallOptionsPublic } from '@/types/proxmox';
 
 interface FirewallOptionsTabProps {
   scope: FirewallScope;
@@ -21,11 +21,11 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
     queryFn: () => getOptions(scope),
   });
 
-  const [draft, setDraft] = useState<FirewallOptions>({});
+  const [draft, setDraft] = useState<FirewallOptionsPublic>({});
   useEffect(() => { if (data) setDraft(data); }, [data]);
 
   const saveM = useMutation({
-    mutationFn: (opts: Partial<FirewallOptions>) => updateOptions(scope, opts),
+    mutationFn: (opts: Partial<FirewallOptionsPublic>) => updateOptions(scope, opts),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...keyBase, 'options'] });
       toast.success('Options saved');
@@ -33,7 +33,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const set = <K extends keyof FirewallOptions>(key: K, value: FirewallOptions[K]) =>
+  const set = <K extends keyof FirewallOptionsPublic>(key: K, value: FirewallOptionsPublic[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
 
   const submit = () => {
@@ -58,8 +58,8 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
         <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
           <input
             type="checkbox"
-            checked={draft.enable === 1}
-            onChange={(e) => set('enable', e.target.checked ? 1 : 0)}
+            checked={draft.enable ?? false}
+            onChange={(e) => set('enable', e.target.checked)}
             className="rounded border-gray-600"
           />
           Firewall enabled
@@ -68,7 +68,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-gray-500 block mb-1">Default policy (inbound)</label>
-            <select value={draft.policy_in ?? 'DROP'} onChange={(e) => set('policy_in', e.target.value as FirewallOptions['policy_in'])} className={inputCls}>
+            <select value={draft.policy_in ?? 'DROP'} onChange={(e) => set('policy_in', e.target.value as FirewallOptionsPublic['policy_in'])} className={inputCls}>
               <option value="ACCEPT">ACCEPT</option>
               <option value="DROP">DROP</option>
               <option value="REJECT">REJECT</option>
@@ -76,7 +76,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
           </div>
           <div>
             <label className="text-xs text-gray-500 block mb-1">Default policy (outbound)</label>
-            <select value={draft.policy_out ?? 'ACCEPT'} onChange={(e) => set('policy_out', e.target.value as FirewallOptions['policy_out'])} className={inputCls}>
+            <select value={draft.policy_out ?? 'ACCEPT'} onChange={(e) => set('policy_out', e.target.value as FirewallOptionsPublic['policy_out'])} className={inputCls}>
               <option value="ACCEPT">ACCEPT</option>
               <option value="DROP">DROP</option>
               <option value="REJECT">REJECT</option>
@@ -99,19 +99,19 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
         <h3 className="text-sm font-semibold text-white">Protections</h3>
         <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-          <input type="checkbox" checked={draft.nosmurfs === 1} onChange={(e) => set('nosmurfs', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+          <input type="checkbox" checked={draft.nosmurfs ?? false} onChange={(e) => set('nosmurfs', e.target.checked)} className="rounded border-gray-600" />
           Drop smurf packets
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-          <input type="checkbox" checked={draft.tcpflags === 1} onChange={(e) => set('tcpflags', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+          <input type="checkbox" checked={draft.tcpflags ?? false} onChange={(e) => set('tcpflags', e.target.checked)} className="rounded border-gray-600" />
           Drop illegal TCP-flag combinations
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-          <input type="checkbox" checked={draft.macfilter === 1} onChange={(e) => set('macfilter', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+          <input type="checkbox" checked={draft.macfilter ?? false} onChange={(e) => set('macfilter', e.target.checked)} className="rounded border-gray-600" />
           MAC address filter
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-          <input type="checkbox" checked={draft.ebtables === 1} onChange={(e) => set('ebtables', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+          <input type="checkbox" checked={draft.ebtables ?? false} onChange={(e) => set('ebtables', e.target.checked)} className="rounded border-gray-600" />
           Use ebtables (bridge-level filtering)
         </label>
       </div>
@@ -120,19 +120,19 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
           <h3 className="text-sm font-semibold text-white">Guest-specific</h3>
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={draft.dhcp === 1} onChange={(e) => set('dhcp', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+            <input type="checkbox" checked={draft.dhcp ?? false} onChange={(e) => set('dhcp', e.target.checked)} className="rounded border-gray-600" />
             Allow DHCP
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={draft.ipfilter === 1} onChange={(e) => set('ipfilter', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+            <input type="checkbox" checked={draft.ipfilter ?? false} onChange={(e) => set('ipfilter', e.target.checked)} className="rounded border-gray-600" />
             IP filter (restrict to assigned IP only)
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={draft.ndp === 1} onChange={(e) => set('ndp', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+            <input type="checkbox" checked={draft.ndp ?? false} onChange={(e) => set('ndp', e.target.checked)} className="rounded border-gray-600" />
             Allow NDP (IPv6)
           </label>
           <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-            <input type="checkbox" checked={draft.radv === 1} onChange={(e) => set('radv', e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+            <input type="checkbox" checked={draft.radv ?? false} onChange={(e) => set('radv', e.target.checked)} className="rounded border-gray-600" />
             Allow router advertisements (IPv6)
           </label>
         </div>
