@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Trash2, Save, AlertTriangle, CheckCircle, RotateCcw, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -162,9 +163,12 @@ function IfaceForm({
 export default function NetworkPage() {
   const { node } = useSystemNode();
   const qc = useQueryClient();
+  const toast = useToast();
   const [selectedIface, setSelectedIface] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [showRevertConfirm, setShowRevertConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [hasPending, setHasPending] = useState(false);
 
@@ -186,7 +190,9 @@ export default function NetworkPage() {
       setShowCreate(false);
       markPending();
       qc.invalidateQueries({ queryKey: ['network', node] });
+      toast.success('Interface created', 'Apply changes to activate.');
     },
+    onError: (err) => toast.error('Create failed', err instanceof Error ? err.message : String(err)),
   });
 
   const updateM = useMutation({
@@ -196,7 +202,9 @@ export default function NetworkPage() {
       setEditing(false);
       markPending();
       qc.invalidateQueries({ queryKey: ['network', node] });
+      toast.success('Interface updated', 'Apply changes to activate.');
     },
+    onError: (err) => toast.error('Update failed', err instanceof Error ? err.message : String(err)),
   });
 
   const deleteM = useMutation({
@@ -206,23 +214,31 @@ export default function NetworkPage() {
       setShowDeleteConfirm(false);
       markPending();
       qc.invalidateQueries({ queryKey: ['network', node] });
+      toast.success('Interface removed', 'Apply changes to activate.');
     },
+    onError: (err) => toast.error('Delete failed', err instanceof Error ? err.message : String(err)),
   });
 
   const applyM = useMutation({
     mutationFn: () => api.networkIfaces.apply(node),
     onSuccess: () => {
       setHasPending(false);
+      setShowApplyConfirm(false);
       qc.invalidateQueries({ queryKey: ['network', node] });
+      toast.success('Network configuration applied', 'Changes are now live on the node.');
     },
+    onError: (err) => toast.error('Apply failed', err instanceof Error ? err.message : String(err)),
   });
 
   const revertM = useMutation({
     mutationFn: () => api.networkIfaces.revert(node),
     onSuccess: () => {
       setHasPending(false);
+      setShowRevertConfirm(false);
       qc.invalidateQueries({ queryKey: ['network', node] });
+      toast.info('Pending network changes reverted');
     },
+    onError: (err) => toast.error('Revert failed', err instanceof Error ? err.message : String(err)),
   });
 
   if (!node) {
@@ -242,6 +258,23 @@ export default function NetworkPage() {
           danger
           onConfirm={() => deleteM.mutate()}
           onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+      {showApplyConfirm && (
+        <ConfirmDialog
+          title="Apply network configuration?"
+          message={`Applying changes on node "${node}" runs ifreload — if the new config is wrong the node may become unreachable. Continue?`}
+          danger
+          onConfirm={() => applyM.mutate()}
+          onCancel={() => setShowApplyConfirm(false)}
+        />
+      )}
+      {showRevertConfirm && (
+        <ConfirmDialog
+          title="Revert pending network changes?"
+          message="All uncommitted interface edits will be discarded."
+          onConfirm={() => revertM.mutate()}
+          onCancel={() => setShowRevertConfirm(false)}
         />
       )}
 
@@ -265,7 +298,7 @@ export default function NetworkPage() {
           <p className="text-sm text-yellow-300 flex-1">Pending network changes — not yet applied to the system.</p>
           <div className="flex gap-2">
             <button
-              onClick={() => revertM.mutate()}
+              onClick={() => setShowRevertConfirm(true)}
               disabled={revertM.isPending}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 rounded-lg transition"
             >
@@ -273,7 +306,7 @@ export default function NetworkPage() {
               Revert
             </button>
             <button
-              onClick={() => applyM.mutate()}
+              onClick={() => setShowApplyConfirm(true)}
               disabled={applyM.isPending}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-yellow-600 hover:bg-yellow-500 rounded-lg transition"
             >
