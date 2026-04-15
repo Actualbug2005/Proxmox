@@ -1,25 +1,28 @@
 /**
- * Local shell executor — runs commands as the Nexus service user (root, per install.sh)
- * on the Proxmox host that hosts Nexus. Used for installing tunnel agents and apt
- * operations that PVE's API doesn't expose directly.
+ * Local + cluster-wide shell executor.
  *
- * Auth: requires a valid Nexus session. Do not expose this without session guarding.
+ * - If `node` matches this host's hostname, runs locally via bash.
+ * - Otherwise SSHes to `root@{node}` — relies on PVE's cluster-wide SSH trust
+ *   (pvecm adds each member's key to /etc/ssh/ssh_known_hosts and authorized_keys).
+ *
+ * Auth: requires a valid Nexus session.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { hostname } from 'node:os';
 import { promisify } from 'node:util';
 import { getSession } from '@/lib/auth';
 
-const execP = promisify(exec);
+const execFileP = promisify(execFile);
 
 interface ExecRequest {
   command: string;
-  /** Optional node name — if set and != our hostname, we refuse */
   node?: string;
-  /** Timeout in ms (default 5 min) */
   timeoutMs?: number;
 }
+
+// Valid PVE node names: alphanumeric + dot/dash/underscore. Used to block SSH flag injection.
+const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}$/;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -31,24 +34,32 @@ export async function POST(req: NextRequest) {
   }
 
   const localHost = hostname();
-  if (body.node && body.node !== localHost) {
-    return NextResponse.json(
-      {
-        error: `Cannot run commands on remote node "${body.node}" — Nexus only executes locally on "${localHost}". Open Nexus on "${body.node}" to install there.`,
-      },
-      { status: 400 },
-    );
+  const target = body.node && body.node !== localHost ? body.node : null;
+
+  if (target !== null && !NODE_RE.test(target)) {
+    return NextResponse.json({ error: `Invalid node name: ${target}` }, { status: 400 });
   }
 
+  const timeout = body.timeoutMs ?? 5 * 60 * 1000;
+  const maxBuffer = 10 * 1024 * 1024;
+
   try {
-    const { stdout, stderr } = await execP(body.command, {
-      timeout: body.timeoutMs ?? 5 * 60 * 1000,
-      maxBuffer: 10 * 1024 * 1024,
-      shell: '/bin/bash',
-    });
+    const { stdout, stderr } = target
+      ? await execFileP(
+          'ssh',
+          [
+            '-o', 'StrictHostKeyChecking=accept-new',
+            '-o', 'BatchMode=yes',
+            '-o', 'ConnectTimeout=10',
+            `root@${target}`,
+            'bash', '-c', body.command,
+          ],
+          { timeout, maxBuffer },
+        )
+      : await execFileP('bash', ['-c', body.command], { timeout, maxBuffer });
+
     return NextResponse.json({ stdout, stderr, exitCode: 0 });
   } catch (err) {
-    // exec errors carry stdout/stderr/code on the error object
     const e = err as { stdout?: string; stderr?: string; code?: number; message?: string };
     return NextResponse.json(
       {
