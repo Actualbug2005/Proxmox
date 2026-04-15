@@ -189,6 +189,33 @@ export interface PVEStorage {
   used_fraction?: number;
 }
 
+/** Subset of PVE storage backends exposed by Nexus's Map Storage flow. */
+export type StorageBackendType = 'nfs' | 'cifs' | 'dir';
+
+/**
+ * Body for `POST /api2/json/storage` (cluster-wide storage pool creation).
+ *
+ * Field names mirror PVE's API exactly — `content` is a comma-separated
+ * string (e.g. "iso,backup,images"), `nodes` is a comma-separated node
+ * restriction (omit to enable on every node). `export` uses its reserved-
+ * word spelling because that's the literal PVE parameter name.
+ */
+export interface StorageCreatePayload {
+  storage: string;
+  type: StorageBackendType;
+  content?: string;
+  nodes?: string;
+  // NFS
+  server?: string;
+  export?: string;
+  // CIFS
+  share?: string;
+  username?: string;
+  password?: string;
+  // Directory
+  path?: string;
+}
+
 // ─── Physical Disks (S.M.A.R.T.) ─────────────────────────────────────────────
 
 /** Coarse PVE disk-type classification. */

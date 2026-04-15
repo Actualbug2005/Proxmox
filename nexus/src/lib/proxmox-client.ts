@@ -179,6 +179,7 @@ import type {
   PoolParams,
   DiskListEntry,
   SmartData,
+  StorageCreatePayload,
 } from '@/types/proxmox';
 import type {
   NasShare,
@@ -318,6 +319,12 @@ export const api = {
   // Storage
   storage: {
     list: (node: string) => proxmox.get<PVEStorage[]>(`nodes/${node}/storage`),
+    /** Cluster-wide: create a new storage pool. Hits POST /storage (not a
+     *  per-node path) — the pool appears on every listed node once PVE's
+     *  config is replicated. CSRF is handled by the shared `request<T>`
+     *  wrapper inside `proxmox.post`. */
+    create: (payload: StorageCreatePayload): Promise<null> =>
+      proxmox.post<null>('storage', payload as unknown as Record<string, unknown>),
     listWithContent: (node: string, content: string) =>
       proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`),
     content: (node: string, storage: string, content?: string) =>

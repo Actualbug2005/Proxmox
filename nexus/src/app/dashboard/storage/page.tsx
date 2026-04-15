@@ -12,6 +12,7 @@ import { Loader2, HardDrive, Database, ServerCog, Share2, Plus } from 'lucide-re
 import { cn } from '@/lib/utils';
 import type { PVEStorage } from '@/types/proxmox';
 import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
+import { MapStorageDialog } from '@/components/storage/map-storage-dialog';
 import { NasServicesCard } from '@/components/nas/nas-services-card';
 import { NasSharesTable } from '@/components/nas/nas-shares-table';
 import { CreateShareDialog } from '@/components/nas/create-share-dialog';
@@ -61,6 +62,7 @@ export default function StoragePage() {
   const [tab, setTab] = useState<Tab>('pools');
   const [nasNode, setNasNode] = useState<string>('');
   const [showCreateShare, setShowCreateShare] = useState(false);
+  const [showMapStorage, setShowMapStorage] = useState(false);
   const qc = useQueryClient();
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
@@ -137,8 +139,33 @@ export default function StoragePage() {
         ))}
       </div>
 
+      {showMapStorage && (
+        <MapStorageDialog
+          onClose={() => setShowMapStorage(false)}
+          onMapped={() => {
+            // Close + force a refetch of every node's storage list so the
+            // new pool shows up in the table without waiting for the 30s
+            // polling tick. Invalidating the root queryKey matches both
+            // ['storage','all',nodeNames] *and* any descendent keys we
+            // might add later.
+            setShowMapStorage(false);
+            qc.invalidateQueries({ queryKey: ['storage'] });
+          }}
+        />
+      )}
+
       {tab === 'pools' && (
         <>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowMapStorage(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+            >
+              <Plus className="w-4 h-4" />
+              Map Storage
+            </button>
+          </div>
+
           {totalCapacity > 0 && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex justify-between text-xs text-gray-500 mb-2">
