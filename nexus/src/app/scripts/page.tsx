@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useToast } from '@/components/ui/toast';
 import { useQuery } from '@tanstack/react-query';
 import { useClusterResources } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
@@ -152,6 +153,8 @@ export default function ScriptsPage() {
   const [selectedNode, setSelectedNode] = useState('');
   const [runState, setRunState] = useState<RunState | null>(null);
 
+  const toast = useToast();
+
   const { data: resources } = useClusterResources();
   const nodes = resources?.filter((r) => r.type === 'node' && r.status === 'online') ?? [];
 
@@ -199,12 +202,15 @@ export default function ScriptsPage() {
 
       const data = await res.json();
       setRunState({ scriptSlug: script.slug, status: 'success', upid: data.upid });
+      toast.success('Script completed', `${script.name} finished`);
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setRunState({
         scriptSlug: script.slug,
         status: 'error',
-        message: err instanceof Error ? err.message : 'Unknown error',
+        message: errorMsg,
       });
+      toast.error('Script execution failed', errorMsg);
     }
   }
 
