@@ -16,6 +16,7 @@ import {
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
+import { BackupsTab } from '@/components/dashboard/backups-tab';
 import type { UpdateVMConfigParams } from '@/types/proxmox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -167,7 +168,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   const vmid = parseInt(vmidStr, 10);
   const router = useRouter();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'summary' | 'hardware' | 'snapshots' | 'metrics'>('summary');
+  const [tab, setTab] = useState<'summary' | 'hardware' | 'snapshots' | 'backups' | 'metrics'>('summary');
   const [showDelete, setShowDelete] = useState(false);
   const [showClone, setShowClone] = useState(false);
   const [showMigrate, setShowMigrate] = useState(false);
@@ -250,6 +251,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
     { id: 'summary', label: 'Summary' },
     { id: 'hardware', label: 'Hardware' },
     { id: 'snapshots', label: 'Snapshots' },
+    { id: 'backups', label: 'Backups' },
     { id: 'metrics', label: 'Metrics' },
   ] as const;
 
@@ -568,6 +570,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
       {/* Snapshots tab */}
       {tab === 'snapshots' && (
         <SnapshotsTab kind="qemu" node={node} vmid={vmid} />
+      )}
+
+      {/* Backups tab */}
+      {tab === 'backups' && (
+        <BackupsTab kind="qemu" node={node} vmid={vmid} />
       )}
 
       {/* Metrics tab */}
