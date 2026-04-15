@@ -10,7 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
-import { formatBytes } from '@/lib/utils';
+import { StatusDot } from '@/components/ui/status-dot';
+import { cn, formatBytes } from '@/lib/utils';
 import { Loader2, HardDrive } from 'lucide-react';
 import type { DiskListEntryPublic, SmartHealth } from '@/types/proxmox';
 import { SmartDetails } from './smart-details';
@@ -19,10 +20,16 @@ interface DiskRow extends DiskListEntryPublic {
   node: string;
 }
 
-const HEALTH_VARIANT: Record<SmartHealth, 'success' | 'danger' | 'warning'> = {
-  PASSED: 'success',
-  FAILED: 'danger',
+const HEALTH_DOT: Record<SmartHealth, 'running' | 'error' | 'warning'> = {
+  PASSED: 'running',
+  FAILED: 'error',
   UNKNOWN: 'warning',
+};
+
+const HEALTH_TEXT: Record<SmartHealth, string> = {
+  PASSED: 'text-emerald-400',
+  FAILED: 'text-red-400',
+  UNKNOWN: 'text-amber-400',
 };
 
 function diskTypeBadge(type: DiskListEntryPublic['type']): 'info' | 'outline' {
@@ -86,11 +93,12 @@ export function PhysicalDisksTable() {
             <button
               key={n}
               onClick={() => setNodeFilter(n)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                 nodeFilter === n
-                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'text-gray-500 bg-gray-900 border border-gray-800 hover:text-gray-300'
-              }`}
+                  ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                  : 'text-zinc-500 bg-zinc-900/50 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-white/[0.04]',
+              )}
             >
               {n === 'all' ? 'All nodes' : n}
             </button>
@@ -111,27 +119,27 @@ export function PhysicalDisksTable() {
       )}
 
       {!isLoading && !error && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-300">
-              Physical Disks {sorted.length > 0 && `(${sorted.length})`}
+        <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm">
+          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-zinc-500" />
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">
+              Physical Disks {sorted.length > 0 && <span className="tabular font-mono text-zinc-600">({sorted.length})</span>}
             </span>
           </div>
 
           {sorted.length === 0 ? (
-            <p className="text-sm text-gray-600 py-10 text-center">No disks found</p>
+            <p className="text-sm text-zinc-600 py-10 text-center">No disks found</p>
           ) : (
-            <table className="w-full text-xs">
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Device</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Node</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Vendor / Model</th>
-                  <th className="text-right px-4 py-2.5 text-gray-500 font-medium">Size</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Type</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Used By</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Health</th>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Device</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Node</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Vendor / Model</th>
+                  <th className="text-right px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Size</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Type</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Used By</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Health</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,23 +149,26 @@ export function PhysicalDisksTable() {
                     <tr
                       key={`${d.node}:${d.devpath}`}
                       onClick={() => setSelected(d)}
-                      className="border-b border-gray-800/40 hover:bg-gray-800/40 cursor-pointer transition"
+                      className="border-b border-white/[0.03] hover:bg-white/[0.03] cursor-pointer transition"
                     >
-                      <td className="px-4 py-2.5 font-mono text-gray-200">{d.devpath}</td>
-                      <td className="px-4 py-2.5 text-gray-400">{d.node}</td>
-                      <td className="px-4 py-2.5 text-gray-300">
-                        {d.vendor ? <span className="text-gray-500">{d.vendor} </span> : null}
+                      <td className="px-3 py-2 tabular font-mono text-data text-zinc-200">{d.devpath}</td>
+                      <td className="px-3 py-2 text-data text-zinc-400">{d.node}</td>
+                      <td className="px-3 py-2 text-data text-zinc-300">
+                        {d.vendor ? <span className="text-zinc-500">{d.vendor} </span> : null}
                         {d.model ?? '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-gray-300">
+                      <td className="px-3 py-2 text-right tabular font-mono text-data text-zinc-300">
                         {d.size ? formatBytes(d.size) : '—'}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-3 py-2">
                         <Badge variant={diskTypeBadge(d.type)}>{d.type.toUpperCase()}</Badge>
                       </td>
-                      <td className="px-4 py-2.5 text-gray-400">{d.used || <span className="text-gray-600">free</span>}</td>
-                      <td className="px-4 py-2.5">
-                        <Badge variant={HEALTH_VARIANT[health]}>{health}</Badge>
+                      <td className="px-3 py-2 text-data text-zinc-400">{d.used || <span className="text-zinc-600">free</span>}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <StatusDot status={HEALTH_DOT[health]} size="sm" aria-label={`SMART ${health}`} />
+                          <span className={cn('text-data font-medium', HEALTH_TEXT[health])}>{health}</span>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -60,7 +60,12 @@
       "mcp__plugin_serena_serena__replace_content",
       "Bash(grep -c \"\\\\$1\\\\|\\\\$2\" nexus/src/lib/proxmox-client.ts)",
       "Bash(grep -n \"params as Record<string, unknown>\\\\|\\\\$!1\\\\|\\\\$!2\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/lib/proxmox-client.ts)",
-      "Read(//Users/devlin/**)"
+      "Read(//Users/devlin/**)",
+      "Bash(grep -r \"@apply\\\\|--\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/globals.css /Users/devlin/Documents/GitHub/Proxmox/nexus/src/components/ui/*.tsx)",
+      "Bash(grep -r \"bg-gray\\\\|text-gray\\\\|border-gray\\\\|--\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/components/ui/*.tsx)",
+      "mcp__plugin_claude-mem_mcp-search____IMPORTANT",
+      "mcp__gitnexus__impact",
+      "mcp__gitnexus__detect_changes"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"

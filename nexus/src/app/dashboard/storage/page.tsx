@@ -6,6 +6,8 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
+import { Gauge } from '@/components/ui/gauge';
+import { StatusDot } from '@/components/ui/status-dot';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
 import { Loader2, HardDrive, Database, ServerCog, Share2, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -38,32 +40,35 @@ function StorageRow({
   return (
     <Link
       href={`/dashboard/storage/${storage.node}/${storage.storage}`}
-      className="flex items-center gap-4 px-4 py-3 hover:bg-gray-800/50 hover:border-orange-500/30 transition rounded-lg"
+      className="flex items-center gap-3 px-3 py-2 hover:bg-white/[0.03] transition rounded-lg"
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-emerald-500/10' : 'bg-gray-800'}`}>
-        <HardDrive className={`w-4 h-4 ${active ? 'text-emerald-400' : 'text-gray-600'}`} />
+      <div className={cn(
+        'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset',
+        active ? 'bg-emerald-500/10 ring-emerald-500/20' : 'bg-zinc-800/60 ring-white/5',
+      )}>
+        <HardDrive className={cn('w-3.5 h-3.5', active ? 'text-emerald-400' : 'text-zinc-600')} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <p className="text-sm font-medium text-white">{storage.storage}</p>
+        <div className="flex items-center gap-2 mb-0.5">
+          <StatusDot status={active ? 'running' : 'stopped'} size="sm" aria-label={active ? 'active' : 'inactive'} />
+          <p className="text-data font-medium text-zinc-100">{storage.storage}</p>
           <Badge variant="outline">{storage.type}</Badge>
           {(storage.shared ?? false) && <Badge variant="info">shared</Badge>}
-          <Badge variant={active ? 'success' : 'danger'}>{active ? 'active' : 'inactive'}</Badge>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-zinc-500">
           {storage.node} · {storage.content?.split(',').join(', ')}
         </p>
       </div>
       <div className="text-right shrink-0 min-w-32">
         {storage.total ? (
-          <>
-            <p className="text-xs text-gray-400 mb-1">
-              {formatBytes(storage.used ?? 0)} / {formatBytes(storage.total)}
+          <div className="flex flex-col gap-1 items-end">
+            <p className="text-data tabular font-mono text-zinc-300">
+              {formatBytes(storage.used ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(storage.total)}
             </p>
-            <ProgressBar value={usedPct} className="w-32" />
-          </>
+            <Gauge value={usedPct} className="w-28" label={`${storage.storage} usage`} />
+          </div>
         ) : (
-          <p className="text-xs text-gray-600">—</p>
+          <p className="text-xs text-zinc-600">—</p>
         )}
       </div>
       {/* Actions — stopPropagation+preventDefault so the parent <Link> doesn't
@@ -77,7 +82,7 @@ function StorageRow({
             onEdit(storage.storage);
           }}
           disabled={editLoading}
-          className="p-2 rounded-lg text-gray-500 hover:text-orange-400 hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-wait"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-orange-400 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-wait"
           aria-label={`Edit ${storage.storage}`}
           title="Edit storage"
         >
@@ -94,7 +99,7 @@ function StorageRow({
             e.stopPropagation();
             onDelete(storage.storage);
           }}
-          className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-white/5 transition"
           aria-label={`Delete ${storage.storage}`}
           title="Delete storage"
         >
@@ -184,8 +189,8 @@ export default function StoragePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">Storage</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-xl font-semibold text-zinc-50">Storage</h1>
+        <p className="text-sm text-zinc-500 tabular">
           {tab === 'pools'
             ? `${unique.length} storage pool${unique.length !== 1 ? 's' : ''} · ${formatBytes(totalUsed)} used of ${formatBytes(totalCapacity)}`
             : 'Per-node physical disks and S.M.A.R.T. health'}
@@ -193,7 +198,7 @@ export default function StoragePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-800">
+      <div className="flex gap-1 border-b border-white/[0.06]">
         {(
           [
             ['pools', 'Storage Pools', Database],
@@ -208,7 +213,7 @@ export default function StoragePage() {
               'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === id
                 ? 'border-orange-500 text-orange-400'
-                : 'border-transparent text-gray-500 hover:text-gray-300',
+                : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -268,13 +273,13 @@ export default function StoragePage() {
           </div>
 
           {totalCapacity > 0 && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex justify-between text-xs text-gray-500 mb-2">
-                <span>Total cluster storage</span>
-                <span>{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 backdrop-blur-sm">
+              <div className="flex justify-between text-xs text-zinc-500 mb-2">
+                <span className="uppercase tracking-[0.1em] font-semibold text-micro">Total cluster storage</span>
+                <span className="tabular font-mono text-data text-zinc-300">{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
               </div>
               <ProgressBar value={memPercent(totalUsed, totalCapacity)} />
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
+              <div className="flex justify-between text-xs text-zinc-500 mt-2 tabular font-mono">
                 <span>{formatBytes(totalUsed)} used</span>
                 <span>{formatBytes(totalCapacity - totalUsed)} free</span>
               </div>
@@ -288,14 +293,14 @@ export default function StoragePage() {
           )}
 
           {!isLoading && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-                <Database className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-300">Storage Pools</span>
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm">
+              <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+                <Database className="w-4 h-4 text-zinc-500" />
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">Storage Pools</span>
               </div>
-              <div className="divide-y divide-gray-800/50 p-2">
+              <div className="divide-y divide-white/[0.04] p-2">
                 {unique.length === 0 ? (
-                  <p className="text-sm text-gray-600 py-8 text-center">No storage found</p>
+                  <p className="text-sm text-zinc-600 py-8 text-center">No storage found</p>
                 ) : (
                   unique.map((s) => (
                     <StorageRow
@@ -340,8 +345,8 @@ export default function StoragePage() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                     nasNode === n
-                      ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                      : 'text-gray-500 bg-gray-900 border border-gray-800 hover:text-gray-300',
+                      ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                      : 'text-zinc-500 bg-zinc-900/50 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-white/[0.04]',
                   )}
                 >
                   {n}

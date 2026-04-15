@@ -1,23 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #030712;
-  --foreground: #f9fafb;
-}
+/*
+ * Nexus "Midnight" design tokens
+ *
+ * Tailwind v4 auto-generates utility classes from the namespaced CSS variables
+ * declared inside @theme. Every --color-* token becomes bg-*/text-*/border-*,
+ * every --text-* token becomes text-*, etc. The old tailwind.config.ts is not
+ * present on purpose — this file IS the config.
+ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
+  /* ── Surfaces (layered, each step ~1 shade lighter than the canvas) ── */
+  --color-canvas: #09090b;          /* zinc-950  · app background */
+  --color-surface: #0f0f11;         /* between zinc-950/900 · sidebar, sunken panels */
+  --color-elevated: #18181b;        /* zinc-900  · cards, row hover */
+  --color-overlay: #27272a;         /* zinc-800  · popovers, modals */
+
+  /* ── Borders ── */
+  --color-border-subtle: #27272a;   /* zinc-800 */
+  --color-border-strong: #3f3f46;   /* zinc-700 */
+  --color-border-hairline: rgba(255, 255, 255, 0.06);
+
+  /* ── Foreground ── */
+  --color-fg: #fafafa;              /* zinc-50 */
+  --color-fg-secondary: #d4d4d8;    /* zinc-300 */
+  --color-fg-muted: #a1a1aa;        /* zinc-400 */
+  --color-fg-subtle: #71717a;       /* zinc-500 */
+  --color-fg-faint: #52525b;        /* zinc-600 */
+
+  /* ── Accent (orange — existing brand) ── */
+  --color-accent: #f97316;          /* orange-500 */
+  --color-accent-soft: rgba(249, 115, 22, 0.15);
+  --color-accent-ring: rgba(249, 115, 22, 0.30);
+
+  /* ── Modular type scale (1.125 — Major Second, 13px tabular data base) ── */
+  --text-micro: 0.625rem;           /* 10px · uppercase section labels */
+  --text-micro--line-height: 0.875rem;
+  --text-nano: 0.6875rem;            /* 11px · metric captions */
+  --text-nano--line-height: 1rem;
+  --text-xs: 0.75rem;               /* 12px · secondary table text, timestamps */
+  --text-xs--line-height: 1rem;
+  --text-data: 0.8125rem;           /* 13px · TABULAR DATA BASE (CPU/MEM/ID) */
+  --text-data--line-height: 1.125rem;
+  --text-sm: 0.875rem;              /* 14px · body */
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;                /* 16px · subheadings */
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;              /* 18px · section titles */
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.5rem;                /* 24px · page titles */
+  --text-xl--line-height: 2rem;
+
+  /* ── Font families (Geist already loaded in layout.tsx via next/font) ── */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Baseline: canvas background + default foreground.
+ * Body gets font-feature-settings for ss-forms/calt to make Geist feel tuned. */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  font-feature-settings: "ss01", "cv05", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Scrollbar styling */
+/* A single utility for tabular+mono — used on every numeric cell.
+ * Shorter than writing "font-mono tabular-nums" on every cell. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "cv11";
+}
+
+/* Scrollbar — derived from border tokens so it picks up theme changes. */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -26,11 +82,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: var(--color-border-subtle);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: var(--color-border-strong);
 }
 
 /* xterm.js container */
