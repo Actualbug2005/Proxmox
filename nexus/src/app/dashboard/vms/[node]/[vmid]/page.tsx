@@ -207,7 +207,12 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   const rebootM = useMutation({ mutationFn: () => api.vms.reboot(node, vmid), onSuccess: invalidate });
   const deleteM = useMutation({
     mutationFn: () => api.vms.delete(node, vmid),
-    onSuccess: () => router.push('/dashboard/vms'),
+    onSuccess: () => {
+      // Purge the deleted VM from the cluster-resources cache *before*
+      // navigating — same rationale as the CT page.
+      qc.invalidateQueries({ queryKey: ['cluster', 'resources'] });
+      router.push('/dashboard/vms');
+    },
   });
   const cloneM = useMutation({
     mutationFn: (p: { newid: number; name: string; full: boolean }) =>

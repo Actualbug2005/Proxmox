@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -23,6 +24,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
   const termRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const qc = useQueryClient();
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
   const [fullscreen, setFullscreen] = useState(false);
@@ -155,9 +157,15 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
       });
     } catch (err) {
       setStatus('error');
-      setError(err instanceof Error ? err.message : 'Connection failed');
+      const msg = err instanceof Error ? err.message : 'Connection failed';
+      setError(msg);
+      // Termproxy failed — the VM/CT may have been destroyed since the last
+      // resource-tree poll. Force an immediate refetch so any ghost row
+      // gets purged from the dashboard. Cheap fire-and-forget; the next
+      // ['cluster','resources'] read picks up the fresh data.
+      qc.invalidateQueries({ queryKey: ['cluster', 'resources'] });
     }
-  }, [node, vmid, type]);
+  }, [node, vmid, type, qc]);
 
   // Fit on container resize
   useEffect(() => {

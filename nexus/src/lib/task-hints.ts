@@ -50,7 +50,8 @@ const RULES: readonly HintRule[] = [
     // assigns, since the error string is what discriminates.
     match: (s) => TERMPROXY_EXIT_1.test(s),
     hint: {
-      message: 'Container is stopped — start it before opening the console',
+      message:
+        'Container is stopped or does not exist — start it, or refresh the dashboard to clear deleted resources.',
       severity: 'warn',
     },
   },

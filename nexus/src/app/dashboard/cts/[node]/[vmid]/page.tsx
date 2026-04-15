@@ -150,7 +150,13 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
   const rebootM = useMutation({ mutationFn: () => api.containers.reboot(node, vmid), onSuccess: invalidate });
   const deleteM = useMutation({
     mutationFn: () => api.containers.delete(node, vmid),
-    onSuccess: () => router.push('/dashboard/cts'),
+    onSuccess: () => {
+      // Purge the deleted CT from the cluster-resources cache *before*
+      // navigating, so the list view doesn't render a ghost row while the
+      // 10s poll catches up.
+      qc.invalidateQueries({ queryKey: ['cluster', 'resources'] });
+      router.push('/dashboard/cts');
+    },
   });
   const cloneM = useMutation({
     mutationFn: (p: { newid: number; hostname: string }) =>
