@@ -277,10 +277,51 @@ export const api = {
       ),
     deleteContent: (node: string, storage: string, volid: string) =>
       proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
-    /** Upload via dedicated /api/iso-upload route (NOT the JSON proxy). Wired in a follow-up task. */
-    upload: async (_params: IsoUploadParams, _onProgress?: (pct: number) => void) => {
-      throw new Error('api.storage.upload is wired in a follow-up task (/api/iso-upload route pending).');
-    },
+    /** Upload via dedicated /api/iso-upload route (bypasses the JSON proxy).
+     *  Uses XMLHttpRequest under the hood so callers can receive upload progress events.
+     *  Returns the PVE task UPID on success. */
+    upload: (params: IsoUploadParams, onProgress?: (pct: number) => void): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const form = new FormData();
+        form.append('node', params.node);
+        form.append('storage', params.storage);
+        form.append('content', params.content);
+        form.append('filename', params.filename);
+        form.append('file', params.file, params.filename);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/iso-upload');
+        xhr.withCredentials = true;
+
+        if (onProgress) {
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+          });
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const body = JSON.parse(xhr.responseText);
+              resolve(typeof body.data === 'string' ? body.data : xhr.responseText);
+            } catch {
+              resolve(xhr.responseText);
+            }
+          } else {
+            let msg = xhr.statusText;
+            try {
+              const err = JSON.parse(xhr.responseText);
+              msg = err.error ?? err.message ?? msg;
+            } catch {
+              /* ignore */
+            }
+            reject(new ProxmoxAPIError(xhr.status, xhr.statusText, msg));
+          }
+        };
+
+        xhr.onerror = () => reject(new ProxmoxAPIError(0, 'Network error', 'Upload failed'));
+        xhr.send(form);
+      }),
     downloadUrl: (params: DownloadUrlParams) =>
       proxmox.post<string>(
         `nodes/${params.node}/storage/${encodeURIComponent(params.storage)}/download-url`,
