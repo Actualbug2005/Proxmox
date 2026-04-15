@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { PVETask } from '@/types/proxmox';
+import { hintForTask } from '@/lib/task-hints';
+import { Lightbulb } from 'lucide-react';
 
 function statusVariant(task: PVETask): 'success' | 'danger' | 'warning' | 'info' | 'outline' {
   const s = task.exitstatus ?? task.status ?? '';
@@ -155,6 +157,16 @@ export default function TasksPage() {
                     <p className="text-xs text-gray-500 mt-0.5 truncate">
                       {task.node} · {task.user}
                     </p>
+                    {(() => {
+                      const hint = hintForTask(task);
+                      if (!hint) return null;
+                      return (
+                        <p className="flex items-start gap-1.5 text-xs text-yellow-300/90 mt-1">
+                          <Lightbulb className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>{hint.message}</span>
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   <div className="text-right shrink-0">

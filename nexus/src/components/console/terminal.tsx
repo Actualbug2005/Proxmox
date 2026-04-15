@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
-import { Loader2, AlertCircle, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, Maximize2, Minimize2, RefreshCw, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { hintForError } from '@/lib/task-hints';
 
 interface TerminalProps {
   node: string;
@@ -25,6 +26,10 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
   const [fullscreen, setFullscreen] = useState(false);
+
+  // Hint is recomputed only when the error string changes, not on every
+  // render. Regex literals in lib/task-hints live at module scope.
+  const hint = useMemo(() => hintForError(error), [error]);
 
   const connect = useCallback(async () => {
     setStatus('connecting');
@@ -252,9 +257,15 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
         {status === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex flex-col items-center gap-3 text-center max-w-md">
               <AlertCircle className="w-8 h-8 text-red-400" />
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-400 break-words">{error}</p>
+              {hint && (
+                <p className="flex items-start gap-1.5 text-xs text-yellow-300/90">
+                  <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>{hint.message}</span>
+                </p>
+              )}
               <button
                 onClick={connect}
                 className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg hover:bg-red-500/20 transition"
