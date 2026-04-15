@@ -21,12 +21,14 @@ import {
 import { useClusterResources } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const router = useRouter();
   const { data: resources } = useClusterResources();
+  const toast = useToast();
 
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
@@ -70,8 +72,9 @@ export function CommandPalette() {
         if (action === 'stop') await api.containers.stop(node, vmid);
         if (action === 'reboot') await api.containers.reboot(node, vmid);
       }
-    } catch {
-      // silently fail — could toast here in future
+      toast.success(`${action[0].toUpperCase() + action.slice(1)} queued`, `${type.toUpperCase()} ${vmid}`);
+    } catch (err) {
+      toast.error(`Failed to ${action}`, err instanceof Error ? err.message : String(err));
     }
   }
 
