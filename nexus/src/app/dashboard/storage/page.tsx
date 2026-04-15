@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
@@ -14,7 +15,10 @@ function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
   const active = storage.active === 1;
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 hover:bg-gray-800/50 transition rounded-lg">
+    <Link
+      href={`/dashboard/storage/${storage.node}/${storage.storage}`}
+      className="flex items-center gap-4 px-4 py-3 hover:bg-gray-800/50 hover:border-orange-500/30 transition rounded-lg"
+    >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-emerald-500/10' : 'bg-gray-800'}`}>
         <HardDrive className={`w-4 h-4 ${active ? 'text-emerald-400' : 'text-gray-600'}`} />
       </div>
@@ -41,7 +45,7 @@ function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
           <p className="text-xs text-gray-600">—</p>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
