@@ -224,6 +224,55 @@ const encodeMigrateVM = (params: MigrateVMParamsPublic): Record<string, unknown>
 const encodeMigrateCT = (params: MigrateCTParamsPublic): Record<string, unknown> =>
   encodeBoolFields(params, MIGRATE_CT_BOOL_KEYS) as Record<string, unknown>;
 
+// ─── B6: Backup / Snapshot / Firewall-Rule / CT-Create / Network Bindings ────
+//
+// Per-field semantic defaults (absent = ?):
+//   BackupJob.enabled, FirewallRule.enable, NetworkIface.autostart  → true
+//   BackupFile.protected, PVESnapshot.vmstate, .running, nomatch,
+//   CreateCTParams.unprivileged                                      → false
+// The codec is symmetric either way; consumer read idioms distinguish
+// (`!== false` vs `?? false`).
+
+const BACKUP_JOB_BOOL_KEYS = ['enabled', 'all', 'remove', 'protected'] as const satisfies readonly (keyof BackupJob)[];
+const BACKUP_FILE_BOOL_KEYS = ['protected'] as const satisfies readonly (keyof BackupFile)[];
+const VZDUMP_BOOL_KEYS = ['all', 'protected', 'remove'] as const satisfies readonly (keyof VzdumpParams)[];
+const SNAPSHOT_BOOL_KEYS = ['vmstate', 'running'] as const satisfies readonly (keyof PVESnapshot)[];
+const CREATE_SNAPSHOT_BOOL_KEYS = ['vmstate'] as const satisfies readonly (keyof CreateSnapshotParams)[];
+const FIREWALL_RULE_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof FirewallRule)[];
+const IPSET_ENTRY_BOOL_KEYS = ['nomatch'] as const satisfies readonly (keyof FirewallIPSetEntry)[];
+const CREATE_CT_BOOL_KEYS = ['unprivileged'] as const satisfies readonly (keyof CreateCTParams)[];
+const NETWORK_IFACE_BOOL_KEYS = ['autostart', 'active'] as const satisfies readonly (keyof NetworkIface)[];
+const NETWORK_IFACE_PARAMS_BOOL_KEYS = ['autostart'] as const satisfies readonly (keyof NetworkIfaceParams)[];
+
+const decodeBackupJob = (raw: BackupJob): BackupJobPublic =>
+  decodeBoolFields(raw, BACKUP_JOB_BOOL_KEYS) as BackupJobPublic;
+const encodeBackupJobParams = (p: BackupJobParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, BACKUP_JOB_BOOL_KEYS) as Record<string, unknown>;
+const decodeBackupFile = (raw: BackupFile): BackupFilePublic =>
+  decodeBoolFields(raw, BACKUP_FILE_BOOL_KEYS) as BackupFilePublic;
+const encodeVzdump = (p: VzdumpParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, VZDUMP_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeSnapshot = (raw: PVESnapshot): PVESnapshotPublic =>
+  decodeBoolFields(raw, SNAPSHOT_BOOL_KEYS) as PVESnapshotPublic;
+const encodeCreateSnapshot = (p: CreateSnapshotParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, CREATE_SNAPSHOT_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeFirewallRule = (raw: FirewallRule): FirewallRulePublic =>
+  decodeBoolFields(raw, FIREWALL_RULE_BOOL_KEYS) as FirewallRulePublic;
+const encodeFirewallRuleParams = (p: FirewallRuleParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, FIREWALL_RULE_BOOL_KEYS) as Record<string, unknown>;
+const decodeIPSetEntry = (raw: FirewallIPSetEntry): FirewallIPSetEntryPublic =>
+  decodeBoolFields(raw, IPSET_ENTRY_BOOL_KEYS) as FirewallIPSetEntryPublic;
+
+const encodeCreateCT = (p: Omit<CreateCTParamsPublic, 'node'>): Record<string, unknown> =>
+  encodeBoolFields(p, CREATE_CT_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeNetworkIface = (raw: NetworkIface): NetworkIfacePublic =>
+  decodeBoolFields(raw, NETWORK_IFACE_BOOL_KEYS) as NetworkIfacePublic;
+const encodeNetworkIfaceParams = (p: Partial<NetworkIfaceParamsPublic>): Record<string, unknown> =>
+  encodeBoolFields(p, NETWORK_IFACE_PARAMS_BOOL_KEYS) as Record<string, unknown>;
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -348,6 +397,7 @@ import type {
   NodeNetwork,
   CreateVMParams,
   CreateCTParams,
+  CreateCTParamsPublic,
   CloneVMParams,
   CloneVMParamsPublic,
   CloneCTParams,
@@ -363,26 +413,37 @@ import type {
   AptInstalledPackage,
   AptUpdatablePackage,
   NetworkIface,
+  NetworkIfacePublic,
   NetworkIfaceParams,
+  NetworkIfaceParamsPublic,
   CertificateInfo,
   AcmeAccount,
   JournalEntry,
   JournalParams,
   PVESnapshot,
+  PVESnapshotPublic,
   CreateSnapshotParams,
+  CreateSnapshotParamsPublic,
   BackupJob,
+  BackupJobPublic,
   BackupJobParams,
+  BackupJobParamsPublic,
   BackupFile,
+  BackupFilePublic,
   VzdumpParams,
+  VzdumpParamsPublic,
   RestoreParams,
   IsoUploadParams,
   DownloadUrlParams,
   StorageContentType,
   FirewallRule,
+  FirewallRulePublic,
   FirewallRuleParams,
+  FirewallRuleParamsPublic,
   FirewallAlias,
   FirewallIPSet,
   FirewallIPSetEntry,
+  FirewallIPSetEntryPublic,
   FirewallGroup,
   FirewallOptions,
   FirewallOptionsPublic,
@@ -499,10 +560,10 @@ export const api = {
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/qemu/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     snapshot: {
-      list: (node: string, vmid: number) =>
-        proxmox.get<PVESnapshot[]>(`nodes/${node}/qemu/${vmid}/snapshot`),
-      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
-        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot`, params as Record<string, unknown>),
+      list: async (node: string, vmid: number): Promise<PVESnapshotPublic[]> =>
+        (await proxmox.get<PVESnapshot[]>(`nodes/${node}/qemu/${vmid}/snapshot`)).map(decodeSnapshot),
+      create: (node: string, vmid: number, params: CreateSnapshotParamsPublic) =>
+        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot`, encodeCreateSnapshot(params)),
       delete: (node: string, vmid: number, snapname: string, force = false) =>
         proxmox.delete<string>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
       rollback: (node: string, vmid: number, snapname: string) =>
@@ -546,17 +607,17 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/clone`, params as Record<string, unknown>),
     migrate: (node: string, vmid: number, params: MigrateCTParamsPublic) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, encodeMigrateCT(params)),
-    create: (node: string, params: Omit<CreateCTParams, 'node'>) =>
-      proxmox.post<string>(`nodes/${node}/lxc`, params as Record<string, unknown>),
+    create: (node: string, params: Omit<CreateCTParamsPublic, 'node'>) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, encodeCreateCT(params)),
     vncproxy: (node: string, vmid: number) =>
       proxmox.post<VNCProxyResponse>(`nodes/${node}/lxc/${vmid}/vncproxy`, { websocket: 1 }),
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/lxc/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     snapshot: {
-      list: (node: string, vmid: number) =>
-        proxmox.get<PVESnapshot[]>(`nodes/${node}/lxc/${vmid}/snapshot`),
-      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
-        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot`, params as Record<string, unknown>),
+      list: async (node: string, vmid: number): Promise<PVESnapshotPublic[]> =>
+        (await proxmox.get<PVESnapshot[]>(`nodes/${node}/lxc/${vmid}/snapshot`)).map(decodeSnapshot),
+      create: (node: string, vmid: number, params: CreateSnapshotParamsPublic) =>
+        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot`, encodeCreateSnapshot(params)),
       delete: (node: string, vmid: number, snapname: string, force = false) =>
         proxmox.delete<string>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
       rollback: (node: string, vmid: number, snapname: string) =>
@@ -802,19 +863,21 @@ export const api = {
 
   backups: {
     jobs: {
-      list: () => proxmox.get<BackupJob[]>('cluster/backup'),
-      get: (id: string) => proxmox.get<BackupJob>(`cluster/backup/${encodeURIComponent(id)}`),
-      create: (params: BackupJobParams) =>
-        proxmox.post<null>('cluster/backup', params as Record<string, unknown>),
-      update: (id: string, params: BackupJobParams) =>
-        proxmox.put<null>(`cluster/backup/${encodeURIComponent(id)}`, params as Record<string, unknown>),
+      list: async (): Promise<BackupJobPublic[]> =>
+        (await proxmox.get<BackupJob[]>('cluster/backup')).map(decodeBackupJob),
+      get: async (id: string): Promise<BackupJobPublic> =>
+        decodeBackupJob(await proxmox.get<BackupJob>(`cluster/backup/${encodeURIComponent(id)}`)),
+      create: (params: BackupJobParamsPublic) =>
+        proxmox.post<null>('cluster/backup', encodeBackupJobParams(params)),
+      update: (id: string, params: BackupJobParamsPublic) =>
+        proxmox.put<null>(`cluster/backup/${encodeURIComponent(id)}`, encodeBackupJobParams(params)),
       delete: (id: string) =>
         proxmox.delete<null>(`cluster/backup/${encodeURIComponent(id)}`),
     },
-    vzdump: (node: string, params: VzdumpParams) =>
-      proxmox.post<string>(`nodes/${node}/vzdump`, params as Record<string, unknown>),
-    files: (node: string, storage: string) =>
-      proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`),
+    vzdump: (node: string, params: VzdumpParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/vzdump`, encodeVzdump(params)),
+    files: async (node: string, storage: string): Promise<BackupFilePublic[]> =>
+      (await proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`)).map(decodeBackupFile),
     delete: (node: string, storage: string, volid: string) =>
       proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
     restoreVM: (node: string, params: RestoreParamsPublic) =>
@@ -824,7 +887,7 @@ export const api = {
     protect: (node: string, storage: string, volid: string, isProtected: boolean) =>
       proxmox.put<null>(
         `nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`,
-        { protected: isProtected ? 1 : 0 },
+        { protected: toPveBool(isProtected) },
       ),
   },
 
@@ -846,14 +909,14 @@ export const api = {
 
   // Note: named networkIfaces (not network) to avoid shadowing the existing api.network.list method
   networkIfaces: {
-    list: (node: string) =>
-      proxmox.get<NetworkIface[]>(`nodes/${node}/network`),
-    get: (node: string, iface: string) =>
-      proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`),
-    create: (node: string, params: NetworkIfaceParams) =>
-      proxmox.post<string>(`nodes/${node}/network`, params as Record<string, unknown>),
-    update: (node: string, iface: string, params: Partial<NetworkIfaceParams>) =>
-      proxmox.put<string>(`nodes/${node}/network/${iface}`, params as Record<string, unknown>),
+    list: async (node: string): Promise<NetworkIfacePublic[]> =>
+      (await proxmox.get<NetworkIface[]>(`nodes/${node}/network`)).map(decodeNetworkIface),
+    get: async (node: string, iface: string): Promise<NetworkIfacePublic> =>
+      decodeNetworkIface(await proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`)),
+    create: (node: string, params: NetworkIfaceParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/network`, encodeNetworkIfaceParams(params)),
+    update: (node: string, iface: string, params: Partial<NetworkIfaceParamsPublic>) =>
+      proxmox.put<string>(`nodes/${node}/network/${iface}`, encodeNetworkIfaceParams(params)),
     delete: (node: string, iface: string) =>
       proxmox.delete<string>(`nodes/${node}/network/${iface}`),
     apply: (node: string) =>
@@ -889,12 +952,12 @@ export const api = {
   firewall: {
     cluster: {
       rules: {
-        list: () => proxmox.get<FirewallRule[]>('cluster/firewall/rules'),
-        get: (pos: number) => proxmox.get<FirewallRule>(`cluster/firewall/rules/${pos}`),
-        create: (params: FirewallRuleParams) =>
-          proxmox.post<null>('cluster/firewall/rules', params as Record<string, unknown>),
-        update: (pos: number, params: FirewallRuleParams) =>
-          proxmox.put<null>(`cluster/firewall/rules/${pos}`, params as Record<string, unknown>),
+        list: async (): Promise<FirewallRulePublic[]> => (await proxmox.get<FirewallRule[]>('cluster/firewall/rules')).map(decodeFirewallRule),
+        get: async (pos: number): Promise<FirewallRulePublic> => decodeFirewallRule(await proxmox.get<FirewallRule>(`cluster/firewall/rules/${pos}`)),
+        create: (params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>('cluster/firewall/rules', encodeFirewallRuleParams(params)),
+        update: (pos: number, params: FirewallRuleParamsPublic) =>
+          proxmox.put<null>(`cluster/firewall/rules/${pos}`, encodeFirewallRuleParams(params)),
         delete: (pos: number, digest?: string) =>
           proxmox.delete<null>(
             `cluster/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
@@ -936,10 +999,10 @@ export const api = {
           proxmox.delete<null>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
         rules: (name: string) =>
           proxmox.get<FirewallRule[]>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
-        addRule: (name: string, params: FirewallRuleParams) =>
+        addRule: (name: string, params: FirewallRuleParamsPublic) =>
           proxmox.post<null>(
             `cluster/firewall/groups/${encodeURIComponent(name)}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
       },
       options: {
@@ -953,11 +1016,11 @@ export const api = {
     },
     node: {
       rules: {
-        list: (node: string) => proxmox.get<FirewallRule[]>(`nodes/${node}/firewall/rules`),
-        create: (node: string, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, pos: number, params: FirewallRuleParams) =>
-          proxmox.put<null>(`nodes/${node}/firewall/rules/${pos}`, params as Record<string, unknown>),
+        list: async (node: string): Promise<FirewallRulePublic[]> => (await proxmox.get<FirewallRule[]>(`nodes/${node}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, pos: number, params: FirewallRuleParamsPublic) =>
+          proxmox.put<null>(`nodes/${node}/firewall/rules/${pos}`, encodeFirewallRuleParams(params)),
         delete: (node: string, pos: number, digest?: string) =>
           proxmox.delete<null>(
             `nodes/${node}/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
@@ -982,14 +1045,14 @@ export const api = {
     },
     vm: {
       rules: {
-        list: (node: string, vmid: number) =>
-          proxmox.get<FirewallRule[]>(`nodes/${node}/qemu/${vmid}/firewall/rules`),
-        create: (node: string, vmid: number, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/qemu/${vmid}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+        list: async (node: string, vmid: number): Promise<FirewallRulePublic[]> =>
+          (await proxmox.get<FirewallRule[]>(`nodes/${node}/qemu/${vmid}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, vmid: number, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/qemu/${vmid}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParamsPublic) =>
           proxmox.put<null>(
             `nodes/${node}/qemu/${vmid}/firewall/rules/${pos}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
         delete: (node: string, vmid: number, pos: number, digest?: string) =>
           proxmox.delete<null>(
@@ -1027,14 +1090,14 @@ export const api = {
     },
     ct: {
       rules: {
-        list: (node: string, vmid: number) =>
-          proxmox.get<FirewallRule[]>(`nodes/${node}/lxc/${vmid}/firewall/rules`),
-        create: (node: string, vmid: number, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/lxc/${vmid}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+        list: async (node: string, vmid: number): Promise<FirewallRulePublic[]> =>
+          (await proxmox.get<FirewallRule[]>(`nodes/${node}/lxc/${vmid}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, vmid: number, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/lxc/${vmid}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParamsPublic) =>
           proxmox.put<null>(
             `nodes/${node}/lxc/${vmid}/firewall/rules/${pos}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
         delete: (node: string, vmid: number, pos: number, digest?: string) =>
           proxmox.delete<null>(

@@ -1,7 +1,7 @@
 import { api } from '@/lib/proxmox-client';
 import type {
-  FirewallRule,
-  FirewallRuleParams,
+  FirewallRulePublic,
+  FirewallRuleParamsPublic,
   FirewallOptionsPublic,
 } from '@/types/proxmox';
 
@@ -29,7 +29,7 @@ export function scopeKey(s: FirewallScope): string[] {
   }
 }
 
-export function listRules(s: FirewallScope): Promise<FirewallRule[]> {
+export function listRules(s: FirewallScope): Promise<FirewallRulePublic[]> {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.list();
     case 'node': return api.firewall.node.rules.list(s.node);
@@ -38,7 +38,7 @@ export function listRules(s: FirewallScope): Promise<FirewallRule[]> {
   }
 }
 
-export function createRule(s: FirewallScope, params: FirewallRuleParams) {
+export function createRule(s: FirewallScope, params: FirewallRuleParamsPublic) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.create(params);
     case 'node': return api.firewall.node.rules.create(s.node, params);
@@ -47,7 +47,7 @@ export function createRule(s: FirewallScope, params: FirewallRuleParams) {
   }
 }
 
-export function updateRule(s: FirewallScope, pos: number, params: FirewallRuleParams) {
+export function updateRule(s: FirewallScope, pos: number, params: FirewallRuleParamsPublic) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.update(pos, params);
     case 'node': return api.firewall.node.rules.update(s.node, pos, params);

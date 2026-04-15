@@ -6,10 +6,10 @@ import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, Undo2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { BackupFile, RestoreParamsPublic } from '@/types/proxmox';
+import type { BackupFilePublic, RestoreParamsPublic } from '@/types/proxmox';
 
 interface RestoreDialogProps {
-  backup: BackupFile;
+  backup: BackupFilePublic;
   node: string;
   storage: string;
   onClose: () => void;

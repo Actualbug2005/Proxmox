@@ -12,7 +12,7 @@ import {
   Archive, Loader2, Trash2, Lock, Undo2, X,
 } from 'lucide-react';
 import { formatBytes, cn } from '@/lib/utils';
-import type { BackupFile, BackupCompress, BackupMode, VzdumpParams, PVEStorage } from '@/types/proxmox';
+import type { BackupFilePublic, BackupCompress, BackupMode, VzdumpParamsPublic, PVEStorage } from '@/types/proxmox';
 
 type Kind = 'qemu' | 'lxc';
 
@@ -55,7 +55,7 @@ function BackupNowDialog({
   }, [backupStorages, storage]);
 
   const backupM = useMutation({
-    mutationFn: (params: VzdumpParams) => api.backups.vzdump(node, params),
+    mutationFn: (params: VzdumpParamsPublic) => api.backups.vzdump(node, params),
     onSuccess: (upid) => {
       toast.success('Backup queued', upid.slice(0, 48));
       onComplete();
@@ -71,7 +71,7 @@ function BackupNowDialog({
       mode,
       compress,
       ...(notes ? { 'notes-template': notes } : {}),
-      ...(markProtected ? { protected: 1 } : {}),
+      ...(markProtected ? { protected: true } : {}),
     });
   };
 
@@ -160,8 +160,8 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
   const qc = useQueryClient();
   const toast = useToast();
   const [showBackupNow, setShowBackupNow] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<BackupFile | null>(null);
-  const [restoreTarget, setRestoreTarget] = useState<BackupFile | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BackupFilePublic | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<BackupFilePublic | null>(null);
 
   const { data: storages } = useQuery({
     queryKey: ['storage', node, 'list'],
@@ -178,7 +178,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
   });
 
   const isLoading = fileQueries.some((q) => q.isLoading);
-  const files: BackupFile[] = fileQueries
+  const files: BackupFilePublic[] = fileQueries
     .flatMap((q) => q.data ?? [])
     .filter((f) => f.vmid === vmid)
     .sort((a, b) => b.ctime - a.ctime);
@@ -190,7 +190,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
   };
 
   const deleteM = useMutation({
-    mutationFn: (f: BackupFile) => api.backups.delete(node, volidStorage(f.volid), f.volid),
+    mutationFn: (f: BackupFilePublic) => api.backups.delete(node, volidStorage(f.volid), f.volid),
     onSuccess: () => {
       setDeleteTarget(null);
       invalidate();
@@ -200,7 +200,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
   });
 
   const protectM = useMutation({
-    mutationFn: (p: { f: BackupFile; next: boolean }) =>
+    mutationFn: (p: { f: BackupFilePublic; next: boolean }) =>
       api.backups.protect(node, volidStorage(p.f.volid), p.f.volid, p.next),
     onSuccess: (_, vars) => {
       invalidate();

@@ -10,7 +10,7 @@ import {
   Camera, Plus, RotateCcw, Trash2, Loader2, ChevronRight, Save, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { PVESnapshot, CreateSnapshotParams } from '@/types/proxmox';
+import type { PVESnapshotPublic, CreateSnapshotParamsPublic } from '@/types/proxmox';
 
 type Kind = 'qemu' | 'lxc';
 
@@ -33,7 +33,7 @@ function CreateSnapshotDialog({
   kind, onSubmit, onCancel, isPending,
 }: {
   kind: Kind;
-  onSubmit: (params: CreateSnapshotParams) => void;
+  onSubmit: (params: CreateSnapshotParamsPublic) => void;
   onCancel: () => void;
   isPending: boolean;
 }) {
@@ -85,7 +85,7 @@ function CreateSnapshotDialog({
             Cancel
           </button>
           <button
-            onClick={() => onSubmit({ snapname, description: description || undefined, vmstate: kind === 'qemu' && vmstate ? 1 : 0 })}
+            onClick={() => onSubmit({ snapname, description: description || undefined, vmstate: kind === 'qemu' && vmstate })}
             disabled={!snapname || isPending}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
           >
@@ -155,7 +155,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['snapshot', kind, node, vmid] });
 
   const createM = useMutation({
-    mutationFn: (params: CreateSnapshotParams) => client.create(node, vmid, params),
+    mutationFn: (params: CreateSnapshotParamsPublic) => client.create(node, vmid, params),
     onSuccess: () => {
       setShowCreate(false);
       invalidate();
@@ -272,7 +272,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((s: PVESnapshot) => {
+                {items.map((s: PVESnapshotPublic) => {
                   const isCurrent = currentParent === s.name;
                   return (
                     <tr key={s.name} className="border-b border-gray-800/40 hover:bg-gray-800/20 align-top">

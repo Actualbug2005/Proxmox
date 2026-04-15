@@ -12,7 +12,7 @@ import { RestoreDialog } from '@/components/storage/restore-dialog';
 import { BackupJobEditor } from '@/components/backups/backup-job-editor';
 import { Archive, Plus, Trash2, Loader2, Lock, Undo2, Pencil, CalendarClock } from 'lucide-react';
 import { formatBytes, cn } from '@/lib/utils';
-import type { BackupFile, BackupJob, PVEStorage } from '@/types/proxmox';
+import type { BackupFilePublic, BackupJobPublic, PVEStorage } from '@/types/proxmox';
 
 type Tab = 'archive' | 'jobs';
 
@@ -29,7 +29,7 @@ function formatTime(ts?: number): string {
   return new Date(ts * 1000).toLocaleString();
 }
 
-interface FileWithLocation extends BackupFile {
+interface FileWithLocation extends BackupFilePublic {
   _node: string;
 }
 
@@ -102,9 +102,9 @@ export default function BackupsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<FileWithLocation | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<FileWithLocation | null>(null);
-  const [editJob, setEditJob] = useState<BackupJob | null>(null);
+  const [editJob, setEditJob] = useState<BackupJobPublic | null>(null);
   const [showNewJob, setShowNewJob] = useState(false);
-  const [deleteJob, setDeleteJob] = useState<BackupJob | null>(null);
+  const [deleteJob, setDeleteJob] = useState<BackupJobPublic | null>(null);
 
   const deleteFileM = useMutation({
     mutationFn: (f: FileWithLocation) => api.backups.delete(f._node, volidStorage(f.volid), f.volid),
@@ -127,7 +127,7 @@ export default function BackupsPage() {
   });
 
   const deleteJobM = useMutation({
-    mutationFn: (j: BackupJob) => api.backups.jobs.delete(j.id),
+    mutationFn: (j: BackupJobPublic) => api.backups.jobs.delete(j.id),
     onSuccess: () => {
       setDeleteJob(null);
       qc.invalidateQueries({ queryKey: ['backups', 'jobs'] });
@@ -313,7 +313,7 @@ export default function BackupsPage() {
                       <td className="px-4 py-2 text-xs text-gray-400 font-mono">{j.storage}</td>
                       <td className="px-4 py-2 text-xs text-gray-400">{j.mode}</td>
                       <td className="px-4 py-2">
-                        {j.enabled === 0 ? (
+                        {j.enabled === false ? (
                           <Badge variant="outline" className="text-xs">disabled</Badge>
                         ) : (
                           <Badge variant="success" className="text-xs">enabled</Badge>

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { RuleEditor } from './rule-editor';
 import { listRules, deleteRule, moveRule, scopeKey, type FirewallScope } from './firewall-scope';
 import { Plus, Trash2, Pencil, ArrowUp, ArrowDown, Shield, Loader2 } from 'lucide-react';
-import type { FirewallRule } from '@/types/proxmox';
+import type { FirewallRulePublic } from '@/types/proxmox';
 
 interface FirewallRulesTabProps {
   scope: FirewallScope;
@@ -26,14 +26,14 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
     refetchInterval: 30_000,
   });
 
-  const [editRule, setEditRule] = useState<FirewallRule | null>(null);
+  const [editRule, setEditRule] = useState<FirewallRulePublic | null>(null);
   const [showNew, setShowNew] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<FirewallRule | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FirewallRulePublic | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: [...keyBase, 'rules'] });
 
   const deleteM = useMutation({
-    mutationFn: (r: FirewallRule) => deleteRule(scope, r.pos, r.digest),
+    mutationFn: (r: FirewallRulePublic) => deleteRule(scope, r.pos, r.digest),
     onSuccess: () => {
       setDeleteTarget(null);
       invalidate();
@@ -43,7 +43,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
   });
 
   const moveM = useMutation({
-    mutationFn: (p: { r: FirewallRule; delta: number }) =>
+    mutationFn: (p: { r: FirewallRulePublic; delta: number }) =>
       moveRule(scope, p.r.pos, p.r.pos + p.delta, p.r.digest),
     onSuccess: () => invalidate(),
     onError: (err) => toast.error('Move failed', err instanceof Error ? err.message : String(err)),
@@ -109,7 +109,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
             </thead>
             <tbody>
               {sorted.map((r, idx) => (
-                <tr key={r.pos} className={r.enable === 0 ? 'opacity-50 border-b border-gray-800/40' : 'border-b border-gray-800/40 hover:bg-gray-800/20'}>
+                <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-gray-800/40' : 'border-b border-gray-800/40 hover:bg-gray-800/20'}>
                   <td className="px-3 py-2 font-mono text-xs text-gray-500">{r.pos}</td>
                   <td className="px-3 py-2">
                     <Badge variant={r.type === 'in' ? 'success' : r.type === 'out' ? 'warning' : 'outline'} className="text-xs">

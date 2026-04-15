@@ -538,7 +538,7 @@ export interface CreateCTParams {
   swap: number;
   rootfs: string;
   net0: string;
-  unprivileged: number;
+  unprivileged: PveBool;
   nameserver?: string;
   onboot?: number;
   pool?: string;
@@ -668,8 +668,8 @@ export type AptPackage = AptUpdatablePackage;
 export interface NetworkIface {
   iface: string;
   type: string;
-  active?: number;
-  autostart?: number;
+  active?: PveBool;
+  autostart?: PveBool;
   address?: string;
   netmask?: string;
   gateway?: string;
@@ -689,7 +689,7 @@ export interface NetworkIfaceParams {
   address?: string;
   netmask?: string;
   gateway?: string;
-  autostart?: number;
+  autostart?: PveBool;
   comments?: string;
   bridge_ports?: string;
   bridge_stp?: string;
@@ -1170,3 +1170,30 @@ export interface PoolParams {
   delete?: PveBool;
   [key: string]: unknown;
 }
+
+// ─── B6: Remaining domain Public variants ────────────────────────────────────
+
+/** Backup domain. `BackupJob.enabled` defaults to enabled when absent (read
+ *  with `!== false`); `BackupFile.protected`, `VzdumpParams.protected` etc.
+ *  default to disabled (`?? false`). */
+export type BackupJobPublic = UnwireBool<BackupJob, 'enabled' | 'all' | 'remove' | 'protected'>;
+export type BackupJobParamsPublic = Partial<Omit<BackupJobPublic, 'id'>>;
+export type BackupFilePublic = UnwireBool<BackupFile, 'protected'>;
+export type VzdumpParamsPublic = UnwireBool<VzdumpParams, 'all' | 'protected' | 'remove'>;
+
+/** Snapshot domain. Both `vmstate` and `running` default to disabled. */
+export type PVESnapshotPublic = UnwireBool<PVESnapshot, 'vmstate' | 'running'>;
+export type CreateSnapshotParamsPublic = UnwireBool<CreateSnapshotParams, 'vmstate'>;
+
+/** Firewall rule / IPSet entry. `enable` defaults to enabled; `nomatch`
+ *  defaults to disabled. */
+export type FirewallRulePublic = UnwireBool<FirewallRule, 'enable'>;
+export type FirewallRuleParamsPublic = Partial<Omit<FirewallRulePublic, 'pos'>>;
+export type FirewallIPSetEntryPublic = UnwireBool<FirewallIPSetEntry, 'nomatch'>;
+
+/** CT creation. `unprivileged` defaults to false (i.e. privileged). */
+export type CreateCTParamsPublic = UnwireBool<CreateCTParams, 'unprivileged'>;
+
+/** Network interfaces. `autostart` defaults to enabled (`!== false`). */
+export type NetworkIfacePublic = UnwireBool<NetworkIface, 'autostart' | 'active'>;
+export type NetworkIfaceParamsPublic = UnwireBool<NetworkIfaceParams, 'autostart'>;
