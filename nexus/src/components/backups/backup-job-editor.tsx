@@ -1,0 +1,224 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/proxmox-client';
+import { useToast } from '@/components/ui/toast';
+import { CronInput } from '@/components/dashboard/cron-input';
+import { Loader2, Save, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { BackupJob, BackupJobParams, BackupMode, BackupCompress, PVEStorage } from '@/types/proxmox';
+
+interface BackupJobEditorProps {
+  initial?: BackupJob | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorProps) {
+  const toast = useToast();
+  const isEdit = !!initial;
+
+  const [schedule, setSchedule] = useState(initial?.schedule ?? '0 2 * * *');
+  const [enabled, setEnabled] = useState(initial?.enabled !== 0);
+  const [storage, setStorage] = useState(initial?.storage ?? '');
+  const [node, setNode] = useState(initial?.node ?? '');
+  const [mode, setMode] = useState<BackupMode>(initial?.mode ?? 'snapshot');
+  const [compress, setCompress] = useState<BackupCompress>(initial?.compress ?? 'zstd');
+  const [vmid, setVmid] = useState(initial?.vmid ?? '');
+  const [all, setAll] = useState(initial?.all === 1);
+  const [pool, setPool] = useState(initial?.pool ?? '');
+  const [mailto, setMailto] = useState(initial?.mailto ?? '');
+  const [mailnotification, setMailnotification] = useState<'always' | 'failure'>(initial?.mailnotification ?? 'failure');
+  const [notesTemplate, setNotesTemplate] = useState(initial?.['notes-template'] ?? '');
+  const [comment, setComment] = useState(initial?.comment ?? '');
+  const [pruneBackups, setPruneBackups] = useState(initial?.['prune-backups'] ?? '');
+
+  const { data: resources } = useQuery({ queryKey: ['cluster', 'resources'], queryFn: () => api.cluster.resources() });
+  const nodes = (resources ?? []).filter((r) => r.type === 'node');
+
+  const { data: storages } = useQuery({
+    queryKey: ['storage', node || nodes[0]?.node, 'list'],
+    queryFn: () => api.storage.list((node || nodes[0]?.node) ?? ''),
+    enabled: !!(node || nodes[0]?.node),
+  });
+  const backupStorages = (storages ?? []).filter((s: PVEStorage) => s.content?.split(',').includes('backup'));
+
+  useEffect(() => {
+    if (!storage && backupStorages.length > 0) setStorage(backupStorages[0].storage);
+  }, [backupStorages, storage]);
+
+  const saveM = useMutation({
+    mutationFn: (params: BackupJobParams) =>
+      isEdit && initial ? api.backups.jobs.update(initial.id, params) : api.backups.jobs.create(params),
+    onSuccess: () => {
+      toast.success(isEdit ? 'Job updated' : 'Job created');
+      onSaved();
+    },
+    onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
+  });
+
+  const submit = () => {
+    const params: BackupJobParams = {
+      schedule,
+      enabled: enabled ? 1 : 0,
+      storage,
+      mode,
+      compress,
+      mailnotification,
+      ...(node ? { node } : {}),
+      ...(all ? { all: 1 } : vmid ? { vmid } : {}),
+      ...(pool ? { pool } : {}),
+      ...(mailto ? { mailto } : {}),
+      ...(notesTemplate ? { 'notes-template': notesTemplate } : {}),
+      ...(comment ? { comment } : {}),
+      ...(pruneBackups ? { 'prune-backups': pruneBackups } : {}),
+    };
+    saveM.mutate(params);
+  };
+
+  const inputCls = 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit backup job' : 'New backup job'}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-white p-1" aria-label="Close"><X className="w-4 h-4" /></button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Schedule</label>
+            <CronInput value={schedule} onChange={setSchedule} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Node (optional)</label>
+              <select value={node} onChange={(e) => setNode(e.target.value)} className={inputCls}>
+                <option value="">All nodes</option>
+                {nodes.map((n) => (
+                  <option key={n.node} value={n.node}>{n.node}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Storage</label>
+              <select value={storage} onChange={(e) => setStorage(e.target.value)} className={inputCls}>
+                <option value="">Select…</option>
+                {backupStorages.map((s) => (
+                  <option key={s.storage} value={s.storage}>{s.storage}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Targets</label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="rounded border-gray-600" />
+                All guests on the selected node(s)
+              </label>
+              {!all && (
+                <>
+                  <input
+                    value={vmid}
+                    onChange={(e) => setVmid(e.target.value)}
+                    placeholder="Comma-separated VMIDs (e.g. 100,101,200)"
+                    className={inputCls}
+                  />
+                  <input
+                    value={pool}
+                    onChange={(e) => setPool(e.target.value)}
+                    placeholder="Or a pool name"
+                    className={inputCls}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Mode</label>
+              <select value={mode} onChange={(e) => setMode(e.target.value as BackupMode)} className={inputCls}>
+                <option value="snapshot">Snapshot</option>
+                <option value="suspend">Suspend</option>
+                <option value="stop">Stop</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Compression</label>
+              <select value={compress} onChange={(e) => setCompress(e.target.value as BackupCompress)} className={inputCls}>
+                <option value="zstd">zstd</option>
+                <option value="gzip">gzip</option>
+                <option value="lzo">lzo</option>
+                <option value="0">none</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-[1fr_140px] gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Mail to (optional)</label>
+              <input value={mailto} onChange={(e) => setMailto(e.target.value)} placeholder="admin@example.com" className={inputCls} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">When</label>
+              <select value={mailnotification} onChange={(e) => setMailnotification(e.target.value as 'always' | 'failure')} className={inputCls}>
+                <option value="failure">on failure</option>
+                <option value="always">always</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Notes template (optional)</label>
+            <input
+              value={notesTemplate}
+              onChange={(e) => setNotesTemplate(e.target.value)}
+              placeholder="{{guestname}} {{vmid}}"
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Prune schedule (optional)</label>
+            <input
+              value={pruneBackups}
+              onChange={(e) => setPruneBackups(e.target.value)}
+              placeholder="keep-last=7,keep-weekly=4,keep-monthly=6"
+              className={inputCls}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Comment</label>
+            <input value={comment} onChange={(e) => setComment(e.target.value)} className={inputCls} />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded border-gray-600" />
+            Enabled
+          </label>
+        </div>
+
+        <div className="flex gap-3 justify-end mt-5">
+          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition disabled:opacity-40">
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={!storage || saveM.isPending}
+            className={cn('flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40')}
+          >
+            {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isEdit ? 'Save' : 'Create job'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
