@@ -11,6 +11,8 @@ import {
   Clock,
   RefreshCw,
   Activity,
+  Pause,
+  Play,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { PVETask } from '@/types/proxmox';
@@ -43,6 +45,7 @@ function formatDuration(start: number, end?: number): string {
 export default function TasksPage() {
   const { data: nodes } = useNodes();
   const [nodeFilter, setNodeFilter] = useState('all');
+  const [paused, setPaused] = useState(false);
 
   const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
 
@@ -58,7 +61,7 @@ export default function TasksPage() {
       return results.flat().sort((a, b) => b.starttime - a.starttime);
     },
     enabled: nodeNames.length > 0,
-    refetchInterval: 10_000,
+    refetchInterval: paused ? false : 10_000,
   });
 
   const filtered =
@@ -78,13 +81,22 @@ export default function TasksPage() {
             {filtered.length} total · Updated {lastUpdated}
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPaused((p) => !p)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
+          >
+            {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            {paused ? 'Resume' : 'Pause'}
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Node filter */}
