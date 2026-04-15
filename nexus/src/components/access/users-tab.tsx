@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/proxmox-client';
 import { Plus, Pencil, Trash2, KeyRound, Users as UsersIcon, Loader2, Save, X } from 'lucide-react';
-import type { PVEUser, UserParams, PVERealm, PVEGroup } from '@/types/proxmox';
+import type { PVEUserPublic, UserParamsPublic, PVERealmPublic, PVEGroup } from '@/types/proxmox';
 
 export function UsersTab() {
   const qc = useQueryClient();
@@ -18,13 +18,13 @@ export function UsersTab() {
   const { data: realms } = useQuery({ queryKey: ['access', 'realms'], queryFn: () => api.access.realms.list() });
   const { data: groups } = useQuery({ queryKey: ['access', 'groups'], queryFn: () => api.access.groups.list() });
 
-  const [edit, setEdit] = useState<PVEUser | null>(null);
+  const [edit, setEdit] = useState<PVEUserPublic | null>(null);
   const [showNew, setShowNew] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PVEUser | null>(null);
-  const [pwTarget, setPwTarget] = useState<PVEUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PVEUserPublic | null>(null);
+  const [pwTarget, setPwTarget] = useState<PVEUserPublic | null>(null);
 
   const deleteM = useMutation({
-    mutationFn: (u: PVEUser) => api.access.users.delete(u.userid),
+    mutationFn: (u: PVEUserPublic) => api.access.users.delete(u.userid),
     onSuccess: () => { setDeleteTarget(null); qc.invalidateQueries({ queryKey: ['access', 'users'] }); toast.success('User deleted'); },
     onError: (err) => toast.error('Delete failed', err instanceof Error ? err.message : String(err)),
   });
@@ -83,7 +83,7 @@ export function UsersTab() {
                     <td className="px-4 py-2 text-xs text-gray-400">{u.email ?? '—'}</td>
                     <td className="px-4 py-2 text-xs text-gray-500 font-mono">{u.groups ?? '—'}</td>
                     <td className="px-4 py-2">
-                      {u.enable === 0 ? <Badge variant="danger" className="text-xs">disabled</Badge> : <Badge variant="success" className="text-xs">enabled</Badge>}
+                      {u.enable === false ? <Badge variant="danger" className="text-xs">disabled</Badge> : <Badge variant="success" className="text-xs">enabled</Badge>}
                     </td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex gap-0.5 justify-end">
@@ -104,8 +104,8 @@ export function UsersTab() {
 }
 
 function UserEditor({ initial, realms, groups, onClose, onSaved }: {
-  initial: PVEUser | null;
-  realms: PVERealm[];
+  initial: PVEUserPublic | null;
+  realms: PVERealmPublic[];
   groups: PVEGroup[];
   onClose: () => void;
   onSaved: () => void;
@@ -122,20 +122,20 @@ function UserEditor({ initial, realms, groups, onClose, onSaved }: {
   const [firstname, setFirstname] = useState(initial?.firstname ?? '');
   const [lastname, setLastname] = useState(initial?.lastname ?? '');
   const [comment, setComment] = useState(initial?.comment ?? '');
-  const [enable, setEnable] = useState(initial?.enable !== 0);
+  const [enable, setEnable] = useState(initial?.enable !== false);
   const [userGroups, setUserGroups] = useState(initial?.groups ?? '');
 
   const saveM = useMutation({
-    mutationFn: (params: UserParams) => isEdit && initial ? api.access.users.update(initial.userid, params) : api.access.users.create(params),
+    mutationFn: (params: UserParamsPublic) => isEdit && initial ? api.access.users.update(initial.userid, params) : api.access.users.create(params),
     onSuccess: () => { toast.success(isEdit ? 'User updated' : 'User created'); onSaved(); },
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
   const submit = () => {
     const userid = `${userName}@${userRealm}`;
-    const params: UserParams = {
+    const params: UserParamsPublic = {
       userid,
-      enable: enable ? 1 : 0,
+      enable,
       ...(email ? { email } : {}),
       ...(firstname ? { firstname } : {}),
       ...(lastname ? { lastname } : {}),
@@ -222,7 +222,7 @@ function UserEditor({ initial, realms, groups, onClose, onSaved }: {
   );
 }
 
-function PasswordDialog({ user, onClose }: { user: PVEUser; onClose: () => void }) {
+function PasswordDialog({ user, onClose }: { user: PVEUserPublic; onClose: () => void }) {
   const toast = useToast();
   const [password, setPassword] = useState('');
   const M = useMutation({

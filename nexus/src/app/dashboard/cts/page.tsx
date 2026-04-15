@@ -13,7 +13,7 @@ import {
   Play, Square, RotateCcw, PowerOff, Plus, Loader2,
   Box, Circle, ChevronDown, Search,
 } from 'lucide-react';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 type SortKey = 'vmid' | 'name' | 'status' | 'node' | 'cpu' | 'mem';
 
@@ -26,7 +26,7 @@ function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'out
   }
 }
 
-function CTActions({ ct, onDone }: { ct: ClusterResource; onDone: () => void }) {
+function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => void }) {
   const qc = useQueryClient();
   const node = ct.node ?? '';
   const vmid = ct.vmid ?? 0;

@@ -6,7 +6,7 @@ import { useClusterResources } from '@/hooks/use-cluster';
 import { Terminal } from '@/components/console/terminal';
 import { Server, Monitor, Box, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 interface ConsoleTab {
   id: string;
@@ -44,7 +44,7 @@ export default function ConsolePage() {
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
 
-  function openConsole(resource: ClusterResource) {
+  function openConsole(resource: ClusterResourcePublic) {
     const id = resource.id;
     if (tabs.find((t) => t.id === id)) {
       setActiveTab(id);

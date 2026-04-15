@@ -5,6 +5,290 @@
  * from both client and server components.
  */
 
+import type { PveBool } from '@/types/proxmox';
+
+// ─── PVE Boolean Codec ────────────────────────────────────────────────────────
+//
+// Proxmox's HTTP API accepts integer 0/1 for boolean flags. Consumers should
+// express these as native `boolean` and call through the codec only at the
+// HTTP boundary — never in UI state or JSX equality checks.
+//
+// These helpers are exported but not yet wired into request methods; Phase B
+// of the migration will thread them through per-domain request builders.
+
+export function toPveBool(v: boolean): PveBool;
+export function toPveBool(v: boolean | undefined): PveBool | undefined;
+export function toPveBool(v: boolean | undefined): PveBool | undefined {
+  return v === undefined ? undefined : v ? (1 as PveBool) : (0 as PveBool);
+}
+
+// Signature accepts raw number so defensive decoding from unknown wire
+// payloads (and test-literal inputs like `fromPveBool(1)`) still typechecks.
+// The branded PveBool is a subtype of number so prior call sites are unaffected.
+export function fromPveBool(v: number | boolean | null | undefined): boolean {
+  return v === 1 || v === true;
+}
+
+/**
+ * Return a shallow copy of `obj` with each listed key's boolean value encoded
+ * as `PveBool`. Keys whose value is `undefined` are preserved as `undefined`.
+ * Non-listed keys pass through unchanged.
+ */
+export function encodeBoolFields<T extends object, K extends keyof T>(
+  obj: T,
+  keys: readonly K[],
+): { [P in keyof T]: P extends K ? PveBool | undefined : T[P] } {
+  const out = { ...obj } as Record<PropertyKey, unknown>;
+  for (const k of keys) {
+    const v = obj[k];
+    out[k as PropertyKey] = v === undefined ? undefined : v ? (1 as PveBool) : (0 as PveBool);
+  }
+  return out as { [P in keyof T]: P extends K ? PveBool | undefined : T[P] };
+}
+
+/**
+ * Inverse of `encodeBoolFields`. Decodes each listed key from `PveBool` to
+ * `boolean`. `undefined` survives. Useful for normalising response payloads.
+ */
+export function decodeBoolFields<T extends object, K extends keyof T>(
+  obj: T,
+  keys: readonly K[],
+): { [P in keyof T]: P extends K ? boolean | undefined : T[P] } {
+  const out = { ...obj } as Record<PropertyKey, unknown>;
+  for (const k of keys) {
+    const v = obj[k];
+    out[k as PropertyKey] = v === undefined ? undefined : (((v as unknown) === 1 || v === true) as boolean);
+  }
+  return out as { [P in keyof T]: P extends K ? boolean | undefined : T[P] };
+}
+
+// ─── Firewall Codec Bindings ──────────────────────────────────────────────────
+
+/** Keys on FirewallOptions that carry PveBool on the wire. Kept beside the
+ *  codec so the encode/decode sites share a single source of truth. The
+ *  `satisfies` clause compile-errors if a key is misspelled or removed from
+ *  the interface. */
+const FIREWALL_OPTIONS_BOOL_KEYS = [
+  'enable',
+  'ebtables',
+  'nosmurfs',
+  'tcpflags',
+  'macfilter',
+  'dhcp',
+  'ipfilter',
+  'ndp',
+  'radv',
+] as const satisfies readonly (keyof FirewallOptions)[];
+
+const decodeFirewallOptions = (raw: FirewallOptions): FirewallOptionsPublic =>
+  decodeBoolFields(raw, FIREWALL_OPTIONS_BOOL_KEYS) as FirewallOptionsPublic;
+
+const encodeFirewallOptions = (
+  opts: Partial<FirewallOptionsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(opts, FIREWALL_OPTIONS_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── Storage / Restore Codec Bindings ─────────────────────────────────────────
+
+const STORAGE_CREATE_BOOL_KEYS = ['mkdir'] as const satisfies
+  readonly (keyof StorageCreatePayload)[];
+
+const DISK_LIST_BOOL_KEYS = ['gpt'] as const satisfies
+  readonly (keyof DiskListEntry)[];
+
+const RESTORE_BOOL_KEYS = ['force', 'unique', 'start'] as const satisfies
+  readonly (keyof RestoreParams)[];
+
+const encodeStorageCreate = (
+  payload: Partial<StorageCreatePayloadPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(payload, STORAGE_CREATE_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeStorageUpdate = (
+  payload: StorageUpdatePayloadPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(payload, STORAGE_CREATE_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeStorageConfig = (raw: PVEStorageConfig): PVEStorageConfigPublic =>
+  decodeBoolFields(raw, STORAGE_CREATE_BOOL_KEYS) as PVEStorageConfigPublic;
+
+const decodeDiskList = (rows: DiskListEntry[]): DiskListEntryPublic[] =>
+  rows.map((r) => decodeBoolFields(r, DISK_LIST_BOOL_KEYS) as DiskListEntryPublic);
+
+const encodeRestore = (
+  params: RestoreParamsPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(params, RESTORE_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── HA / Cluster Status Codec Bindings ───────────────────────────────────────
+
+const HA_GROUP_BOOL_KEYS = ['restricted', 'nofailback'] as const satisfies
+  readonly (keyof HAGroup)[];
+
+const HA_STATUS_BOOL_KEYS = ['quorate'] as const satisfies
+  readonly (keyof HAStatus)[];
+
+const CLUSTER_STATUS_BOOL_KEYS = ['quorate', 'online', 'local'] as const satisfies
+  readonly (keyof ClusterStatus)[];
+
+const decodeHAGroup = (raw: HAGroup): HAGroupPublic =>
+  decodeBoolFields(raw, HA_GROUP_BOOL_KEYS) as HAGroupPublic;
+
+const encodeHAGroupParams = (
+  params: Partial<HAGroupParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, HA_GROUP_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeHAStatus = (rows: HAStatus[]): HAStatusPublic[] =>
+  rows.map((r) => decodeBoolFields(r, HA_STATUS_BOOL_KEYS) as HAStatusPublic);
+
+const decodeClusterStatus = (rows: ClusterStatus[]): ClusterStatusPublic[] =>
+  rows.map((r) => decodeBoolFields(r, CLUSTER_STATUS_BOOL_KEYS) as ClusterStatusPublic);
+
+// ─── Access Codec Bindings ────────────────────────────────────────────────────
+
+const USER_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof PVEUser)[];
+const ROLE_BOOL_KEYS = ['special'] as const satisfies readonly (keyof PVERole)[];
+const REALM_BOOL_KEYS = ['default', 'secure', 'autocreate'] as const satisfies
+  readonly (keyof PVERealm)[];
+const ACL_BOOL_KEYS = ['propagate'] as const satisfies readonly (keyof PVEACL)[];
+const ACL_PARAMS_BOOL_KEYS = ['propagate', 'delete'] as const satisfies
+  readonly (keyof ACLParams)[];
+
+const decodeUser = (raw: PVEUser): PVEUserPublic =>
+  decodeBoolFields(raw, USER_BOOL_KEYS) as PVEUserPublic;
+
+const encodeUserParams = (
+  params: Partial<UserParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, USER_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeRole = (raw: PVERole): PVERolePublic =>
+  decodeBoolFields(raw, ROLE_BOOL_KEYS) as PVERolePublic;
+
+const decodeRealm = (raw: PVERealm): PVERealmPublic =>
+  decodeBoolFields(raw, REALM_BOOL_KEYS) as PVERealmPublic;
+
+const encodeRealmParams = (
+  params: Partial<RealmParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, REALM_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeAcl = (rows: PVEACL[]): PVEACLPublic[] =>
+  rows.map((r) => decodeBoolFields(r, ACL_BOOL_KEYS) as PVEACLPublic);
+
+const encodeAclParams = (
+  params: ACLParamsPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(params, ACL_PARAMS_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── VM / CT Codec Bindings ───────────────────────────────────────────────────
+//
+// Config flags (onboot, protection, template) default to *false* in PVE when
+// absent — opposite semantic from user.enable. Reads use `?? false`, not
+// `!== false`.
+
+const VM_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof VMConfig)[];
+const CT_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof CTConfig)[];
+const UPDATE_VM_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof UpdateVMConfigParams)[];
+const UPDATE_CT_CONFIG_BOOL_KEYS = ['onboot', 'protection', 'template'] as const satisfies
+  readonly (keyof UpdateCTConfigParams)[];
+const CLONE_VM_BOOL_KEYS = ['full'] as const satisfies readonly (keyof CloneVMParams)[];
+const MIGRATE_VM_BOOL_KEYS = ['online', 'with_local_disks'] as const satisfies
+  readonly (keyof MigrateVMParams)[];
+const MIGRATE_CT_BOOL_KEYS = ['online', 'restart'] as const satisfies
+  readonly (keyof MigrateCTParams)[];
+
+const decodeVMConfig = (raw: VMConfigFull): VMConfigFullPublic =>
+  decodeBoolFields(raw, VM_CONFIG_BOOL_KEYS) as VMConfigFullPublic;
+
+const decodeCTConfig = (raw: CTConfig): CTConfigPublic =>
+  decodeBoolFields(raw, CT_CONFIG_BOOL_KEYS) as CTConfigPublic;
+
+const encodeUpdateVMConfig = (
+  params: Partial<UpdateVMConfigParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, UPDATE_VM_CONFIG_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeUpdateCTConfig = (
+  params: Partial<UpdateCTConfigParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, UPDATE_CT_CONFIG_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeCloneVM = (params: CloneVMParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, CLONE_VM_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeMigrateVM = (params: MigrateVMParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, MIGRATE_VM_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeMigrateCT = (params: MigrateCTParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(params, MIGRATE_CT_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── B6: Backup / Snapshot / Firewall-Rule / CT-Create / Network Bindings ────
+//
+// Per-field semantic defaults (absent = ?):
+//   BackupJob.enabled, FirewallRule.enable, NetworkIface.autostart  → true
+//   BackupFile.protected, PVESnapshot.vmstate, .running, nomatch,
+//   CreateCTParams.unprivileged                                      → false
+// The codec is symmetric either way; consumer read idioms distinguish
+// (`!== false` vs `?? false`).
+
+const BACKUP_JOB_BOOL_KEYS = ['enabled', 'all', 'remove', 'protected'] as const satisfies readonly (keyof BackupJob)[];
+const BACKUP_FILE_BOOL_KEYS = ['protected'] as const satisfies readonly (keyof BackupFile)[];
+const VZDUMP_BOOL_KEYS = ['all', 'protected', 'remove'] as const satisfies readonly (keyof VzdumpParams)[];
+const SNAPSHOT_BOOL_KEYS = ['vmstate', 'running'] as const satisfies readonly (keyof PVESnapshot)[];
+const CREATE_SNAPSHOT_BOOL_KEYS = ['vmstate'] as const satisfies readonly (keyof CreateSnapshotParams)[];
+const FIREWALL_RULE_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof FirewallRule)[];
+const IPSET_ENTRY_BOOL_KEYS = ['nomatch'] as const satisfies readonly (keyof FirewallIPSetEntry)[];
+const CREATE_CT_BOOL_KEYS = ['unprivileged'] as const satisfies readonly (keyof CreateCTParams)[];
+const NETWORK_IFACE_BOOL_KEYS = ['autostart', 'active'] as const satisfies readonly (keyof NetworkIface)[];
+const NETWORK_IFACE_PARAMS_BOOL_KEYS = ['autostart'] as const satisfies readonly (keyof NetworkIfaceParams)[];
+
+const decodeBackupJob = (raw: BackupJob): BackupJobPublic =>
+  decodeBoolFields(raw, BACKUP_JOB_BOOL_KEYS) as BackupJobPublic;
+const encodeBackupJobParams = (p: BackupJobParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, BACKUP_JOB_BOOL_KEYS) as Record<string, unknown>;
+const decodeBackupFile = (raw: BackupFile): BackupFilePublic =>
+  decodeBoolFields(raw, BACKUP_FILE_BOOL_KEYS) as BackupFilePublic;
+const encodeVzdump = (p: VzdumpParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, VZDUMP_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeSnapshot = (raw: PVESnapshot): PVESnapshotPublic =>
+  decodeBoolFields(raw, SNAPSHOT_BOOL_KEYS) as PVESnapshotPublic;
+const encodeCreateSnapshot = (p: CreateSnapshotParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, CREATE_SNAPSHOT_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeFirewallRule = (raw: FirewallRule): FirewallRulePublic =>
+  decodeBoolFields(raw, FIREWALL_RULE_BOOL_KEYS) as FirewallRulePublic;
+const encodeFirewallRuleParams = (p: FirewallRuleParamsPublic): Record<string, unknown> =>
+  encodeBoolFields(p, FIREWALL_RULE_BOOL_KEYS) as Record<string, unknown>;
+const decodeIPSetEntry = (raw: FirewallIPSetEntry): FirewallIPSetEntryPublic =>
+  decodeBoolFields(raw, IPSET_ENTRY_BOOL_KEYS) as FirewallIPSetEntryPublic;
+
+const encodeCreateCT = (p: Omit<CreateCTParamsPublic, 'node'>): Record<string, unknown> =>
+  encodeBoolFields(p, CREATE_CT_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeNetworkIface = (raw: NetworkIface): NetworkIfacePublic =>
+  decodeBoolFields(raw, NETWORK_IFACE_BOOL_KEYS) as NetworkIfacePublic;
+const encodeNetworkIfaceParams = (p: Partial<NetworkIfaceParamsPublic>): Record<string, unknown> =>
+  encodeBoolFields(p, NETWORK_IFACE_PARAMS_BOOL_KEYS) as Record<string, unknown>;
+
+// ─── B7: Residue cleanup — list-endpoint list types ──────────────────────────
+
+const PVE_STORAGE_BOOL_KEYS = ['shared', 'active', 'enabled'] as const satisfies
+  readonly (keyof PVEStorage)[];
+const CLUSTER_RESOURCE_BOOL_KEYS = ['template', 'shared'] as const satisfies
+  readonly (keyof ClusterResource)[];
+
+const decodePveStorage = (raw: PVEStorage): PVEStoragePublic =>
+  decodeBoolFields(raw, PVE_STORAGE_BOOL_KEYS) as PVEStoragePublic;
+
+const decodeClusterResource = (raw: ClusterResource): ClusterResourcePublic =>
+  decodeBoolFields(raw, CLUSTER_RESOURCE_BOOL_KEYS) as ClusterResourcePublic;
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -112,69 +396,104 @@ export const proxmox = {
 
 import type {
   ClusterResource,
+  ClusterResourcePublic,
   PVENode,
   NodeStatus,
   PVEVM,
   PVECT,
   PVEStorage,
+  PVEStoragePublic,
   PVETask,
   VNCProxyResponse,
   NodeRRDData,
   VMConfig,
   VMConfigFull,
+  VMConfigFullPublic,
   CTConfig,
+  CTConfigPublic,
   StorageContent,
   NodeNetwork,
   CreateVMParams,
   CreateCTParams,
+  CreateCTParamsPublic,
   CloneVMParams,
+  CloneVMParamsPublic,
   CloneCTParams,
   MigrateVMParams,
+  MigrateVMParamsPublic,
   MigrateCTParams,
+  MigrateCTParamsPublic,
   UpdateVMConfigParams,
+  UpdateVMConfigParamsPublic,
   UpdateCTConfigParams,
+  UpdateCTConfigParamsPublic,
   NodePowerCommand,
   AptInstalledPackage,
   AptUpdatablePackage,
   NetworkIface,
+  NetworkIfacePublic,
   NetworkIfaceParams,
+  NetworkIfaceParamsPublic,
   CertificateInfo,
   AcmeAccount,
   JournalEntry,
   JournalParams,
   PVESnapshot,
+  PVESnapshotPublic,
   CreateSnapshotParams,
+  CreateSnapshotParamsPublic,
   BackupJob,
+  BackupJobPublic,
   BackupJobParams,
+  BackupJobParamsPublic,
   BackupFile,
+  BackupFilePublic,
   VzdumpParams,
+  VzdumpParamsPublic,
   RestoreParams,
   IsoUploadParams,
   DownloadUrlParams,
   StorageContentType,
   FirewallRule,
+  FirewallRulePublic,
   FirewallRuleParams,
+  FirewallRuleParamsPublic,
   FirewallAlias,
   FirewallIPSet,
   FirewallIPSetEntry,
+  FirewallIPSetEntryPublic,
   FirewallGroup,
   FirewallOptions,
+  FirewallOptionsPublic,
+  StorageCreatePayloadPublic,
+  StorageUpdatePayloadPublic,
+  PVEStorageConfigPublic,
+  DiskListEntryPublic,
+  RestoreParamsPublic,
   PVEUser,
-  UserParams,
+  PVEUserPublic,
+  UserParamsPublic,
   PVEGroup,
   GroupParams,
   PVERole,
   RoleParams,
   PVERealm,
-  RealmParams,
+  PVERealmPublic,
+  RealmParamsPublic,
+  PVERolePublic,
   PVEACL,
+  PVEACLPublic,
   ACLParams,
+  ACLParamsPublic,
   HAResource,
   HAResourceParams,
   HAGroup,
-  HAGroupParams,
+  HAGroupPublic,
+  HAGroupParamsPublic,
   HAStatus,
+  HAStatusPublic,
   ClusterStatus,
+  ClusterStatusPublic,
   PVEPool,
   PoolParams,
   DiskListEntry,
@@ -225,10 +544,15 @@ export const api = {
     list: (node: string) => proxmox.get<PVEVM[]>(`nodes/${node}/qemu`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVEVM>(`nodes/${node}/qemu/${vmid}/status/current`),
-    config: (node: string, vmid: number) =>
-      proxmox.get<VMConfigFull>(`nodes/${node}/qemu/${vmid}/config`),
-    updateConfig: (node: string, vmid: number, params: UpdateVMConfigParams) =>
-      proxmox.put<null>(`nodes/${node}/qemu/${vmid}/config`, params as Record<string, unknown>),
+    config: async (node: string, vmid: number): Promise<VMConfigFullPublic> =>
+      decodeVMConfig(
+        await proxmox.get<VMConfigFull>(`nodes/${node}/qemu/${vmid}/config`),
+      ),
+    updateConfig: (node: string, vmid: number, params: Partial<UpdateVMConfigParamsPublic>) =>
+      proxmox.put<null>(
+        `nodes/${node}/qemu/${vmid}/config`,
+        encodeUpdateVMConfig(params),
+      ),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -243,10 +567,10 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/status/resume`),
     delete: (node: string, vmid: number, purge = true) =>
       proxmox.delete<string>(`nodes/${node}/qemu/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
-    clone: (node: string, vmid: number, params: CloneVMParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, params as Record<string, unknown>),
-    migrate: (node: string, vmid: number, params: MigrateVMParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, params as Record<string, unknown>),
+    clone: (node: string, vmid: number, params: CloneVMParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, encodeCloneVM(params)),
+    migrate: (node: string, vmid: number, params: MigrateVMParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, encodeMigrateVM(params)),
     create: (node: string, params: Omit<CreateVMParams, 'node'>) =>
       proxmox.post<string>(`nodes/${node}/qemu`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
@@ -254,10 +578,10 @@ export const api = {
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/qemu/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     snapshot: {
-      list: (node: string, vmid: number) =>
-        proxmox.get<PVESnapshot[]>(`nodes/${node}/qemu/${vmid}/snapshot`),
-      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
-        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot`, params as Record<string, unknown>),
+      list: async (node: string, vmid: number): Promise<PVESnapshotPublic[]> =>
+        (await proxmox.get<PVESnapshot[]>(`nodes/${node}/qemu/${vmid}/snapshot`)).map(decodeSnapshot),
+      create: (node: string, vmid: number, params: CreateSnapshotParamsPublic) =>
+        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot`, encodeCreateSnapshot(params)),
       delete: (node: string, vmid: number, snapname: string, force = false) =>
         proxmox.delete<string>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
       rollback: (node: string, vmid: number, snapname: string) =>
@@ -274,10 +598,15 @@ export const api = {
     list: (node: string) => proxmox.get<PVECT[]>(`nodes/${node}/lxc`),
     status: (node: string, vmid: number) =>
       proxmox.get<PVECT>(`nodes/${node}/lxc/${vmid}/status/current`),
-    config: (node: string, vmid: number) =>
-      proxmox.get<CTConfig>(`nodes/${node}/lxc/${vmid}/config`),
-    updateConfig: (node: string, vmid: number, params: UpdateCTConfigParams) =>
-      proxmox.put<null>(`nodes/${node}/lxc/${vmid}/config`, params as Record<string, unknown>),
+    config: async (node: string, vmid: number): Promise<CTConfigPublic> =>
+      decodeCTConfig(
+        await proxmox.get<CTConfig>(`nodes/${node}/lxc/${vmid}/config`),
+      ),
+    updateConfig: (node: string, vmid: number, params: Partial<UpdateCTConfigParamsPublic>) =>
+      proxmox.put<null>(
+        `nodes/${node}/lxc/${vmid}/config`,
+        encodeUpdateCTConfig(params),
+      ),
     start: (node: string, vmid: number) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/status/start`),
     stop: (node: string, vmid: number) =>
@@ -294,19 +623,19 @@ export const api = {
       proxmox.delete<string>(`nodes/${node}/lxc/${vmid}${purge ? '?purge=1&destroy-unreferenced-disks=1' : ''}`),
     clone: (node: string, vmid: number, params: CloneCTParams) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/clone`, params as Record<string, unknown>),
-    migrate: (node: string, vmid: number, params: MigrateCTParams) =>
-      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, params as Record<string, unknown>),
-    create: (node: string, params: Omit<CreateCTParams, 'node'>) =>
-      proxmox.post<string>(`nodes/${node}/lxc`, params as Record<string, unknown>),
+    migrate: (node: string, vmid: number, params: MigrateCTParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, encodeMigrateCT(params)),
+    create: (node: string, params: Omit<CreateCTParamsPublic, 'node'>) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, encodeCreateCT(params)),
     vncproxy: (node: string, vmid: number) =>
       proxmox.post<VNCProxyResponse>(`nodes/${node}/lxc/${vmid}/vncproxy`, { websocket: 1 }),
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/lxc/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     snapshot: {
-      list: (node: string, vmid: number) =>
-        proxmox.get<PVESnapshot[]>(`nodes/${node}/lxc/${vmid}/snapshot`),
-      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
-        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot`, params as Record<string, unknown>),
+      list: async (node: string, vmid: number): Promise<PVESnapshotPublic[]> =>
+        (await proxmox.get<PVESnapshot[]>(`nodes/${node}/lxc/${vmid}/snapshot`)).map(decodeSnapshot),
+      create: (node: string, vmid: number, params: CreateSnapshotParamsPublic) =>
+        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot`, encodeCreateSnapshot(params)),
       delete: (node: string, vmid: number, snapname: string, force = false) =>
         proxmox.delete<string>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
       rollback: (node: string, vmid: number, snapname: string) =>
@@ -320,32 +649,35 @@ export const api = {
 
   // Storage
   storage: {
-    list: (node: string) => proxmox.get<PVEStorage[]>(`nodes/${node}/storage`),
+    list: async (node: string): Promise<PVEStoragePublic[]> =>
+      (await proxmox.get<PVEStorage[]>(`nodes/${node}/storage`)).map(decodePveStorage),
     /** Cluster-wide: create a new storage pool. Hits POST /storage (not a
      *  per-node path) — the pool appears on every listed node once PVE's
      *  config is replicated. CSRF is handled by the shared `request<T>`
      *  wrapper inside `proxmox.post`. */
-    create: (payload: StorageCreatePayload): Promise<null> =>
-      proxmox.post<null>('storage', payload as unknown as Record<string, unknown>),
+    create: (payload: StorageCreatePayloadPublic): Promise<null> =>
+      proxmox.post<null>('storage', encodeStorageCreate(payload)),
     /** Cluster-wide: fetch the full persisted config for one storage pool.
      *  Used by the Edit flow to pre-fill the dialog with fields the list
      *  endpoint (GET /nodes/{node}/storage) doesn't include (server, export, …). */
-    get: (id: string) =>
-      proxmox.get<PVEStorageConfig>(`storage/${encodeURIComponent(id)}`),
+    get: async (id: string): Promise<PVEStorageConfigPublic> =>
+      decodeStorageConfig(
+        await proxmox.get<PVEStorageConfig>(`storage/${encodeURIComponent(id)}`),
+      ),
     /** Cluster-wide: patch a storage pool. PVE rejects changes to the ID or
      *  backend type, so callers must strip those from the payload. CSRF is
      *  added by `proxmox.put`. */
-    update: (id: string, payload: StorageUpdatePayload): Promise<null> =>
+    update: (id: string, payload: StorageUpdatePayloadPublic): Promise<null> =>
       proxmox.put<null>(
         `storage/${encodeURIComponent(id)}`,
-        payload as unknown as Record<string, unknown>,
+        encodeStorageUpdate(payload),
       ),
     /** Cluster-wide: detach a storage pool from PVE. Data on the underlying
      *  share is left untouched — PVE only removes the config entry. */
     delete: (id: string): Promise<null> =>
       proxmox.delete<null>(`storage/${encodeURIComponent(id)}`),
     listWithContent: (node: string, content: string) =>
-      proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`),
+      (proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`).then((rows) => rows.map(decodePveStorage))),
     content: (node: string, storage: string, content?: string) =>
       proxmox.get<StorageContent[]>(
         `nodes/${node}/storage/${storage}/content${content ? `?content=${content}` : ''}`,
@@ -418,7 +750,10 @@ export const api = {
 
   // Physical disks (S.M.A.R.T.)
   disks: {
-    list: (node: string) => proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
+    list: async (node: string): Promise<DiskListEntryPublic[]> =>
+      decodeDiskList(
+        await proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
+      ),
     smart: (node: string, disk: string) =>
       proxmox.get<SmartData>(`nodes/${node}/disks/smart?disk=${encodeURIComponent(disk)}`),
   },
@@ -478,10 +813,12 @@ export const api = {
 
   // Cluster
   cluster: {
-    resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
+    resources: async (): Promise<ClusterResourcePublic[]> =>
+      (await proxmox.get<ClusterResource[]>('cluster/resources')).map(decodeClusterResource),
     tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
     nextid: () => proxmox.get<number>('cluster/nextid'),
-    status: () => proxmox.get<ClusterStatus[]>('cluster/status'),
+    status: async (): Promise<ClusterStatusPublic[]> =>
+      decodeClusterStatus(await proxmox.get<ClusterStatus[]>('cluster/status')),
   },
 
   // Tasks
@@ -546,29 +883,31 @@ export const api = {
 
   backups: {
     jobs: {
-      list: () => proxmox.get<BackupJob[]>('cluster/backup'),
-      get: (id: string) => proxmox.get<BackupJob>(`cluster/backup/${encodeURIComponent(id)}`),
-      create: (params: BackupJobParams) =>
-        proxmox.post<null>('cluster/backup', params as Record<string, unknown>),
-      update: (id: string, params: BackupJobParams) =>
-        proxmox.put<null>(`cluster/backup/${encodeURIComponent(id)}`, params as Record<string, unknown>),
+      list: async (): Promise<BackupJobPublic[]> =>
+        (await proxmox.get<BackupJob[]>('cluster/backup')).map(decodeBackupJob),
+      get: async (id: string): Promise<BackupJobPublic> =>
+        decodeBackupJob(await proxmox.get<BackupJob>(`cluster/backup/${encodeURIComponent(id)}`)),
+      create: (params: BackupJobParamsPublic) =>
+        proxmox.post<null>('cluster/backup', encodeBackupJobParams(params)),
+      update: (id: string, params: BackupJobParamsPublic) =>
+        proxmox.put<null>(`cluster/backup/${encodeURIComponent(id)}`, encodeBackupJobParams(params)),
       delete: (id: string) =>
         proxmox.delete<null>(`cluster/backup/${encodeURIComponent(id)}`),
     },
-    vzdump: (node: string, params: VzdumpParams) =>
-      proxmox.post<string>(`nodes/${node}/vzdump`, params as Record<string, unknown>),
-    files: (node: string, storage: string) =>
-      proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`),
+    vzdump: (node: string, params: VzdumpParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/vzdump`, encodeVzdump(params)),
+    files: async (node: string, storage: string): Promise<BackupFilePublic[]> =>
+      (await proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`)).map(decodeBackupFile),
     delete: (node: string, storage: string, volid: string) =>
       proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
-    restoreVM: (node: string, params: RestoreParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu`, { ...params } as Record<string, unknown>),
-    restoreCT: (node: string, params: RestoreParams) =>
-      proxmox.post<string>(`nodes/${node}/lxc`, { ...params } as Record<string, unknown>),
+    restoreVM: (node: string, params: RestoreParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu`, encodeRestore(params)),
+    restoreCT: (node: string, params: RestoreParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, encodeRestore(params)),
     protect: (node: string, storage: string, volid: string, isProtected: boolean) =>
       proxmox.put<null>(
         `nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`,
-        { protected: isProtected ? 1 : 0 },
+        { protected: toPveBool(isProtected) },
       ),
   },
 
@@ -590,14 +929,14 @@ export const api = {
 
   // Note: named networkIfaces (not network) to avoid shadowing the existing api.network.list method
   networkIfaces: {
-    list: (node: string) =>
-      proxmox.get<NetworkIface[]>(`nodes/${node}/network`),
-    get: (node: string, iface: string) =>
-      proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`),
-    create: (node: string, params: NetworkIfaceParams) =>
-      proxmox.post<string>(`nodes/${node}/network`, params as Record<string, unknown>),
-    update: (node: string, iface: string, params: Partial<NetworkIfaceParams>) =>
-      proxmox.put<string>(`nodes/${node}/network/${iface}`, params as Record<string, unknown>),
+    list: async (node: string): Promise<NetworkIfacePublic[]> =>
+      (await proxmox.get<NetworkIface[]>(`nodes/${node}/network`)).map(decodeNetworkIface),
+    get: async (node: string, iface: string): Promise<NetworkIfacePublic> =>
+      decodeNetworkIface(await proxmox.get<NetworkIface>(`nodes/${node}/network/${iface}`)),
+    create: (node: string, params: NetworkIfaceParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/network`, encodeNetworkIfaceParams(params)),
+    update: (node: string, iface: string, params: Partial<NetworkIfaceParamsPublic>) =>
+      proxmox.put<string>(`nodes/${node}/network/${iface}`, encodeNetworkIfaceParams(params)),
     delete: (node: string, iface: string) =>
       proxmox.delete<string>(`nodes/${node}/network/${iface}`),
     apply: (node: string) =>
@@ -633,12 +972,12 @@ export const api = {
   firewall: {
     cluster: {
       rules: {
-        list: () => proxmox.get<FirewallRule[]>('cluster/firewall/rules'),
-        get: (pos: number) => proxmox.get<FirewallRule>(`cluster/firewall/rules/${pos}`),
-        create: (params: FirewallRuleParams) =>
-          proxmox.post<null>('cluster/firewall/rules', params as Record<string, unknown>),
-        update: (pos: number, params: FirewallRuleParams) =>
-          proxmox.put<null>(`cluster/firewall/rules/${pos}`, params as Record<string, unknown>),
+        list: async (): Promise<FirewallRulePublic[]> => (await proxmox.get<FirewallRule[]>('cluster/firewall/rules')).map(decodeFirewallRule),
+        get: async (pos: number): Promise<FirewallRulePublic> => decodeFirewallRule(await proxmox.get<FirewallRule>(`cluster/firewall/rules/${pos}`)),
+        create: (params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>('cluster/firewall/rules', encodeFirewallRuleParams(params)),
+        update: (pos: number, params: FirewallRuleParamsPublic) =>
+          proxmox.put<null>(`cluster/firewall/rules/${pos}`, encodeFirewallRuleParams(params)),
         delete: (pos: number, digest?: string) =>
           proxmox.delete<null>(
             `cluster/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
@@ -680,25 +1019,28 @@ export const api = {
           proxmox.delete<null>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
         rules: (name: string) =>
           proxmox.get<FirewallRule[]>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
-        addRule: (name: string, params: FirewallRuleParams) =>
+        addRule: (name: string, params: FirewallRuleParamsPublic) =>
           proxmox.post<null>(
             `cluster/firewall/groups/${encodeURIComponent(name)}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
       },
       options: {
-        get: () => proxmox.get<FirewallOptions>('cluster/firewall/options'),
-        update: (opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>('cluster/firewall/options', opts as Record<string, unknown>),
+        get: async (): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>('cluster/firewall/options'),
+          ),
+        update: (opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>('cluster/firewall/options', encodeFirewallOptions(opts)),
       },
     },
     node: {
       rules: {
-        list: (node: string) => proxmox.get<FirewallRule[]>(`nodes/${node}/firewall/rules`),
-        create: (node: string, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, pos: number, params: FirewallRuleParams) =>
-          proxmox.put<null>(`nodes/${node}/firewall/rules/${pos}`, params as Record<string, unknown>),
+        list: async (node: string): Promise<FirewallRulePublic[]> => (await proxmox.get<FirewallRule[]>(`nodes/${node}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, pos: number, params: FirewallRuleParamsPublic) =>
+          proxmox.put<null>(`nodes/${node}/firewall/rules/${pos}`, encodeFirewallRuleParams(params)),
         delete: (node: string, pos: number, digest?: string) =>
           proxmox.delete<null>(
             `nodes/${node}/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
@@ -710,21 +1052,27 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string) => proxmox.get<FirewallOptions>(`nodes/${node}/firewall/options`),
-        update: (node: string, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(`nodes/${node}/firewall/options`),
+          ),
+        update: (node: string, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
     },
     vm: {
       rules: {
-        list: (node: string, vmid: number) =>
-          proxmox.get<FirewallRule[]>(`nodes/${node}/qemu/${vmid}/firewall/rules`),
-        create: (node: string, vmid: number, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/qemu/${vmid}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+        list: async (node: string, vmid: number): Promise<FirewallRulePublic[]> =>
+          (await proxmox.get<FirewallRule[]>(`nodes/${node}/qemu/${vmid}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, vmid: number, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/qemu/${vmid}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParamsPublic) =>
           proxmox.put<null>(
             `nodes/${node}/qemu/${vmid}/firewall/rules/${pos}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
         delete: (node: string, vmid: number, pos: number, digest?: string) =>
           proxmox.delete<null>(
@@ -737,10 +1085,17 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string, vmid: number) =>
-          proxmox.get<FirewallOptions>(`nodes/${node}/qemu/${vmid}/firewall/options`),
-        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/qemu/${vmid}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string, vmid: number): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(
+              `nodes/${node}/qemu/${vmid}/firewall/options`,
+            ),
+          ),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/qemu/${vmid}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
       aliases: {
         list: (node: string, vmid: number) =>
@@ -755,14 +1110,14 @@ export const api = {
     },
     ct: {
       rules: {
-        list: (node: string, vmid: number) =>
-          proxmox.get<FirewallRule[]>(`nodes/${node}/lxc/${vmid}/firewall/rules`),
-        create: (node: string, vmid: number, params: FirewallRuleParams) =>
-          proxmox.post<null>(`nodes/${node}/lxc/${vmid}/firewall/rules`, params as Record<string, unknown>),
-        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+        list: async (node: string, vmid: number): Promise<FirewallRulePublic[]> =>
+          (await proxmox.get<FirewallRule[]>(`nodes/${node}/lxc/${vmid}/firewall/rules`)).map(decodeFirewallRule),
+        create: (node: string, vmid: number, params: FirewallRuleParamsPublic) =>
+          proxmox.post<null>(`nodes/${node}/lxc/${vmid}/firewall/rules`, encodeFirewallRuleParams(params)),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParamsPublic) =>
           proxmox.put<null>(
             `nodes/${node}/lxc/${vmid}/firewall/rules/${pos}`,
-            params as Record<string, unknown>,
+            encodeFirewallRuleParams(params),
           ),
         delete: (node: string, vmid: number, pos: number, digest?: string) =>
           proxmox.delete<null>(
@@ -775,22 +1130,38 @@ export const api = {
           ),
       },
       options: {
-        get: (node: string, vmid: number) =>
-          proxmox.get<FirewallOptions>(`nodes/${node}/lxc/${vmid}/firewall/options`),
-        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
-          proxmox.put<null>(`nodes/${node}/lxc/${vmid}/firewall/options`, opts as Record<string, unknown>),
+        get: async (node: string, vmid: number): Promise<FirewallOptionsPublic> =>
+          decodeFirewallOptions(
+            await proxmox.get<FirewallOptions>(
+              `nodes/${node}/lxc/${vmid}/firewall/options`,
+            ),
+          ),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptionsPublic>) =>
+          proxmox.put<null>(
+            `nodes/${node}/lxc/${vmid}/firewall/options`,
+            encodeFirewallOptions(opts),
+          ),
       },
     },
   },
 
   access: {
     users: {
-      list: () => proxmox.get<PVEUser[]>('access/users'),
-      get: (userid: string) => proxmox.get<PVEUser>(`access/users/${encodeURIComponent(userid)}`),
-      create: (params: UserParams) =>
-        proxmox.post<null>('access/users', params as Record<string, unknown>),
-      update: (userid: string, params: Partial<UserParams>) =>
-        proxmox.put<null>(`access/users/${encodeURIComponent(userid)}`, params as Record<string, unknown>),
+      list: async (): Promise<PVEUserPublic[]> => {
+        const rows = await proxmox.get<PVEUser[]>('access/users');
+        return rows.map(decodeUser);
+      },
+      get: async (userid: string): Promise<PVEUserPublic> =>
+        decodeUser(
+          await proxmox.get<PVEUser>(`access/users/${encodeURIComponent(userid)}`),
+        ),
+      create: (params: UserParamsPublic) =>
+        proxmox.post<null>('access/users', encodeUserParams(params)),
+      update: (userid: string, params: Partial<UserParamsPublic>) =>
+        proxmox.put<null>(
+          `access/users/${encodeURIComponent(userid)}`,
+          encodeUserParams(params),
+        ),
       delete: (userid: string) =>
         proxmox.delete<null>(`access/users/${encodeURIComponent(userid)}`),
       resetPassword: (userid: string, password: string) =>
@@ -818,8 +1189,14 @@ export const api = {
         proxmox.delete<null>(`access/groups/${encodeURIComponent(groupid)}`),
     },
     roles: {
-      list: () => proxmox.get<PVERole[]>('access/roles'),
-      get: (roleid: string) => proxmox.get<PVERole>(`access/roles/${encodeURIComponent(roleid)}`),
+      list: async (): Promise<PVERolePublic[]> => {
+        const rows = await proxmox.get<PVERole[]>('access/roles');
+        return rows.map(decodeRole);
+      },
+      get: async (roleid: string): Promise<PVERolePublic> =>
+        decodeRole(
+          await proxmox.get<PVERole>(`access/roles/${encodeURIComponent(roleid)}`),
+        ),
       create: (params: RoleParams) =>
         proxmox.post<null>('access/roles', params as Record<string, unknown>),
       update: (roleid: string, params: Partial<RoleParams>) =>
@@ -828,27 +1205,38 @@ export const api = {
         proxmox.delete<null>(`access/roles/${encodeURIComponent(roleid)}`),
     },
     realms: {
-      list: () => proxmox.get<PVERealm[]>('access/domains'),
-      get: (realm: string) => proxmox.get<PVERealm>(`access/domains/${encodeURIComponent(realm)}`),
-      create: (params: RealmParams) =>
-        proxmox.post<null>('access/domains', params as Record<string, unknown>),
-      update: (realm: string, params: Partial<RealmParams>) =>
-        proxmox.put<null>(`access/domains/${encodeURIComponent(realm)}`, params as Record<string, unknown>),
+      list: async (): Promise<PVERealmPublic[]> => {
+        const rows = await proxmox.get<PVERealm[]>('access/domains');
+        return rows.map(decodeRealm);
+      },
+      get: async (realm: string): Promise<PVERealmPublic> =>
+        decodeRealm(
+          await proxmox.get<PVERealm>(`access/domains/${encodeURIComponent(realm)}`),
+        ),
+      create: (params: RealmParamsPublic) =>
+        proxmox.post<null>('access/domains', encodeRealmParams(params)),
+      update: (realm: string, params: Partial<RealmParamsPublic>) =>
+        proxmox.put<null>(
+          `access/domains/${encodeURIComponent(realm)}`,
+          encodeRealmParams(params),
+        ),
       delete: (realm: string) =>
         proxmox.delete<null>(`access/domains/${encodeURIComponent(realm)}`),
       sync: (realm: string) =>
         proxmox.post<string>(`access/domains/${encodeURIComponent(realm)}/sync`),
     },
     acl: {
-      list: () => proxmox.get<PVEACL[]>('access/acl'),
-      update: (params: ACLParams) =>
-        proxmox.put<null>('access/acl', params as Record<string, unknown>),
+      list: async (): Promise<PVEACLPublic[]> =>
+        decodeAcl(await proxmox.get<PVEACL[]>('access/acl')),
+      update: (params: ACLParamsPublic) =>
+        proxmox.put<null>('access/acl', encodeAclParams(params)),
     },
   },
 
   ha: {
     status: {
-      current: () => proxmox.get<HAStatus[]>('cluster/ha/status/current'),
+      current: async (): Promise<HAStatusPublic[]> =>
+        decodeHAStatus(await proxmox.get<HAStatus[]>('cluster/ha/status/current')),
       managerStatus: () => proxmox.get<Record<string, unknown>>('cluster/ha/status/manager_status'),
     },
     resources: {
@@ -866,12 +1254,21 @@ export const api = {
         proxmox.post<null>(`cluster/ha/resources/${encodeURIComponent(sid)}/relocate`, { node: target }),
     },
     groups: {
-      list: () => proxmox.get<HAGroup[]>('cluster/ha/groups'),
-      get: (group: string) => proxmox.get<HAGroup>(`cluster/ha/groups/${encodeURIComponent(group)}`),
-      create: (params: HAGroupParams) =>
-        proxmox.post<null>('cluster/ha/groups', params as Record<string, unknown>),
-      update: (group: string, params: Partial<HAGroupParams>) =>
-        proxmox.put<null>(`cluster/ha/groups/${encodeURIComponent(group)}`, params as Record<string, unknown>),
+      list: async (): Promise<HAGroupPublic[]> => {
+        const rows = await proxmox.get<HAGroup[]>('cluster/ha/groups');
+        return rows.map(decodeHAGroup);
+      },
+      get: async (group: string): Promise<HAGroupPublic> =>
+        decodeHAGroup(
+          await proxmox.get<HAGroup>(`cluster/ha/groups/${encodeURIComponent(group)}`),
+        ),
+      create: (params: HAGroupParamsPublic) =>
+        proxmox.post<null>('cluster/ha/groups', encodeHAGroupParams(params)),
+      update: (group: string, params: Partial<HAGroupParamsPublic>) =>
+        proxmox.put<null>(
+          `cluster/ha/groups/${encodeURIComponent(group)}`,
+          encodeHAGroupParams(params),
+        ),
       delete: (group: string) =>
         proxmox.delete<null>(`cluster/ha/groups/${encodeURIComponent(group)}`),
     },

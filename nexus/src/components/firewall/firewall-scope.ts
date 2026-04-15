@@ -1,5 +1,9 @@
 import { api } from '@/lib/proxmox-client';
-import type { FirewallRule, FirewallRuleParams, FirewallOptions } from '@/types/proxmox';
+import type {
+  FirewallRulePublic,
+  FirewallRuleParamsPublic,
+  FirewallOptionsPublic,
+} from '@/types/proxmox';
 
 export type FirewallScope =
   | { kind: 'cluster' }
@@ -25,7 +29,7 @@ export function scopeKey(s: FirewallScope): string[] {
   }
 }
 
-export function listRules(s: FirewallScope): Promise<FirewallRule[]> {
+export function listRules(s: FirewallScope): Promise<FirewallRulePublic[]> {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.list();
     case 'node': return api.firewall.node.rules.list(s.node);
@@ -34,7 +38,7 @@ export function listRules(s: FirewallScope): Promise<FirewallRule[]> {
   }
 }
 
-export function createRule(s: FirewallScope, params: FirewallRuleParams) {
+export function createRule(s: FirewallScope, params: FirewallRuleParamsPublic) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.create(params);
     case 'node': return api.firewall.node.rules.create(s.node, params);
@@ -43,7 +47,7 @@ export function createRule(s: FirewallScope, params: FirewallRuleParams) {
   }
 }
 
-export function updateRule(s: FirewallScope, pos: number, params: FirewallRuleParams) {
+export function updateRule(s: FirewallScope, pos: number, params: FirewallRuleParamsPublic) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.rules.update(pos, params);
     case 'node': return api.firewall.node.rules.update(s.node, pos, params);
@@ -70,7 +74,7 @@ export function moveRule(s: FirewallScope, pos: number, moveto: number, digest?:
   }
 }
 
-export function getOptions(s: FirewallScope): Promise<FirewallOptions> {
+export function getOptions(s: FirewallScope): Promise<FirewallOptionsPublic> {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.options.get();
     case 'node': return api.firewall.node.options.get(s.node);
@@ -79,7 +83,7 @@ export function getOptions(s: FirewallScope): Promise<FirewallOptions> {
   }
 }
 
-export function updateOptions(s: FirewallScope, opts: Partial<FirewallOptions>) {
+export function updateOptions(s: FirewallScope, opts: Partial<FirewallOptionsPublic>) {
   switch (s.kind) {
     case 'cluster': return api.firewall.cluster.options.update(opts);
     case 'node': return api.firewall.node.options.update(s.node, opts);

@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "node --experimental-strip-types server.ts",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.99.0",

@@ -12,10 +12,10 @@ import { api } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes } from '@/lib/utils';
 import { Loader2, HardDrive } from 'lucide-react';
-import type { DiskListEntry, SmartHealth } from '@/types/proxmox';
+import type { DiskListEntryPublic, SmartHealth } from '@/types/proxmox';
 import { SmartDetails } from './smart-details';
 
-interface DiskRow extends DiskListEntry {
+interface DiskRow extends DiskListEntryPublic {
   node: string;
 }
 
@@ -25,7 +25,7 @@ const HEALTH_VARIANT: Record<SmartHealth, 'success' | 'danger' | 'warning'> = {
   UNKNOWN: 'warning',
 };
 
-function diskTypeBadge(type: DiskListEntry['type']): 'info' | 'outline' {
+function diskTypeBadge(type: DiskListEntryPublic['type']): 'info' | 'outline' {
   if (type === 'nvme' || type === 'ssd') return 'info';
   return 'outline';
 }

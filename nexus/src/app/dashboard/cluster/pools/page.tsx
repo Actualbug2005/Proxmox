@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/proxmox-client';
+import { api, toPveBool } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -220,7 +220,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
   const removeM = useMutation({
     mutationFn: (m: { id: string; type: string; vmid?: number; storage?: string }) =>
       api.pools.update(pool.poolid, {
-        delete: 1,
+        delete: toPveBool(true),
         ...(m.type === 'storage' ? { storage: m.storage ?? m.id } : { vms: String(m.vmid ?? m.id) }),
       }),
     onSuccess: () => {

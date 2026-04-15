@@ -8,19 +8,19 @@ import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/proxmox-client';
 import { Plus, Pencil, Trash2, ShieldCheck, Loader2, Save, X } from 'lucide-react';
-import type { PVERole, RoleParams } from '@/types/proxmox';
+import type { PVERolePublic, RoleParams } from '@/types/proxmox';
 
 export function RolesTab() {
   const qc = useQueryClient();
   const toast = useToast();
   const { data: roles, isLoading } = useQuery({ queryKey: ['access', 'roles'], queryFn: () => api.access.roles.list() });
 
-  const [edit, setEdit] = useState<PVERole | null>(null);
+  const [edit, setEdit] = useState<PVERolePublic | null>(null);
   const [showNew, setShowNew] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PVERole | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PVERolePublic | null>(null);
 
   const deleteM = useMutation({
-    mutationFn: (r: PVERole) => api.access.roles.delete(r.roleid),
+    mutationFn: (r: PVERolePublic) => api.access.roles.delete(r.roleid),
     onSuccess: () => { setDeleteTarget(null); qc.invalidateQueries({ queryKey: ['access', 'roles'] }); toast.success('Role deleted'); },
     onError: (err) => toast.error('Delete failed', err instanceof Error ? err.message : String(err)),
   });
@@ -60,13 +60,13 @@ export function RolesTab() {
                   <tr key={r.roleid} className="border-b border-gray-800/40 hover:bg-gray-800/20">
                     <td className="px-4 py-2 font-mono text-gray-200">{r.roleid}</td>
                     <td className="px-4 py-2">
-                      {r.special === 1 ? <Badge variant="outline" className="text-xs">built-in</Badge> : <Badge variant="success" className="text-xs">custom</Badge>}
+                      {(r.special ?? false) ? <Badge variant="outline" className="text-xs">built-in</Badge> : <Badge variant="success" className="text-xs">custom</Badge>}
                     </td>
                     <td className="px-4 py-2 text-xs text-gray-400 font-mono break-words max-w-2xl">{r.privs ?? '—'}</td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex gap-0.5 justify-end">
-                        <button onClick={() => setEdit(r)} disabled={r.special === 1} className="p-1 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={r.special === 1 ? 'Built-in — read only' : 'Edit'}><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget(r)} disabled={r.special === 1} className="p-1 text-red-400 hover:text-red-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={r.special === 1 ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
+                        <button onClick={() => setEdit(r)} disabled={(r.special ?? false)} className="p-1 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Edit'}><Pencil className="w-3 h-3" /></button>
+                        <button onClick={() => setDeleteTarget(r)} disabled={(r.special ?? false)} className="p-1 text-red-400 hover:text-red-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </td>
                   </tr>
@@ -80,7 +80,7 @@ export function RolesTab() {
   );
 }
 
-function RoleEditor({ initial, onClose, onSaved }: { initial: PVERole | null; onClose: () => void; onSaved: () => void }) {
+function RoleEditor({ initial, onClose, onSaved }: { initial: PVERolePublic | null; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const isEdit = !!initial;
   const [roleid, setRoleid] = useState(initial?.roleid ?? '');

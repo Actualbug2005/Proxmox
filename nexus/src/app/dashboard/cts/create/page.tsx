@@ -314,10 +314,10 @@ export default function CreateCTPage() {
         swap: state.swap,
         rootfs,
         net0,
-        unprivileged: state.unprivileged ? 1 : 0,
+        unprivileged: state.unprivileged ?? false,
         ...(state.dns ? { nameserver: state.dns } : {}),
         ...(state.pool ? { pool: state.pool } : {}),
-        onboot: 0,
+        onboot: false,
       });
     },
     onSuccess: () => router.push('/dashboard/cts'),

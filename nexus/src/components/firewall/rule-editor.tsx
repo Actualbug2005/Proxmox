@@ -6,11 +6,11 @@ import { useToast } from '@/components/ui/toast';
 import { Loader2, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createRule, updateRule, type FirewallScope } from './firewall-scope';
-import type { FirewallRule, FirewallRuleParams, FirewallRuleType } from '@/types/proxmox';
+import type { FirewallRulePublic, FirewallRuleParamsPublic, FirewallRuleType } from '@/types/proxmox';
 
 interface RuleEditorProps {
   scope: FirewallScope;
-  initial?: FirewallRule | null;
+  initial?: FirewallRulePublic | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -23,7 +23,7 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
 
   const [type, setType] = useState<FirewallRuleType>(initial?.type ?? 'in');
   const [action, setAction] = useState(initial?.action ?? 'ACCEPT');
-  const [enable, setEnable] = useState(initial?.enable !== 0);
+  const [enable, setEnable] = useState(initial?.enable !== false);
   const [macro, setMacro] = useState(initial?.macro ?? '');
   const [source, setSource] = useState(initial?.source ?? '');
   const [dest, setDest] = useState(initial?.dest ?? '');
@@ -35,7 +35,7 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
   const [comment, setComment] = useState(initial?.comment ?? '');
 
   const saveM = useMutation({
-    mutationFn: (params: FirewallRuleParams) =>
+    mutationFn: (params: FirewallRuleParamsPublic) =>
       isEdit && initial ? updateRule(scope, initial.pos, params) : createRule(scope, params),
     onSuccess: () => {
       toast.success(isEdit ? 'Rule updated' : 'Rule created');
@@ -45,9 +45,9 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
   });
 
   const submit = () => {
-    const params: FirewallRuleParams = {
+    const params: FirewallRuleParamsPublic = {
       type, action,
-      enable: enable ? 1 : 0,
+      enable,
       ...(macro ? { macro } : {}),
       ...(source ? { source } : {}),
       ...(dest ? { dest } : {}),

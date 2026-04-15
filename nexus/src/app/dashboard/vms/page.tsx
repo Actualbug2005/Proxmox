@@ -13,7 +13,7 @@ import {
   Play, Square, RotateCcw, PowerOff, Plus, Loader2,
   Monitor, Circle, ChevronDown, Search,
 } from 'lucide-react';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 type SortKey = 'vmid' | 'name' | 'status' | 'node' | 'cpu' | 'mem';
 
@@ -26,7 +26,7 @@ function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'out
   }
 }
 
-function VMActions({ vm, onDone }: { vm: ClusterResource; onDone: () => void }) {
+function VMActions({ vm, onDone }: { vm: ClusterResourcePublic; onDone: () => void }) {
   const qc = useQueryClient();
   const node = vm.node ?? '';
   const vmid = vm.vmid ?? 0;
@@ -224,7 +224,7 @@ export default function VMsPage() {
                         <span className="text-sm font-medium text-gray-200 group-hover:text-white transition">
                           {vm.name ?? `VM ${vm.vmid}`}
                         </span>
-                        {(vm as ClusterResource & { template?: number }).template === 1 && (
+                        {(vm.template ?? false) && (
                           <Badge variant="info">template</Badge>
                         )}
                       </div>

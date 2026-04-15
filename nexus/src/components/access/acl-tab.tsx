@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/proxmox-client';
 import { Plus, Trash2, Key, Loader2, Save, X } from 'lucide-react';
-import type { PVEACL, PVEUser, PVEGroup, PVERole } from '@/types/proxmox';
+import type { PVEACLPublic, PVEUserPublic, PVEGroup, PVERolePublic } from '@/types/proxmox';
 
 export function ACLTab() {
   const qc = useQueryClient();
@@ -19,14 +19,14 @@ export function ACLTab() {
   const { data: roles } = useQuery({ queryKey: ['access', 'roles'], queryFn: () => api.access.roles.list() });
 
   const [showNew, setShowNew] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PVEACL | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PVEACLPublic | null>(null);
 
   const deleteM = useMutation({
-    mutationFn: (a: PVEACL) =>
+    mutationFn: (a: PVEACLPublic) =>
       api.access.acl.update({
         path: a.path,
         roles: a.roleid,
-        delete: 1,
+        delete: true,
         ...(a.type === 'user' ? { users: a.ugid } : a.type === 'group' ? { groups: a.ugid } : { tokens: a.ugid }),
       }),
     onSuccess: () => { setDeleteTarget(null); qc.invalidateQueries({ queryKey: ['access', 'acl'] }); toast.success('ACL entry removed'); },
@@ -80,7 +80,7 @@ export function ACLTab() {
                       <span className="font-mono">{a.ugid}</span>
                     </td>
                     <td className="px-4 py-2 font-mono text-xs text-gray-400">{a.roleid}</td>
-                    <td className="px-4 py-2 text-xs text-gray-500">{a.propagate === 1 ? 'yes' : 'no'}</td>
+                    <td className="px-4 py-2 text-xs text-gray-500">{(a.propagate ?? false) ? 'yes' : 'no'}</td>
                     <td className="px-4 py-2 text-right">
                       <button onClick={() => setDeleteTarget(a)} className="p-1 text-red-400 hover:text-red-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition"><Trash2 className="w-3 h-3" /></button>
                     </td>
@@ -96,7 +96,7 @@ export function ACLTab() {
 }
 
 function ACLEditor({ users, groups, roles, onClose, onSaved }: {
-  users: PVEUser[]; groups: PVEGroup[]; roles: PVERole[];
+  users: PVEUserPublic[]; groups: PVEGroup[]; roles: PVERolePublic[];
   onClose: () => void; onSaved: () => void;
 }) {
   const toast = useToast();
@@ -112,7 +112,7 @@ function ACLEditor({ users, groups, roles, onClose, onSaved }: {
       api.access.acl.update({
         path,
         roles: roleid,
-        propagate: propagate ? 1 : 0,
+        propagate,
         ...(who === 'user' ? { users: userid } : { groups: groupid }),
       }),
     onSuccess: () => { toast.success('ACL entry created'); onSaved(); },

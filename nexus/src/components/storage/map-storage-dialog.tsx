@@ -26,10 +26,10 @@ import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import type {
-  PVEStorageConfig,
+  PVEStorageConfigPublic,
   StorageBackendType,
-  StorageCreatePayload,
-  StorageUpdatePayload,
+  StorageCreatePayloadPublic,
+  StorageUpdatePayloadPublic,
 } from '@/types/proxmox';
 
 interface Props {
@@ -39,7 +39,7 @@ interface Props {
   nodeNames?: string[];
   /** When supplied the dialog opens in edit mode — topology fields get disabled
    *  and the submit button PUTs to /storage/{id} instead of POSTing to /storage. */
-  existingStorage?: PVEStorageConfig;
+  existingStorage?: PVEStorageConfigPublic;
 }
 
 /** Storage ID constraint — PVE actually accepts `[a-z][a-z0-9\-_.]*[a-z0-9]`
@@ -114,9 +114,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
   const [mountOptions, setMountOptions] = useState(existingStorage?.options ?? '');
   const [smbVersion, setSmbVersion] = useState(existingStorage?.smbversion ?? 'default');
   // `mkdir` defaults to true (PVE's own default when the param is omitted).
-  const [mkdir, setMkdir] = useState<boolean>(
-    existingStorage?.mkdir === undefined ? true : existingStorage.mkdir === 1,
-  );
+  const [mkdir, setMkdir] = useState<boolean>(existingStorage?.mkdir ?? true);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const validation = useMemo(() => {
@@ -170,12 +168,12 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
   /** Build the PVE payload, honouring the "omit nodes when all/none selected"
    *  rule and coercing our React booleans to PVE's 0|1 integer form. Shared
    *  between create and update so the diff is kept to a single branch. */
-  function buildPayload(): StorageCreatePayload {
+  function buildPayload(): StorageCreatePayloadPublic {
     const contentStr = CONTENT_OPTIONS.filter((o) => content.has(o.id))
       .map((o) => o.id)
       .join(',');
 
-    const payload: StorageCreatePayload = {
+    const payload: StorageCreatePayloadPublic = {
       storage: storageId,
       type,
       content: contentStr,
@@ -203,7 +201,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
       if (smbVersion !== 'default') payload.smbversion = smbVersion;
     } else if (type === 'dir') {
       payload.path = path.trim();
-      payload.mkdir = mkdir ? 1 : 0;
+      payload.mkdir = mkdir;
     }
 
     return payload;
@@ -217,7 +215,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
         const { storage: _s, type: _t, ...patch } = payload;
         void _s;
         void _t;
-        return api.storage.update(existingStorage.storage, patch as StorageUpdatePayload);
+        return api.storage.update(existingStorage.storage, patch as StorageUpdatePayloadPublic);
       }
       return api.storage.create(payload);
     },

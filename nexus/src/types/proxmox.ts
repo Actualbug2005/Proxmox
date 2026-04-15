@@ -1,3 +1,37 @@
+// ─── Proxmox Wire Primitives ──────────────────────────────────────────────────
+//
+// Proxmox's HTTP API uses integer 0/1 on the wire for boolean flags (ExtJS
+// heritage). `PveBool` is the wire representation; consumers should use native
+// `boolean` via the codec in `lib/proxmox-client.ts`.
+//
+// `PveBool` is NOMINALLY BRANDED — raw `0`/`1` literals are NOT assignable
+// to it. The only producers are `toPveBool` and `encodeBoolFields` in the
+// codec, both of which `as PveBool` cast internally. This guarantees that
+// every wire value flowing out of the UI layer has passed through the
+// codec at least once.
+//
+// `WireBool<T, K>` and `UnwireBool<T, K>` are mapped type helpers that flip
+// specified keys of an interface between the two representations, used during
+// the phased migration away from wire-shaped types in the UI layer.
+
+declare const __brand: unique symbol;
+
+/** Branded integer-boolean for the Proxmox HTTP wire protocol. Cannot be
+ *  assigned raw numbers or booleans; values must be produced by the codec
+ *  (`toPveBool`, `encodeBoolFields`) which `as PveBool` casts internally. */
+export type PveBool = (0 | 1) & { readonly [__brand]: 'PveBool' };
+
+// Homomorphic mapped types: iterating `keyof T` preserves optional markers,
+// readonly-ness, and index signatures. Only keys in `K` are retyped.
+
+export type WireBool<T, K extends keyof T> = {
+  [P in keyof T]: P extends K ? PveBool | undefined : T[P];
+};
+
+export type UnwireBool<T, K extends keyof T> = {
+  [P in keyof T]: P extends K ? boolean | undefined : T[P];
+};
+
 // ─── Proxmox API Response Types ───────────────────────────────────────────────
 
 export interface PVEApiResponse<T> {
@@ -41,17 +75,21 @@ export interface ClusterResource {
   uptime?: number;
   netin?: number;
   netout?: number;
-  template?: number;
+  template?: PveBool;
   // Node fields
   maxcpus?: number;
   level?: string;
   // Storage fields
   storage?: string;
-  shared?: number;
+  shared?: PveBool;
   content?: string;
   plugintype?: string;
   pool?: string;
 }
+
+/** Boolean-facing shape of ClusterResource — `template` and `shared`
+ *  unwired from PveBool at the HTTP boundary. */
+export type ClusterResourcePublic = UnwireBool<ClusterResource, 'template' | 'shared'>;
 
 // ─── Nodes ────────────────────────────────────────────────────────────────────
 
@@ -146,7 +184,9 @@ export interface VMConfig {
   boot?: string;
   ostype?: string;
   agent?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   tags?: string;
   description?: string;
 }
@@ -180,14 +220,18 @@ export interface PVEStorage {
   storage: string;
   type: string;
   content?: string;
-  shared?: number;
-  active?: number;
-  enabled?: number;
+  shared?: PveBool;
+  active?: PveBool;
+  enabled?: PveBool;
   total?: number;
   used?: number;
   avail?: number;
   used_fraction?: number;
 }
+
+/** Boolean-facing shape of PVEStorage (list row) — `shared`, `active`,
+ *  `enabled` unwired from PveBool at the HTTP boundary. */
+export type PVEStoragePublic = UnwireBool<PVEStorage, 'shared' | 'active' | 'enabled'>;
 
 /** Subset of PVE storage backends exposed by Nexus's Map Storage flow. */
 export type StorageBackendType = 'nfs' | 'cifs' | 'dir';
@@ -217,7 +261,7 @@ export interface StorageCreatePayload {
   smbversion?: string;
   // Directory
   path?: string;
-  mkdir?: 0 | 1;
+  mkdir?: PveBool;
 }
 
 /** Body for `PUT /api2/json/storage/{id}`. PVE rejects attempts to change
@@ -230,6 +274,18 @@ export type StorageUpdatePayload = Partial<Omit<StorageCreatePayload, 'storage' 
 export interface PVEStorageConfig extends StorageCreatePayload {
   digest?: string;
 }
+
+/** Boolean-facing shape of StorageCreatePayload. `mkdir` is unwired from
+ *  PveBool; the client encodes it at the HTTP boundary. */
+export type StorageCreatePayloadPublic = UnwireBool<StorageCreatePayload, 'mkdir'>;
+
+/** Boolean-facing shape of StorageUpdatePayload (partial of the Public body). */
+export type StorageUpdatePayloadPublic = Partial<
+  Omit<StorageCreatePayloadPublic, 'storage' | 'type'>
+>;
+
+/** Boolean-facing shape of PVEStorageConfig (read path). */
+export type PVEStorageConfigPublic = UnwireBool<PVEStorageConfig, 'mkdir'>;
 
 // ─── Physical Disks (S.M.A.R.T.) ─────────────────────────────────────────────
 
@@ -261,11 +317,15 @@ export interface DiskListEntry {
    *  Empty string when the disk is unused/free. */
   used?: string;
   /** 1 if the disk has a GPT partition table. */
-  gpt?: 0 | 1;
+  gpt?: PveBool;
   /** Ceph OSD id; -1 (or omitted) when not part of a Ceph cluster. */
   osdid?: number;
   parttype?: string;
 }
+
+/** Boolean-facing shape of DiskListEntry. `gpt` is unwired from PveBool at
+ *  the HTTP boundary. */
+export type DiskListEntryPublic = UnwireBool<DiskListEntry, 'gpt'>;
 
 /** One row from `smartctl -A` (ATA) or the NVMe SMART/Health Information log.
  *  ATA reports populate id/value/worst/threshold/raw; NVMe reports tend to
@@ -390,7 +450,9 @@ export interface CTConfig {
   arch?: string;
   description?: string;
   tags?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   startup?: string;
   unprivileged?: number;
   features?: string;
@@ -414,7 +476,9 @@ export interface VMConfigFull extends VMConfig {
   machine?: string;
   ostype?: string;
   agent?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   description?: string;
   tags?: string;
   boot?: string;
@@ -493,7 +557,7 @@ export interface CreateCTParams {
   swap: number;
   rootfs: string;
   net0: string;
-  unprivileged: number;
+  unprivileged: PveBool;
   nameserver?: string;
   onboot?: number;
   pool?: string;
@@ -505,7 +569,7 @@ export interface CloneVMParams {
   newid: number;
   name?: string;
   target?: string;
-  full?: number;
+  full?: PveBool;
   pool?: string;
   [key: string]: unknown;
 }
@@ -519,15 +583,15 @@ export interface CloneCTParams {
 
 export interface MigrateVMParams {
   target: string;
-  online?: number;
-  with_local_disks?: number;
+  online?: PveBool;
+  with_local_disks?: PveBool;
   [key: string]: unknown;
 }
 
 export interface MigrateCTParams {
   target: string;
-  restart?: number;
-  online?: number;
+  restart?: PveBool;
+  online?: PveBool;
   [key: string]: unknown;
 }
 
@@ -538,7 +602,9 @@ export interface UpdateVMConfigParams {
   balloon?: number;
   name?: string;
   description?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   agent?: string;
   tags?: string;
   boot?: string;
@@ -554,12 +620,30 @@ export interface UpdateCTConfigParams {
   memory?: number;
   swap?: number;
   description?: string;
-  onboot?: number;
+  onboot?: PveBool;
+  protection?: PveBool;
+  template?: PveBool;
   tags?: string;
   nameserver?: string;
   searchdomain?: string;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shapes for the VM/CT boundary. `onboot`, `protection`,
+ *  `template` on configs; `full` on CloneVM; `online` on both Migrates and
+ *  `with_local_disks` on MigrateVM; `restart` on MigrateCT.
+ *
+ *  Note on semantics: unlike `PVEUser.enable` (which defaults to "enabled"
+ *  when absent), these fields all default to *false* when absent in PVE's
+ *  config schema. Read sites should use `?? false`, not `!== false`. */
+export type VMConfigPublic = UnwireBool<VMConfig, 'onboot' | 'protection' | 'template'>;
+export type VMConfigFullPublic = UnwireBool<VMConfigFull, 'onboot' | 'protection' | 'template'>;
+export type CTConfigPublic = UnwireBool<CTConfig, 'onboot' | 'protection' | 'template'>;
+export type UpdateVMConfigParamsPublic = UnwireBool<UpdateVMConfigParams, 'onboot' | 'protection' | 'template'>;
+export type UpdateCTConfigParamsPublic = UnwireBool<UpdateCTConfigParams, 'onboot' | 'protection' | 'template'>;
+export type CloneVMParamsPublic = UnwireBool<CloneVMParams, 'full'>;
+export type MigrateVMParamsPublic = UnwireBool<MigrateVMParams, 'online' | 'with_local_disks'>;
+export type MigrateCTParamsPublic = UnwireBool<MigrateCTParams, 'online' | 'restart'>;
 
 // ─── Tier 4 — System ─────────────────────────────────────────────────────────
 
@@ -603,8 +687,8 @@ export type AptPackage = AptUpdatablePackage;
 export interface NetworkIface {
   iface: string;
   type: string;
-  active?: number;
-  autostart?: number;
+  active?: PveBool;
+  autostart?: PveBool;
   address?: string;
   netmask?: string;
   gateway?: string;
@@ -624,7 +708,7 @@ export interface NetworkIfaceParams {
   address?: string;
   netmask?: string;
   gateway?: string;
-  autostart?: number;
+  autostart?: PveBool;
   comments?: string;
   bridge_ports?: string;
   bridge_stp?: string;
@@ -671,14 +755,14 @@ export interface PVESnapshot {
   description?: string;
   snaptime?: number;
   parent?: string;
-  vmstate?: 0 | 1;
-  running?: 0 | 1;
+  vmstate?: PveBool;
+  running?: PveBool;
 }
 
 export interface CreateSnapshotParams {
   snapname: string;
   description?: string;
-  vmstate?: 0 | 1;
+  vmstate?: PveBool;
   [key: string]: unknown;
 }
 
@@ -690,8 +774,8 @@ export type BackupCompress = '0' | '1' | 'gzip' | 'lzo' | 'zstd';
 export interface BackupJob {
   id: string;
   schedule: string;
-  enabled?: 0 | 1;
-  all?: 0 | 1;
+  enabled?: PveBool;
+  all?: PveBool;
   vmid?: string;
   exclude?: string;
   pool?: string;
@@ -706,8 +790,8 @@ export interface BackupJob {
   starttime?: string;
   dow?: string;
   'prune-backups'?: string;
-  remove?: 0 | 1;
-  protected?: 0 | 1;
+  remove?: PveBool;
+  protected?: PveBool;
 }
 
 export interface BackupJobParams extends Partial<Omit<BackupJob, 'id'>> {
@@ -722,7 +806,7 @@ export interface BackupFile {
   vmid?: number;
   subtype?: 'qemu' | 'lxc';
   notes?: string;
-  protected?: 0 | 1;
+  protected?: PveBool;
   verification?: {
     state: 'ok' | 'failed' | 'none';
     upid?: string;
@@ -732,14 +816,14 @@ export interface BackupFile {
 
 export interface VzdumpParams {
   vmid?: number | string;
-  all?: 0 | 1;
+  all?: PveBool;
   node?: string;
   storage: string;
   mode?: BackupMode;
   compress?: BackupCompress;
   notes?: string;
-  protected?: 0 | 1;
-  remove?: 0 | 1;
+  protected?: PveBool;
+  remove?: PveBool;
   'notes-template'?: string;
   [key: string]: unknown;
 }
@@ -748,12 +832,16 @@ export interface RestoreParams {
   vmid: number;
   archive: string;
   storage?: string;
-  force?: 0 | 1;
-  unique?: 0 | 1;
+  force?: PveBool;
+  unique?: PveBool;
   pool?: string;
-  start?: 0 | 1;
+  start?: PveBool;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shape of RestoreParams. `force` / `unique` / `start` are
+ *  unwired from PveBool at the HTTP boundary. */
+export type RestoreParamsPublic = UnwireBool<RestoreParams, 'force' | 'unique' | 'start'>;
 
 // ─── Tier 2 — Storage content / upload ───────────────────────────────────────
 
@@ -786,7 +874,7 @@ export interface FirewallRule {
   pos: number;
   type: FirewallRuleType;
   action: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   macro?: string;
   source?: string;
   dest?: string;
@@ -822,7 +910,7 @@ export interface FirewallIPSet {
 export interface FirewallIPSetEntry {
   cidr: string;
   comment?: string;
-  nomatch?: 0 | 1;
+  nomatch?: PveBool;
   digest?: string;
 }
 
@@ -833,30 +921,46 @@ export interface FirewallGroup {
 }
 
 export interface FirewallOptions {
-  enable?: 0 | 1;
+  enable?: PveBool;
   log_level_in?: string;
   log_level_out?: string;
   policy_in?: 'ACCEPT' | 'DROP' | 'REJECT';
   policy_out?: 'ACCEPT' | 'DROP' | 'REJECT';
-  ebtables?: 0 | 1;
-  nosmurfs?: 0 | 1;
-  tcpflags?: 0 | 1;
-  macfilter?: 0 | 1;
+  ebtables?: PveBool;
+  nosmurfs?: PveBool;
+  tcpflags?: PveBool;
+  macfilter?: PveBool;
   // VM-specific
-  dhcp?: 0 | 1;
-  ipfilter?: 0 | 1;
-  ndp?: 0 | 1;
-  radv?: 0 | 1;
+  dhcp?: PveBool;
+  ipfilter?: PveBool;
+  ndp?: PveBool;
+  radv?: PveBool;
   digest?: string;
   [key: string]: unknown;
 }
+
+/** Public-facing shape of FirewallOptions with boolean flags unwired from
+ *  PveBool. The API client's firewall methods translate to/from the wire
+ *  shape at the HTTP boundary. */
+export type FirewallOptionsPublic = UnwireBool<
+  FirewallOptions,
+  | 'enable'
+  | 'ebtables'
+  | 'nosmurfs'
+  | 'tcpflags'
+  | 'macfilter'
+  | 'dhcp'
+  | 'ipfilter'
+  | 'ndp'
+  | 'radv'
+>;
 
 // ─── Tier 3 — Access control ─────────────────────────────────────────────────
 
 export interface PVEUser {
   userid: string;
   email?: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   expire?: number;
   firstname?: string;
   lastname?: string;
@@ -871,7 +975,7 @@ export interface UserParams {
   userid: string;
   password?: string;
   email?: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   expire?: number;
   firstname?: string;
   lastname?: string;
@@ -880,6 +984,13 @@ export interface UserParams {
   keys?: string;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shapes of the user types. `enable` is unwired at the
+ *  HTTP boundary. Note PVE's convention: `enable === undefined` means
+ *  "enabled" (field wasn't set, defaults to enabled). Consumers must
+ *  distinguish that from an explicit `false`. */
+export type PVEUserPublic = UnwireBool<PVEUser, 'enable'>;
+export type UserParamsPublic = UnwireBool<UserParams, 'enable'>;
 
 export interface PVEGroup {
   groupid: string;
@@ -896,7 +1007,7 @@ export interface GroupParams {
 export interface PVERole {
   roleid: string;
   privs?: string;
-  special?: 0 | 1;
+  special?: PveBool;
 }
 
 export interface RoleParams {
@@ -905,13 +1016,17 @@ export interface RoleParams {
   [key: string]: unknown;
 }
 
+/** Boolean-facing shape of PVERole — `special` (built-in indicator) is
+ *  unwired at the HTTP boundary. */
+export type PVERolePublic = UnwireBool<PVERole, 'special'>;
+
 export type RealmType = 'pam' | 'pve' | 'ldap' | 'ad' | 'openid';
 
 export interface PVERealm {
   realm: string;
   type: RealmType;
   comment?: string;
-  default?: 0 | 1;
+  default?: PveBool;
   tfa?: string;
   // LDAP/AD
   server1?: string;
@@ -919,13 +1034,13 @@ export interface PVERealm {
   base_dn?: string;
   user_attr?: string;
   bind_dn?: string;
-  secure?: 0 | 1;
+  secure?: PveBool;
   port?: number;
   // OpenID
   'issuer-url'?: string;
   'client-id'?: string;
   'client-key'?: string;
-  autocreate?: 0 | 1;
+  autocreate?: PveBool;
   digest?: string;
   [key: string]: unknown;
 }
@@ -934,13 +1049,21 @@ export interface RealmParams extends Partial<PVERealm> {
   [key: string]: unknown;
 }
 
+/** Boolean-facing shapes of the realm types. `default`, `secure`, and
+ *  `autocreate` are unwired at the HTTP boundary. */
+export type PVERealmPublic = UnwireBool<PVERealm, 'default' | 'secure' | 'autocreate'>;
+export type RealmParamsPublic = UnwireBool<RealmParams, 'default' | 'secure' | 'autocreate'>;
+
 export interface PVEACL {
   path: string;
   type: 'user' | 'group' | 'token';
   ugid: string;
   roleid: string;
-  propagate?: 0 | 1;
+  propagate?: PveBool;
 }
+
+/** Boolean-facing shape of PVEACL — `propagate` unwired at the HTTP boundary. */
+export type PVEACLPublic = UnwireBool<PVEACL, 'propagate'>;
 
 export interface ACLParams {
   path: string;
@@ -948,10 +1071,14 @@ export interface ACLParams {
   users?: string;
   groups?: string;
   tokens?: string;
-  propagate?: 0 | 1;
-  delete?: 0 | 1;
+  propagate?: PveBool;
+  delete?: PveBool;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shape of ACLParams — `propagate` and `delete` are unwired
+ *  at the HTTP boundary. */
+export type ACLParamsPublic = UnwireBool<ACLParams, 'propagate' | 'delete'>;
 
 // ─── Tier 3 — HA + Cluster ───────────────────────────────────────────────────
 
@@ -983,8 +1110,8 @@ export interface HAResourceParams {
 export interface HAGroup {
   group: string;
   nodes: string;
-  restricted?: 0 | 1;
-  nofailback?: 0 | 1;
+  restricted?: PveBool;
+  nofailback?: PveBool;
   comment?: string;
   type?: 'group';
   digest?: string;
@@ -993,11 +1120,16 @@ export interface HAGroup {
 export interface HAGroupParams {
   group: string;
   nodes: string;
-  restricted?: 0 | 1;
-  nofailback?: 0 | 1;
+  restricted?: PveBool;
+  nofailback?: PveBool;
   comment?: string;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shapes of the HA Group types. `restricted` and `nofailback`
+ *  are unwired from PveBool at the HTTP boundary. */
+export type HAGroupPublic = UnwireBool<HAGroup, 'restricted' | 'nofailback'>;
+export type HAGroupParamsPublic = UnwireBool<HAGroupParams, 'restricted' | 'nofailback'>;
 
 export interface HAStatus {
   id: string;
@@ -1008,22 +1140,29 @@ export interface HAStatus {
   request_state?: string;
   type: 'node' | 'service' | 'quorum' | 'master' | 'lrm';
   status?: string;
-  quorate?: 0 | 1;
+  quorate?: PveBool;
 }
+
+/** Boolean-facing shape of HAStatus — `quorate` unwired from PveBool. */
+export type HAStatusPublic = UnwireBool<HAStatus, 'quorate'>;
 
 export interface ClusterStatus {
   type: 'cluster' | 'node';
   name: string;
   id?: string;
-  quorate?: 0 | 1;
+  quorate?: PveBool;
   version?: number;
   nodes?: number;
-  online?: 0 | 1;
+  online?: PveBool;
   ip?: string;
   level?: string;
-  local?: 0 | 1;
+  local?: PveBool;
   nodeid?: number;
 }
+
+/** Boolean-facing shape of ClusterStatus. `quorate`, `online`, and `local`
+ *  are unwired from PveBool at the HTTP boundary. */
+export type ClusterStatusPublic = UnwireBool<ClusterStatus, 'quorate' | 'online' | 'local'>;
 
 // ─── Tier 3 — Pools ──────────────────────────────────────────────────────────
 
@@ -1047,6 +1186,33 @@ export interface PoolParams {
   comment?: string;
   vms?: string;
   storage?: string;
-  delete?: 0 | 1;
+  delete?: PveBool;
   [key: string]: unknown;
 }
+
+// ─── B6: Remaining domain Public variants ────────────────────────────────────
+
+/** Backup domain. `BackupJob.enabled` defaults to enabled when absent (read
+ *  with `!== false`); `BackupFile.protected`, `VzdumpParams.protected` etc.
+ *  default to disabled (`?? false`). */
+export type BackupJobPublic = UnwireBool<BackupJob, 'enabled' | 'all' | 'remove' | 'protected'>;
+export type BackupJobParamsPublic = Partial<Omit<BackupJobPublic, 'id'>>;
+export type BackupFilePublic = UnwireBool<BackupFile, 'protected'>;
+export type VzdumpParamsPublic = UnwireBool<VzdumpParams, 'all' | 'protected' | 'remove'>;
+
+/** Snapshot domain. Both `vmstate` and `running` default to disabled. */
+export type PVESnapshotPublic = UnwireBool<PVESnapshot, 'vmstate' | 'running'>;
+export type CreateSnapshotParamsPublic = UnwireBool<CreateSnapshotParams, 'vmstate'>;
+
+/** Firewall rule / IPSet entry. `enable` defaults to enabled; `nomatch`
+ *  defaults to disabled. */
+export type FirewallRulePublic = UnwireBool<FirewallRule, 'enable'>;
+export type FirewallRuleParamsPublic = Partial<Omit<FirewallRulePublic, 'pos'>>;
+export type FirewallIPSetEntryPublic = UnwireBool<FirewallIPSetEntry, 'nomatch'>;
+
+/** CT creation. `unprivileged` defaults to false (i.e. privileged). */
+export type CreateCTParamsPublic = UnwireBool<CreateCTParams, 'unprivileged'>;
+
+/** Network interfaces. `autostart` defaults to enabled (`!== false`). */
+export type NetworkIfacePublic = UnwireBool<NetworkIface, 'autostart' | 'active'>;
+export type NetworkIfaceParamsPublic = UnwireBool<NetworkIfaceParams, 'autostart'>;

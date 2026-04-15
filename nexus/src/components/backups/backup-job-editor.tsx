@@ -7,10 +7,10 @@ import { useToast } from '@/components/ui/toast';
 import { CronInput } from '@/components/dashboard/cron-input';
 import { Loader2, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { BackupJob, BackupJobParams, BackupMode, BackupCompress, PVEStorage } from '@/types/proxmox';
+import type { BackupJobPublic, BackupJobParamsPublic, BackupMode, BackupCompress, PVEStoragePublic } from '@/types/proxmox';
 
 interface BackupJobEditorProps {
-  initial?: BackupJob | null;
+  initial?: BackupJobPublic | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -20,13 +20,13 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
   const isEdit = !!initial;
 
   const [schedule, setSchedule] = useState(initial?.schedule ?? '0 2 * * *');
-  const [enabled, setEnabled] = useState(initial?.enabled !== 0);
+  const [enabled, setEnabled] = useState(initial?.enabled !== false);
   const [storage, setStorage] = useState(initial?.storage ?? '');
   const [node, setNode] = useState(initial?.node ?? '');
   const [mode, setMode] = useState<BackupMode>(initial?.mode ?? 'snapshot');
   const [compress, setCompress] = useState<BackupCompress>(initial?.compress ?? 'zstd');
   const [vmid, setVmid] = useState(initial?.vmid ?? '');
-  const [all, setAll] = useState(initial?.all === 1);
+  const [all, setAll] = useState(initial?.all ?? false);
   const [pool, setPool] = useState(initial?.pool ?? '');
   const [mailto, setMailto] = useState(initial?.mailto ?? '');
   const [mailnotification, setMailnotification] = useState<'always' | 'failure'>(initial?.mailnotification ?? 'failure');
@@ -42,14 +42,14 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
     queryFn: () => api.storage.list((node || nodes[0]?.node) ?? ''),
     enabled: !!(node || nodes[0]?.node),
   });
-  const backupStorages = (storages ?? []).filter((s: PVEStorage) => s.content?.split(',').includes('backup'));
+  const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.content?.split(',').includes('backup'));
 
   useEffect(() => {
     if (!storage && backupStorages.length > 0) setStorage(backupStorages[0].storage);
   }, [backupStorages, storage]);
 
   const saveM = useMutation({
-    mutationFn: (params: BackupJobParams) =>
+    mutationFn: (params: BackupJobParamsPublic) =>
       isEdit && initial ? api.backups.jobs.update(initial.id, params) : api.backups.jobs.create(params),
     onSuccess: () => {
       toast.success(isEdit ? 'Job updated' : 'Job created');
@@ -59,15 +59,15 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
   });
 
   const submit = () => {
-    const params: BackupJobParams = {
+    const params: BackupJobParamsPublic = {
       schedule,
-      enabled: enabled ? 1 : 0,
+      enabled,
       storage,
       mode,
       compress,
       mailnotification,
       ...(node ? { node } : {}),
-      ...(all ? { all: 1 } : vmid ? { vmid } : {}),
+      ...(all ? { all: true } : vmid ? { vmid } : {}),
       ...(pool ? { pool } : {}),
       ...(mailto ? { mailto } : {}),
       ...(notesTemplate ? { 'notes-template': notesTemplate } : {}),

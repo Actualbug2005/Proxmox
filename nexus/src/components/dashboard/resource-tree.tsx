@@ -12,19 +12,19 @@ import {
 } from 'lucide-react';
 import { cn, cpuPercent, formatBytes } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 interface ResourceTreeProps {
-  resources: ClusterResource[];
-  onSelect?: (resource: ClusterResource) => void;
+  resources: ClusterResourcePublic[];
+  onSelect?: (resource: ClusterResourcePublic) => void;
   selectedId?: string;
 }
 
 type GroupedResources = {
   [node: string]: {
-    node?: ClusterResource;
-    vms: ClusterResource[];
-    containers: ClusterResource[];
+    node?: ClusterResourcePublic;
+    vms: ClusterResourcePublic[];
+    containers: ClusterResourcePublic[];
   };
 };
 
@@ -50,9 +50,9 @@ function ResourceRow({
   onSelect,
   indent = false,
 }: {
-  resource: ClusterResource;
+  resource: ClusterResourcePublic;
   selected: boolean;
-  onSelect?: (r: ClusterResource) => void;
+  onSelect?: (r: ClusterResourcePublic) => void;
   indent?: boolean;
 }) {
   const Icon =

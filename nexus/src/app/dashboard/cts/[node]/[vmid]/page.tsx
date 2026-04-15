@@ -20,7 +20,7 @@ import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
 import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
-import type { UpdateCTConfigParams } from '@/types/proxmox';
+import type { UpdateCTConfigParamsPublic } from '@/types/proxmox';
 
 function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'outline' {
   switch (status) {
@@ -119,7 +119,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
   const [showClone, setShowClone] = useState(false);
   const [showMigrate, setShowMigrate] = useState(false);
   const [editConfig, setEditConfig] = useState(false);
-  const [configDraft, setConfigDraft] = useState<UpdateCTConfigParams>({});
+  const [configDraft, setConfigDraft] = useState<UpdateCTConfigParamsPublic>({});
 
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ['ct', node, vmid, 'status'],
@@ -378,12 +378,12 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                       {editConfig ? (
                         field === 'onboot' ? (
                           <input type="checkbox" checked={!!configDraft.onboot}
-                            onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked ? 1 : 0 }))}
+                            onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked }))}
                             className="rounded border-gray-600" />
                         ) : (
                           <input
                             type={['cores','memory','swap'].includes(field) ? 'number' : 'text'}
-                            value={String(configDraft[field as keyof UpdateCTConfigParams] ?? '')}
+                            value={String(configDraft[field as keyof UpdateCTConfigParamsPublic] ?? '')}
                             onChange={(e) => setConfigDraft((d) => ({
                               ...d,
                               [field]: ['cores','memory','swap'].includes(field) ? Number(e.target.value) : e.target.value,

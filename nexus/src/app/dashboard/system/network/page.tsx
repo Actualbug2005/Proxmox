@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Trash2, Save, AlertTriangle, CheckCircle, RotateCcw, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NetworkIface, NetworkIfaceParams } from '@/types/proxmox';
+import type { NetworkIfacePublic, NetworkIfaceParamsPublic } from '@/types/proxmox';
 
 type IfaceType = 'bridge' | 'bond' | 'vlan' | 'eth';
 
@@ -28,8 +28,8 @@ function IfaceForm({
   onCancel,
   isSaving,
 }: {
-  initial?: Partial<NetworkIfaceParams & { iface: string }>;
-  onSave: (params: NetworkIfaceParams & { iface: string }) => void;
+  initial?: Partial<NetworkIfaceParamsPublic & { iface: string }>;
+  onSave: (params: NetworkIfaceParamsPublic & { iface: string }) => void;
   onCancel: () => void;
   isSaving: boolean;
 }) {
@@ -38,7 +38,7 @@ function IfaceForm({
   const [address, setAddress] = useState(initial?.address ?? '');
   const [netmask, setNetmask] = useState(initial?.netmask ?? '');
   const [gateway, setGateway] = useState(initial?.gateway ?? '');
-  const [autostart, setAutostart] = useState(initial?.autostart ?? 1);
+  const [autostart, setAutostart] = useState<boolean>(initial?.autostart !== false);
   const [comments, setComments] = useState(initial?.comments ?? '');
   const [bridgePorts, setBridgePorts] = useState(initial?.bridge_ports ?? '');
   const [bondMode, setBondMode] = useState(initial?.bond_mode ?? 'active-backup');
@@ -50,7 +50,7 @@ function IfaceForm({
   const labelCls = 'text-xs text-gray-500 block mb-1';
 
   function handleSave() {
-    const params: NetworkIfaceParams & { iface: string } = { type, iface, address, netmask, gateway, autostart, comments };
+    const params: NetworkIfaceParamsPublic & { iface: string } = { type, iface, address, netmask, gateway, autostart, comments };
     if (type === 'bridge') { params.bridge_ports = bridgePorts; params.bridge_stp = 'off'; params.bridge_fd = 0; }
     if (type === 'bond') { params.bond_mode = bondMode; params.slaves = slaves; }
     if (type === 'vlan') { params['vlan-raw-device'] = vlanDev; params['vlan-id'] = Number(vlanId); }
@@ -139,7 +139,7 @@ function IfaceForm({
       </div>
 
       <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-        <input type="checkbox" checked={autostart === 1} onChange={(e) => setAutostart(e.target.checked ? 1 : 0)} className="rounded border-gray-600" />
+        <input type="checkbox" checked={autostart} onChange={(e) => setAutostart(e.target.checked)} className="rounded border-gray-600" />
         Autostart on boot
       </label>
 
@@ -185,7 +185,7 @@ export default function NetworkPage() {
   const markPending = () => setHasPending(true);
 
   const createM = useMutation({
-    mutationFn: (params: NetworkIfaceParams) => api.networkIfaces.create(node, params),
+    mutationFn: (params: NetworkIfaceParamsPublic) => api.networkIfaces.create(node, params),
     onSuccess: () => {
       setShowCreate(false);
       markPending();
@@ -196,7 +196,7 @@ export default function NetworkPage() {
   });
 
   const updateM = useMutation({
-    mutationFn: (params: Partial<NetworkIfaceParams>) =>
+    mutationFn: (params: Partial<NetworkIfaceParamsPublic>) =>
       api.networkIfaces.update(node, selectedIface!, params),
     onSuccess: () => {
       setEditing(false);
