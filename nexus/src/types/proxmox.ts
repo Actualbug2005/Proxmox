@@ -75,17 +75,21 @@ export interface ClusterResource {
   uptime?: number;
   netin?: number;
   netout?: number;
-  template?: number;
+  template?: PveBool;
   // Node fields
   maxcpus?: number;
   level?: string;
   // Storage fields
   storage?: string;
-  shared?: number;
+  shared?: PveBool;
   content?: string;
   plugintype?: string;
   pool?: string;
 }
+
+/** Boolean-facing shape of ClusterResource — `template` and `shared`
+ *  unwired from PveBool at the HTTP boundary. */
+export type ClusterResourcePublic = UnwireBool<ClusterResource, 'template' | 'shared'>;
 
 // ─── Nodes ────────────────────────────────────────────────────────────────────
 
@@ -216,14 +220,18 @@ export interface PVEStorage {
   storage: string;
   type: string;
   content?: string;
-  shared?: number;
-  active?: number;
-  enabled?: number;
+  shared?: PveBool;
+  active?: PveBool;
+  enabled?: PveBool;
   total?: number;
   used?: number;
   avail?: number;
   used_fraction?: number;
 }
+
+/** Boolean-facing shape of PVEStorage (list row) — `shared`, `active`,
+ *  `enabled` unwired from PveBool at the HTTP boundary. */
+export type PVEStoragePublic = UnwireBool<PVEStorage, 'shared' | 'active' | 'enabled'>;
 
 /** Subset of PVE storage backends exposed by Nexus's Map Storage flow. */
 export type StorageBackendType = 'nfs' | 'cifs' | 'dir';

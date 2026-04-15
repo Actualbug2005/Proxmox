@@ -4,10 +4,10 @@ import { Server, Cpu, MemoryStick, HardDrive, Clock } from 'lucide-react';
 import { cn, cpuPercent, formatBytes, formatUptime, memPercent } from '@/lib/utils';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Badge } from '@/components/ui/badge';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 interface NodeCardProps {
-  node: ClusterResource;
+  node: ClusterResourcePublic;
   vmCount?: number;
   ctCount?: number;
   className?: string;

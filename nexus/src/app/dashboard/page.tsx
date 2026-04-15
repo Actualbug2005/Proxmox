@@ -7,11 +7,11 @@ import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
 import { TaskList } from '@/components/dashboard/task-list';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 export default function DashboardPage() {
   const { data: resources, isLoading, isError, refetch, dataUpdatedAt } = useClusterResources();
-  const [selected, setSelected] = useState<ClusterResource | null>(null);
+  const [selected, setSelected] = useState<ClusterResourcePublic | null>(null);
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];

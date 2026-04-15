@@ -10,7 +10,7 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { formatBytes, formatUptime, cpuPercent, memPercent } from '@/lib/utils';
 import { Loader2, Server, Cpu, MemoryStick, HardDrive } from 'lucide-react';
 import { useState } from 'react';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 export default function NodesPage() {
   const { data: nodes, isLoading } = useNodes();
@@ -102,7 +102,7 @@ export default function NodesPage() {
   );
 }
 
-function NodeDetailPanel({ node }: { node: ClusterResource }) {
+function NodeDetailPanel({ node }: { node: ClusterResourcePublic }) {
   const name = node.node ?? node.id;
   const { data: status, isLoading } = useQuery({
     queryKey: ['node', name, 'status'],

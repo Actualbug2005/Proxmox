@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/toast';
 import { CronInput } from '@/components/dashboard/cron-input';
 import { Loader2, Save, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { BackupJobPublic, BackupJobParamsPublic, BackupMode, BackupCompress, PVEStorage } from '@/types/proxmox';
+import type { BackupJobPublic, BackupJobParamsPublic, BackupMode, BackupCompress, PVEStoragePublic } from '@/types/proxmox';
 
 interface BackupJobEditorProps {
   initial?: BackupJobPublic | null;
@@ -42,7 +42,7 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
     queryFn: () => api.storage.list((node || nodes[0]?.node) ?? ''),
     enabled: !!(node || nodes[0]?.node),
   });
-  const backupStorages = (storages ?? []).filter((s: PVEStorage) => s.content?.split(',').includes('backup'));
+  const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.content?.split(',').includes('backup'));
 
   useEffect(() => {
     if (!storage && backupStorages.length > 0) setStorage(backupStorages[0].storage);

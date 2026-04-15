@@ -276,6 +276,19 @@ const decodeNetworkIface = (raw: NetworkIface): NetworkIfacePublic =>
 const encodeNetworkIfaceParams = (p: Partial<NetworkIfaceParamsPublic>): Record<string, unknown> =>
   encodeBoolFields(p, NETWORK_IFACE_PARAMS_BOOL_KEYS) as Record<string, unknown>;
 
+// ─── B7: Residue cleanup — list-endpoint list types ──────────────────────────
+
+const PVE_STORAGE_BOOL_KEYS = ['shared', 'active', 'enabled'] as const satisfies
+  readonly (keyof PVEStorage)[];
+const CLUSTER_RESOURCE_BOOL_KEYS = ['template', 'shared'] as const satisfies
+  readonly (keyof ClusterResource)[];
+
+const decodePveStorage = (raw: PVEStorage): PVEStoragePublic =>
+  decodeBoolFields(raw, PVE_STORAGE_BOOL_KEYS) as PVEStoragePublic;
+
+const decodeClusterResource = (raw: ClusterResource): ClusterResourcePublic =>
+  decodeBoolFields(raw, CLUSTER_RESOURCE_BOOL_KEYS) as ClusterResourcePublic;
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -383,11 +396,13 @@ export const proxmox = {
 
 import type {
   ClusterResource,
+  ClusterResourcePublic,
   PVENode,
   NodeStatus,
   PVEVM,
   PVECT,
   PVEStorage,
+  PVEStoragePublic,
   PVETask,
   VNCProxyResponse,
   NodeRRDData,
@@ -634,7 +649,8 @@ export const api = {
 
   // Storage
   storage: {
-    list: (node: string) => proxmox.get<PVEStorage[]>(`nodes/${node}/storage`),
+    list: async (node: string): Promise<PVEStoragePublic[]> =>
+      (await proxmox.get<PVEStorage[]>(`nodes/${node}/storage`)).map(decodePveStorage),
     /** Cluster-wide: create a new storage pool. Hits POST /storage (not a
      *  per-node path) — the pool appears on every listed node once PVE's
      *  config is replicated. CSRF is handled by the shared `request<T>`
@@ -661,7 +677,7 @@ export const api = {
     delete: (id: string): Promise<null> =>
       proxmox.delete<null>(`storage/${encodeURIComponent(id)}`),
     listWithContent: (node: string, content: string) =>
-      proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`),
+      (proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`).then((rows) => rows.map(decodePveStorage))),
     content: (node: string, storage: string, content?: string) =>
       proxmox.get<StorageContent[]>(
         `nodes/${node}/storage/${storage}/content${content ? `?content=${content}` : ''}`,
@@ -797,7 +813,8 @@ export const api = {
 
   // Cluster
   cluster: {
-    resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
+    resources: async (): Promise<ClusterResourcePublic[]> =>
+      (await proxmox.get<ClusterResource[]>('cluster/resources')).map(decodeClusterResource),
     tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
     nextid: () => proxmox.get<number>('cluster/nextid'),
     status: async (): Promise<ClusterStatusPublic[]> =>

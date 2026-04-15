@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import type { ClusterResource } from '@/types/proxmox';
+import type { ClusterResourcePublic } from '@/types/proxmox';
 
 /**
  * Single source of truth for polling intervals. Keep these in milliseconds
@@ -27,7 +27,7 @@ export function useNodes() {
   const nodes = useMemo(
     () =>
       (resources ?? []).filter(
-        (r): r is ClusterResource & { type: 'node' } => r.type === 'node',
+        (r): r is ClusterResourcePublic & { type: 'node' } => r.type === 'node',
       ),
     [resources],
   );

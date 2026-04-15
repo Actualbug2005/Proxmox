@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
 import { Loader2, HardDrive, Database, ServerCog, Share2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { PVEStorage, PVEStorageConfigPublic } from '@/types/proxmox';
+import type { PVEStoragePublic, PVEStorageConfigPublic } from '@/types/proxmox';
 import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
 import { MapStorageDialog } from '@/components/storage/map-storage-dialog';
 import { NasServicesCard } from '@/components/nas/nas-services-card';
@@ -27,13 +27,13 @@ function StorageRow({
   onDelete,
   editLoading,
 }: {
-  storage: PVEStorage & { node: string };
+  storage: PVEStoragePublic & { node: string };
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   editLoading: boolean;
 }) {
   const usedPct = memPercent(storage.used, storage.total);
-  const active = storage.active === 1;
+  const active = storage.active ?? false;
 
   return (
     <Link
@@ -47,7 +47,7 @@ function StorageRow({
         <div className="flex items-center gap-2 mb-1">
           <p className="text-sm font-medium text-white">{storage.storage}</p>
           <Badge variant="outline">{storage.type}</Badge>
-          {storage.shared === 1 && <Badge variant="info">shared</Badge>}
+          {(storage.shared ?? false) && <Badge variant="info">shared</Badge>}
           <Badge variant={active ? 'success' : 'danger'}>{active ? 'active' : 'inactive'}</Badge>
         </div>
         <p className="text-xs text-gray-500">
@@ -172,7 +172,7 @@ export default function StoragePage() {
   // Deduplicate shared storage (same storage name appearing on multiple nodes)
   const seen = new Set<string>();
   const unique = storages.filter((s) => {
-    const key = s.shared === 1 ? s.storage : `${s.node}:${s.storage}`;
+    const key = (s.shared ?? false) ? s.storage : `${s.node}:${s.storage}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

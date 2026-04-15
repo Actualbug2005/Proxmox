@@ -12,7 +12,7 @@ import {
   Archive, Loader2, Trash2, Lock, Undo2, X,
 } from 'lucide-react';
 import { formatBytes, cn } from '@/lib/utils';
-import type { BackupFilePublic, BackupCompress, BackupMode, VzdumpParamsPublic, PVEStorage } from '@/types/proxmox';
+import type { BackupFilePublic, BackupCompress, BackupMode, VzdumpParamsPublic, PVEStoragePublic } from '@/types/proxmox';
 
 type Kind = 'qemu' | 'lxc';
 
@@ -42,7 +42,7 @@ function BackupNowDialog({
     queryFn: () => api.storage.list(node),
   });
 
-  const backupStorages = (storages ?? []).filter((s: PVEStorage) => s.active && s.content?.split(',').includes('backup'));
+  const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.active && s.content?.split(',').includes('backup'));
 
   const [storage, setStorage] = useState('');
   const [mode, setMode] = useState<BackupMode>('snapshot');
@@ -167,7 +167,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
     queryKey: ['storage', node, 'list'],
     queryFn: () => api.storage.list(node),
   });
-  const backupStorages = (storages ?? []).filter((s: PVEStorage) => s.active && s.content?.split(',').includes('backup'));
+  const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.active && s.content?.split(',').includes('backup'));
 
   const fileQueries = useQueries({
     queries: backupStorages.map((s) => ({
