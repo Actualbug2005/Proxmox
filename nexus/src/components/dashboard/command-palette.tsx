@@ -192,7 +192,7 @@ export function CommandPalette() {
                           <ActionButton
                             icon={<Terminal className="w-3 h-3" />}
                             label="Console"
-                            onClick={() => navigate('/console')}
+                            onClick={() => navigate(`/console?node=${encodeURIComponent(vm.node!)}&vmid=${vm.vmid}&type=qemu`)}
                           />
                         </div>
                         <span

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useClusterResources } from '@/hooks/use-cluster';
 import { Terminal } from '@/components/console/terminal';
 import { Server, Monitor, Box, Plus, X } from 'lucide-react';
@@ -19,6 +20,25 @@ export default function ConsolePage() {
   const { data: resources } = useClusterResources();
   const [tabs, setTabs] = useState<ConsoleTab[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const node = searchParams.get('node');
+    const vmidStr = searchParams.get('vmid');
+    const type = searchParams.get('type') as 'qemu' | 'lxc' | 'node' | null;
+    if (!node || !type) return;
+    const vmid = vmidStr ? parseInt(vmidStr, 10) : undefined;
+    const id = type === 'node' ? `node/${node}` : `${type}/${node}/${vmid}`;
+    setTabs((prev) => {
+      if (prev.find((t) => t.id === id)) return prev;
+      return [
+        ...prev,
+        { id, label: vmid ? `${type.toUpperCase()} ${vmid}` : node, node, vmid, type },
+      ];
+    });
+    setActiveTab(id);
+  }, [searchParams]);
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
