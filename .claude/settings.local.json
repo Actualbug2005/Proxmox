@@ -21,7 +21,10 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(echo \"exit=$?\")",
       "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/.env*)",
-      "Bash(./node_modules/.bin/tsc --noEmit --noUnusedLocals)"
+      "Bash(./node_modules/.bin/tsc --noEmit --noUnusedLocals)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(tee /tmp/tsc.out)",
+      "Read(//tmp/**)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"

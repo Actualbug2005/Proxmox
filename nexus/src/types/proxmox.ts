@@ -198,7 +198,8 @@ export type StorageBackendType = 'nfs' | 'cifs' | 'dir';
  * Field names mirror PVE's API exactly — `content` is a comma-separated
  * string (e.g. "iso,backup,images"), `nodes` is a comma-separated node
  * restriction (omit to enable on every node). `export` uses its reserved-
- * word spelling because that's the literal PVE parameter name.
+ * word spelling because that's the literal PVE parameter name. `mkdir`
+ * is PVE's boolean-as-integer convention (0 = don't create subdirs, 1 = do).
  */
 export interface StorageCreatePayload {
   storage: string;
@@ -208,12 +209,26 @@ export interface StorageCreatePayload {
   // NFS
   server?: string;
   export?: string;
+  options?: string;
   // CIFS
   share?: string;
   username?: string;
   password?: string;
+  smbversion?: string;
   // Directory
   path?: string;
+  mkdir?: 0 | 1;
+}
+
+/** Body for `PUT /api2/json/storage/{id}`. PVE rejects attempts to change
+ *  the ID or backend type once a pool exists, so both are stripped. */
+export type StorageUpdatePayload = Partial<Omit<StorageCreatePayload, 'storage' | 'type'>>;
+
+/** Response of `GET /api2/json/storage/{id}` — the full persisted config.
+ *  Superset of `StorageCreatePayload` with PVE's optimistic-concurrency
+ *  `digest` so callers can round-trip edits without races. */
+export interface PVEStorageConfig extends StorageCreatePayload {
+  digest?: string;
 }
 
 // ─── Physical Disks (S.M.A.R.T.) ─────────────────────────────────────────────

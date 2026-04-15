@@ -180,6 +180,8 @@ import type {
   DiskListEntry,
   SmartData,
   StorageCreatePayload,
+  StorageUpdatePayload,
+  PVEStorageConfig,
 } from '@/types/proxmox';
 import type {
   NasShare,
@@ -325,6 +327,23 @@ export const api = {
      *  wrapper inside `proxmox.post`. */
     create: (payload: StorageCreatePayload): Promise<null> =>
       proxmox.post<null>('storage', payload as unknown as Record<string, unknown>),
+    /** Cluster-wide: fetch the full persisted config for one storage pool.
+     *  Used by the Edit flow to pre-fill the dialog with fields the list
+     *  endpoint (GET /nodes/{node}/storage) doesn't include (server, export, …). */
+    get: (id: string) =>
+      proxmox.get<PVEStorageConfig>(`storage/${encodeURIComponent(id)}`),
+    /** Cluster-wide: patch a storage pool. PVE rejects changes to the ID or
+     *  backend type, so callers must strip those from the payload. CSRF is
+     *  added by `proxmox.put`. */
+    update: (id: string, payload: StorageUpdatePayload): Promise<null> =>
+      proxmox.put<null>(
+        `storage/${encodeURIComponent(id)}`,
+        payload as unknown as Record<string, unknown>,
+      ),
+    /** Cluster-wide: detach a storage pool from PVE. Data on the underlying
+     *  share is left untouched — PVE only removes the config entry. */
+    delete: (id: string): Promise<null> =>
+      proxmox.delete<null>(`storage/${encodeURIComponent(id)}`),
     listWithContent: (node: string, content: string) =>
       proxmox.get<PVEStorage[]>(`nodes/${node}/storage?content=${content}`),
     content: (node: string, storage: string, content?: string) =>

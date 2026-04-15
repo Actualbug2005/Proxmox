@@ -2,24 +2,36 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
-import { Loader2, HardDrive, Database, ServerCog, Share2, Plus } from 'lucide-react';
+import { Loader2, HardDrive, Database, ServerCog, Share2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { PVEStorage } from '@/types/proxmox';
+import type { PVEStorage, PVEStorageConfig } from '@/types/proxmox';
 import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
 import { MapStorageDialog } from '@/components/storage/map-storage-dialog';
 import { NasServicesCard } from '@/components/nas/nas-services-card';
 import { NasSharesTable } from '@/components/nas/nas-shares-table';
 import { CreateShareDialog } from '@/components/nas/create-share-dialog';
+import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
 
 type Tab = 'pools' | 'disks' | 'nas';
 
-function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
+function StorageRow({
+  storage,
+  onEdit,
+  onDelete,
+  editLoading,
+}: {
+  storage: PVEStorage & { node: string };
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  editLoading: boolean;
+}) {
   const usedPct = memPercent(storage.used, storage.total);
   const active = storage.active === 1;
 
@@ -54,6 +66,41 @@ function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
           <p className="text-xs text-gray-600">—</p>
         )}
       </div>
+      {/* Actions — stopPropagation+preventDefault so the parent <Link> doesn't
+          fire and navigate to the detail page when the user clicks a button. */}
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(storage.storage);
+          }}
+          disabled={editLoading}
+          className="p-2 rounded-lg text-gray-500 hover:text-orange-400 hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-wait"
+          aria-label={`Edit ${storage.storage}`}
+          title="Edit storage"
+        >
+          {editLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Pencil className="w-3.5 h-3.5" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(storage.storage);
+          }}
+          className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition"
+          aria-label={`Delete ${storage.storage}`}
+          title="Delete storage"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </Link>
   );
 }
@@ -63,10 +110,41 @@ export default function StoragePage() {
   const [nasNode, setNasNode] = useState<string>('');
   const [showCreateShare, setShowCreateShare] = useState(false);
   const [showMapStorage, setShowMapStorage] = useState(false);
+  const [editTarget, setEditTarget] = useState<PVEStorageConfig | null>(null);
+  const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const qc = useQueryClient();
+  const toast = useToast();
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
-  const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
+  const nodeNames = nodes?.map((n) => n.node ?? n.id ?? '') ?? [];
+
+  // Fetch full config for the row the user clicked Edit on, then open the
+  // dialog once the config lands. PVE's per-node list endpoint lacks the
+  // topology fields (server/export/path/…) so we can't prefill without this.
+  async function handleEdit(id: string) {
+    setEditLoadingId(id);
+    try {
+      const cfg = await api.storage.get(id);
+      setEditTarget(cfg);
+    } catch (err) {
+      toast.error('Could not load storage', err instanceof Error ? err.message : String(err));
+    } finally {
+      setEditLoadingId(null);
+    }
+  }
+
+  const deleteM = useMutation({
+    mutationFn: (id: string) => api.storage.delete(id),
+    onSuccess: (_data, id) => {
+      toast.success('Storage detached', id);
+      setDeleteTargetId(null);
+      qc.invalidateQueries({ queryKey: ['storage'] });
+    },
+    onError: (err) => {
+      toast.error('Delete failed', err instanceof Error ? err.message : String(err));
+    },
+  });
 
   // Default the NAS node picker to the first cluster node once nodes arrive.
   useEffect(() => {
@@ -141,6 +219,7 @@ export default function StoragePage() {
 
       {showMapStorage && (
         <MapStorageDialog
+          nodeNames={nodeNames}
           onClose={() => setShowMapStorage(false)}
           onMapped={() => {
             // Close + force a refetch of every node's storage list so the
@@ -151,6 +230,28 @@ export default function StoragePage() {
             setShowMapStorage(false);
             qc.invalidateQueries({ queryKey: ['storage'] });
           }}
+        />
+      )}
+
+      {editTarget && (
+        <MapStorageDialog
+          nodeNames={nodeNames}
+          existingStorage={editTarget}
+          onClose={() => setEditTarget(null)}
+          onMapped={() => {
+            setEditTarget(null);
+            qc.invalidateQueries({ queryKey: ['storage'] });
+          }}
+        />
+      )}
+
+      {deleteTargetId && (
+        <ConfirmDialog
+          title={`Delete storage "${deleteTargetId}"?`}
+          message="Data on the underlying share will not be destroyed, but the storage will be detached from the Proxmox cluster."
+          danger
+          onCancel={() => setDeleteTargetId(null)}
+          onConfirm={() => deleteM.mutate(deleteTargetId)}
         />
       )}
 
@@ -197,7 +298,13 @@ export default function StoragePage() {
                   <p className="text-sm text-gray-600 py-8 text-center">No storage found</p>
                 ) : (
                   unique.map((s) => (
-                    <StorageRow key={`${s.node}:${s.storage}`} storage={s} />
+                    <StorageRow
+                      key={`${s.node}:${s.storage}`}
+                      storage={s}
+                      onEdit={handleEdit}
+                      onDelete={setDeleteTargetId}
+                      editLoading={editLoadingId === s.storage}
+                    />
                   ))
                 )}
               </div>
