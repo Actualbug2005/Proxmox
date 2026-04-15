@@ -5,16 +5,15 @@
  * never import a concrete provider directly. When dynamic selection lands
  * (per-node probe for U-NAS presence, explicit cluster config, etc.) only
  * this function changes; the rest of the stack is unaware.
- *
- * Scaffold state: both providers throw 'Not implemented' on every method.
- * Selection is hardcoded to nativeProvider — see TODO below.
  */
 import type { NasProvider } from '@/types/nas';
+import { nativeProvider } from '@/lib/nas/providers/native';
 
 function notImplemented(): never {
   throw new Error('Not implemented');
 }
 
+/** U-NAS REST adapter — Phase 2b placeholder. */
 export const unasProvider: NasProvider = {
   getShares: async () => notImplemented(),
   createShare: async () => notImplemented(),
@@ -22,12 +21,7 @@ export const unasProvider: NasProvider = {
   getServices: async () => notImplemented(),
 };
 
-export const nativeProvider: NasProvider = {
-  getShares: async () => notImplemented(),
-  createShare: async () => notImplemented(),
-  deleteShare: async () => notImplemented(),
-  getServices: async () => notImplemented(),
-};
+export { nativeProvider };
 
 /**
  * Route a request to the appropriate NAS provider for `node`.

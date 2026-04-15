@@ -60,28 +60,39 @@ interface CreateRequestBody {
 /**
  * Validate + normalise a create-share payload.
  *
- * Returns [payload, null] on success or [null, errorMessage] on rejection.
- *
- * TODO(daisy): implement this. See guidance in the chat message that
- * introduced this scaffold — the right policy here is a domain call:
- *
- *   • path  — homelab-friendly vs. strict (must live under /mnt/? /tank/?
- *             reject '..'? resolve symlinks?)
- *   • name  — SMB has hard rules (no slashes, 1..80 chars, no control
- *             chars); NFS is lenient. Taking the SMB-strict intersection
- *             keeps shares protocol-portable.
- *   • protocols — must be a non-empty subset of ['smb', 'nfs'].
- *   • readOnly  — default false when unspecified.
- *
- * Trade-off: stricter rejection means cleaner errors up-front at the cost
- * of occasionally blocking exotic-but-legitimate paths. Looser validation
- * defers errors to the backend (`exportfs` / `smbcontrol reload-config`),
- * which produces uglier messages but fewer false rejections.
+ * Policy chosen by the operator:
+ *   • name      — strict: 1..64 chars, [A-Za-z0-9_.-] only (no shell metas).
+ *   • path      — absolute, no '..' directory traversal.
+ *   • protocols — non-empty subset of {smb, nfs}, deduplicated, lowercased.
+ *   • readOnly  — defaults to true (security-first).
  */
-function validateCreatePayload(
-  _body: CreateRequestBody,
-): [CreateNasSharePayload, null] | [null, string] {
-  throw new Error('validateCreatePayload not implemented — see TODO');
+function validateCreatePayload(body: any): [CreateNasSharePayload, null] | [null, string] {
+  const { name, path, protocols, readOnly } = body;
+
+  if (typeof name !== 'string' || !/^[a-zA-Z0-9_.-]{1,64}$/.test(name)) {
+    return [null, "Invalid name: Must be 1-64 characters, alphanumeric, dashes, or underscores."];
+  }
+
+  if (typeof path !== 'string' || !path.startsWith('/') || path.includes('..')) {
+    return [null, "Invalid path: Must be an absolute path without directory traversal (..)."];
+  }
+
+  if (!Array.isArray(protocols) || protocols.length === 0) {
+    return [null, "Invalid protocols: Must provide at least one protocol."];
+  }
+
+  const validProtocols = new Set(['smb', 'nfs']);
+  const requestedProtocols = new Set(protocols.map((p) => String(p).toLowerCase()));
+  const finalProtocols: ('smb' | 'nfs')[] = [];
+
+  for (const p of requestedProtocols) {
+    if (!validProtocols.has(p)) return [null, `Invalid protocol: ${p}`];
+    finalProtocols.push(p as 'smb' | 'nfs');
+  }
+
+  const finalReadOnly = typeof readOnly === 'boolean' ? readOnly : true;
+
+  return [{ name, path, protocols: finalProtocols, readOnly: finalReadOnly }, null];
 }
 
 export async function POST(req: NextRequest) {
