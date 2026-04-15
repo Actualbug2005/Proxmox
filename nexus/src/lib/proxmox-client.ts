@@ -136,6 +136,31 @@ import type {
   IsoUploadParams,
   DownloadUrlParams,
   StorageContentType,
+  FirewallRule,
+  FirewallRuleParams,
+  FirewallAlias,
+  FirewallIPSet,
+  FirewallIPSetEntry,
+  FirewallGroup,
+  FirewallOptions,
+  PVEUser,
+  UserParams,
+  PVEGroup,
+  GroupParams,
+  PVERole,
+  RoleParams,
+  PVERealm,
+  RealmParams,
+  PVEACL,
+  ACLParams,
+  HAResource,
+  HAResourceParams,
+  HAGroup,
+  HAGroupParams,
+  HAStatus,
+  ClusterStatus,
+  PVEPool,
+  PoolParams,
 } from '@/types/proxmox';
 
 export const api = {
@@ -274,6 +299,7 @@ export const api = {
     resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
     tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
     nextid: () => proxmox.get<number>('cluster/nextid'),
+    status: () => proxmox.get<ClusterStatus[]>('cluster/status'),
   },
 
   // Tasks
@@ -416,5 +442,263 @@ export const api = {
         contact: `mailto:${contact}`,
         directory: directory ?? 'https://acme-v02.api.letsencrypt.org/directory',
       }),
+  },
+
+  firewall: {
+    cluster: {
+      rules: {
+        list: () => proxmox.get<FirewallRule[]>('cluster/firewall/rules'),
+        get: (pos: number) => proxmox.get<FirewallRule>(`cluster/firewall/rules/${pos}`),
+        create: (params: FirewallRuleParams) =>
+          proxmox.post<null>('cluster/firewall/rules', params as Record<string, unknown>),
+        update: (pos: number, params: FirewallRuleParams) =>
+          proxmox.put<null>(`cluster/firewall/rules/${pos}`, params as Record<string, unknown>),
+        delete: (pos: number, digest?: string) =>
+          proxmox.delete<null>(
+            `cluster/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
+          ),
+        move: (pos: number, moveto: number, digest?: string) =>
+          proxmox.put<null>(
+            `cluster/firewall/rules/${pos}`,
+            { moveto, ...(digest ? { digest } : {}) } as Record<string, unknown>,
+          ),
+      },
+      aliases: {
+        list: () => proxmox.get<FirewallAlias[]>('cluster/firewall/aliases'),
+        get: (name: string) => proxmox.get<FirewallAlias>(`cluster/firewall/aliases/${encodeURIComponent(name)}`),
+        create: (alias: FirewallAlias) =>
+          proxmox.post<null>('cluster/firewall/aliases', alias as unknown as Record<string, unknown>),
+        update: (name: string, alias: Partial<FirewallAlias>) =>
+          proxmox.put<null>(`cluster/firewall/aliases/${encodeURIComponent(name)}`, alias as Record<string, unknown>),
+        delete: (name: string) =>
+          proxmox.delete<null>(`cluster/firewall/aliases/${encodeURIComponent(name)}`),
+      },
+      ipsets: {
+        list: () => proxmox.get<FirewallIPSet[]>('cluster/firewall/ipset'),
+        create: (ipset: FirewallIPSet) =>
+          proxmox.post<null>('cluster/firewall/ipset', ipset as unknown as Record<string, unknown>),
+        delete: (name: string) =>
+          proxmox.delete<null>(`cluster/firewall/ipset/${encodeURIComponent(name)}`),
+        entries: (name: string) =>
+          proxmox.get<FirewallIPSetEntry[]>(`cluster/firewall/ipset/${encodeURIComponent(name)}`),
+        addEntry: (name: string, entry: FirewallIPSetEntry) =>
+          proxmox.post<null>(`cluster/firewall/ipset/${encodeURIComponent(name)}`, entry as unknown as Record<string, unknown>),
+        deleteEntry: (name: string, cidr: string) =>
+          proxmox.delete<null>(`cluster/firewall/ipset/${encodeURIComponent(name)}/${encodeURIComponent(cidr)}`),
+      },
+      groups: {
+        list: () => proxmox.get<FirewallGroup[]>('cluster/firewall/groups'),
+        create: (group: FirewallGroup) =>
+          proxmox.post<null>('cluster/firewall/groups', group as unknown as Record<string, unknown>),
+        delete: (name: string) =>
+          proxmox.delete<null>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
+        rules: (name: string) =>
+          proxmox.get<FirewallRule[]>(`cluster/firewall/groups/${encodeURIComponent(name)}`),
+        addRule: (name: string, params: FirewallRuleParams) =>
+          proxmox.post<null>(
+            `cluster/firewall/groups/${encodeURIComponent(name)}`,
+            params as Record<string, unknown>,
+          ),
+      },
+      options: {
+        get: () => proxmox.get<FirewallOptions>('cluster/firewall/options'),
+        update: (opts: Partial<FirewallOptions>) =>
+          proxmox.put<null>('cluster/firewall/options', opts as Record<string, unknown>),
+      },
+    },
+    node: {
+      rules: {
+        list: (node: string) => proxmox.get<FirewallRule[]>(`nodes/${node}/firewall/rules`),
+        create: (node: string, params: FirewallRuleParams) =>
+          proxmox.post<null>(`nodes/${node}/firewall/rules`, params as Record<string, unknown>),
+        update: (node: string, pos: number, params: FirewallRuleParams) =>
+          proxmox.put<null>(`nodes/${node}/firewall/rules/${pos}`, params as Record<string, unknown>),
+        delete: (node: string, pos: number, digest?: string) =>
+          proxmox.delete<null>(
+            `nodes/${node}/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
+          ),
+        move: (node: string, pos: number, moveto: number, digest?: string) =>
+          proxmox.put<null>(
+            `nodes/${node}/firewall/rules/${pos}`,
+            { moveto, ...(digest ? { digest } : {}) } as Record<string, unknown>,
+          ),
+      },
+      options: {
+        get: (node: string) => proxmox.get<FirewallOptions>(`nodes/${node}/firewall/options`),
+        update: (node: string, opts: Partial<FirewallOptions>) =>
+          proxmox.put<null>(`nodes/${node}/firewall/options`, opts as Record<string, unknown>),
+      },
+    },
+    vm: {
+      rules: {
+        list: (node: string, vmid: number) =>
+          proxmox.get<FirewallRule[]>(`nodes/${node}/qemu/${vmid}/firewall/rules`),
+        create: (node: string, vmid: number, params: FirewallRuleParams) =>
+          proxmox.post<null>(`nodes/${node}/qemu/${vmid}/firewall/rules`, params as Record<string, unknown>),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+          proxmox.put<null>(
+            `nodes/${node}/qemu/${vmid}/firewall/rules/${pos}`,
+            params as Record<string, unknown>,
+          ),
+        delete: (node: string, vmid: number, pos: number, digest?: string) =>
+          proxmox.delete<null>(
+            `nodes/${node}/qemu/${vmid}/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
+          ),
+        move: (node: string, vmid: number, pos: number, moveto: number, digest?: string) =>
+          proxmox.put<null>(
+            `nodes/${node}/qemu/${vmid}/firewall/rules/${pos}`,
+            { moveto, ...(digest ? { digest } : {}) } as Record<string, unknown>,
+          ),
+      },
+      options: {
+        get: (node: string, vmid: number) =>
+          proxmox.get<FirewallOptions>(`nodes/${node}/qemu/${vmid}/firewall/options`),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
+          proxmox.put<null>(`nodes/${node}/qemu/${vmid}/firewall/options`, opts as Record<string, unknown>),
+      },
+      aliases: {
+        list: (node: string, vmid: number) =>
+          proxmox.get<FirewallAlias[]>(`nodes/${node}/qemu/${vmid}/firewall/aliases`),
+      },
+      ipsets: {
+        list: (node: string, vmid: number) =>
+          proxmox.get<FirewallIPSet[]>(`nodes/${node}/qemu/${vmid}/firewall/ipset`),
+      },
+      refs: (node: string, vmid: number) =>
+        proxmox.get<unknown[]>(`nodes/${node}/qemu/${vmid}/firewall/refs`),
+    },
+    ct: {
+      rules: {
+        list: (node: string, vmid: number) =>
+          proxmox.get<FirewallRule[]>(`nodes/${node}/lxc/${vmid}/firewall/rules`),
+        create: (node: string, vmid: number, params: FirewallRuleParams) =>
+          proxmox.post<null>(`nodes/${node}/lxc/${vmid}/firewall/rules`, params as Record<string, unknown>),
+        update: (node: string, vmid: number, pos: number, params: FirewallRuleParams) =>
+          proxmox.put<null>(
+            `nodes/${node}/lxc/${vmid}/firewall/rules/${pos}`,
+            params as Record<string, unknown>,
+          ),
+        delete: (node: string, vmid: number, pos: number, digest?: string) =>
+          proxmox.delete<null>(
+            `nodes/${node}/lxc/${vmid}/firewall/rules/${pos}${digest ? `?digest=${encodeURIComponent(digest)}` : ''}`,
+          ),
+        move: (node: string, vmid: number, pos: number, moveto: number, digest?: string) =>
+          proxmox.put<null>(
+            `nodes/${node}/lxc/${vmid}/firewall/rules/${pos}`,
+            { moveto, ...(digest ? { digest } : {}) } as Record<string, unknown>,
+          ),
+      },
+      options: {
+        get: (node: string, vmid: number) =>
+          proxmox.get<FirewallOptions>(`nodes/${node}/lxc/${vmid}/firewall/options`),
+        update: (node: string, vmid: number, opts: Partial<FirewallOptions>) =>
+          proxmox.put<null>(`nodes/${node}/lxc/${vmid}/firewall/options`, opts as Record<string, unknown>),
+      },
+    },
+  },
+
+  access: {
+    users: {
+      list: () => proxmox.get<PVEUser[]>('access/users'),
+      get: (userid: string) => proxmox.get<PVEUser>(`access/users/${encodeURIComponent(userid)}`),
+      create: (params: UserParams) =>
+        proxmox.post<null>('access/users', params as Record<string, unknown>),
+      update: (userid: string, params: Partial<UserParams>) =>
+        proxmox.put<null>(`access/users/${encodeURIComponent(userid)}`, params as Record<string, unknown>),
+      delete: (userid: string) =>
+        proxmox.delete<null>(`access/users/${encodeURIComponent(userid)}`),
+      resetPassword: (userid: string, password: string) =>
+        proxmox.put<null>('access/password', { userid, password }),
+      listTokens: (userid: string) =>
+        proxmox.get<unknown[]>(`access/users/${encodeURIComponent(userid)}/token`),
+      createToken: (userid: string, tokenid: string, params: Record<string, unknown> = {}) =>
+        proxmox.post<{ value: string; info: unknown }>(
+          `access/users/${encodeURIComponent(userid)}/token/${encodeURIComponent(tokenid)}`,
+          params,
+        ),
+      deleteToken: (userid: string, tokenid: string) =>
+        proxmox.delete<null>(
+          `access/users/${encodeURIComponent(userid)}/token/${encodeURIComponent(tokenid)}`,
+        ),
+    },
+    groups: {
+      list: () => proxmox.get<PVEGroup[]>('access/groups'),
+      get: (groupid: string) => proxmox.get<PVEGroup>(`access/groups/${encodeURIComponent(groupid)}`),
+      create: (params: GroupParams) =>
+        proxmox.post<null>('access/groups', params as Record<string, unknown>),
+      update: (groupid: string, params: Partial<GroupParams>) =>
+        proxmox.put<null>(`access/groups/${encodeURIComponent(groupid)}`, params as Record<string, unknown>),
+      delete: (groupid: string) =>
+        proxmox.delete<null>(`access/groups/${encodeURIComponent(groupid)}`),
+    },
+    roles: {
+      list: () => proxmox.get<PVERole[]>('access/roles'),
+      get: (roleid: string) => proxmox.get<PVERole>(`access/roles/${encodeURIComponent(roleid)}`),
+      create: (params: RoleParams) =>
+        proxmox.post<null>('access/roles', params as Record<string, unknown>),
+      update: (roleid: string, params: Partial<RoleParams>) =>
+        proxmox.put<null>(`access/roles/${encodeURIComponent(roleid)}`, params as Record<string, unknown>),
+      delete: (roleid: string) =>
+        proxmox.delete<null>(`access/roles/${encodeURIComponent(roleid)}`),
+    },
+    realms: {
+      list: () => proxmox.get<PVERealm[]>('access/domains'),
+      get: (realm: string) => proxmox.get<PVERealm>(`access/domains/${encodeURIComponent(realm)}`),
+      create: (params: RealmParams) =>
+        proxmox.post<null>('access/domains', params as Record<string, unknown>),
+      update: (realm: string, params: Partial<RealmParams>) =>
+        proxmox.put<null>(`access/domains/${encodeURIComponent(realm)}`, params as Record<string, unknown>),
+      delete: (realm: string) =>
+        proxmox.delete<null>(`access/domains/${encodeURIComponent(realm)}`),
+      sync: (realm: string) =>
+        proxmox.post<string>(`access/domains/${encodeURIComponent(realm)}/sync`),
+    },
+    acl: {
+      list: () => proxmox.get<PVEACL[]>('access/acl'),
+      update: (params: ACLParams) =>
+        proxmox.put<null>('access/acl', params as Record<string, unknown>),
+    },
+  },
+
+  ha: {
+    status: {
+      current: () => proxmox.get<HAStatus[]>('cluster/ha/status/current'),
+      managerStatus: () => proxmox.get<Record<string, unknown>>('cluster/ha/status/manager_status'),
+    },
+    resources: {
+      list: () => proxmox.get<HAResource[]>('cluster/ha/resources'),
+      get: (sid: string) => proxmox.get<HAResource>(`cluster/ha/resources/${encodeURIComponent(sid)}`),
+      create: (params: HAResourceParams) =>
+        proxmox.post<null>('cluster/ha/resources', params as Record<string, unknown>),
+      update: (sid: string, params: Partial<HAResourceParams>) =>
+        proxmox.put<null>(`cluster/ha/resources/${encodeURIComponent(sid)}`, params as Record<string, unknown>),
+      delete: (sid: string) =>
+        proxmox.delete<null>(`cluster/ha/resources/${encodeURIComponent(sid)}`),
+      migrate: (sid: string, target: string) =>
+        proxmox.post<null>(`cluster/ha/resources/${encodeURIComponent(sid)}/migrate`, { node: target }),
+      relocate: (sid: string, target: string) =>
+        proxmox.post<null>(`cluster/ha/resources/${encodeURIComponent(sid)}/relocate`, { node: target }),
+    },
+    groups: {
+      list: () => proxmox.get<HAGroup[]>('cluster/ha/groups'),
+      get: (group: string) => proxmox.get<HAGroup>(`cluster/ha/groups/${encodeURIComponent(group)}`),
+      create: (params: HAGroupParams) =>
+        proxmox.post<null>('cluster/ha/groups', params as Record<string, unknown>),
+      update: (group: string, params: Partial<HAGroupParams>) =>
+        proxmox.put<null>(`cluster/ha/groups/${encodeURIComponent(group)}`, params as Record<string, unknown>),
+      delete: (group: string) =>
+        proxmox.delete<null>(`cluster/ha/groups/${encodeURIComponent(group)}`),
+    },
+  },
+
+  pools: {
+    list: () => proxmox.get<PVEPool[]>('pools'),
+    get: (poolid: string) => proxmox.get<PVEPool>(`pools/${encodeURIComponent(poolid)}`),
+    create: (params: PoolParams) =>
+      proxmox.post<null>('pools', params as Record<string, unknown>),
+    update: (poolid: string, params: Partial<PoolParams>) =>
+      proxmox.put<null>(`pools/${encodeURIComponent(poolid)}`, params as Record<string, unknown>),
+    delete: (poolid: string) =>
+      proxmox.delete<null>(`pools/${encodeURIComponent(poolid)}`),
   },
 };
