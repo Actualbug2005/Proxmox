@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldCheck, AlertTriangle, Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
 
 type Tab = 'current' | 'acme' | 'tunnels';
 
@@ -51,6 +52,7 @@ const TUNNEL_PROVIDERS = [
 
 function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_PROVIDERS[number] }) {
   const qc = useQueryClient();
+  const toast = useToast();
   const [configVals, setConfigVals] = useState<Record<string, string>>({});
   const [showConfig, setShowConfig] = useState(false);
   const [output, setOutput] = useState('');
@@ -68,9 +70,12 @@ function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_
   const execM = useMutation({
     mutationFn: (cmd: string) => api.exec.shellCmd(node, cmd),
     onSuccess: (result) => {
-      setOutput(typeof result === 'string' ? result : JSON.stringify(result));
+      const output = typeof result === 'string' ? result : JSON.stringify(result);
+      setOutput(output);
       qc.invalidateQueries({ queryKey: ['tunnel', node, provider.id] });
+      toast.success(`${provider.name} command sent`, output.slice(0, 160));
     },
+    onError: (err) => toast.error(`${provider.name} command failed`, err instanceof Error ? err.message : String(err)),
   });
 
   return (
@@ -170,6 +175,8 @@ export default function CertificatesPage() {
   const [acmeDomain, setAcmeDomain] = useState('');
   const [taskUpid, setTaskUpid] = useState('');
 
+  const toast = useToast();
+
   const { data: certs, isLoading } = useQuery({
     queryKey: ['certificates', node],
     queryFn: () => api.certificates.list(node),
@@ -188,22 +195,37 @@ export default function CertificatesPage() {
       setCertPem('');
       setKeyPem('');
       qc.invalidateQueries({ queryKey: ['certificates', node] });
+      toast.success('Certificate uploaded', `Restart pveproxy for it to take effect.`);
     },
+    onError: (err) => toast.error('Upload failed', err instanceof Error ? err.message : String(err)),
   });
 
   const deleteCustomM = useMutation({
     mutationFn: () => api.certificates.deleteCustom(node),
-    onSuccess: () => { setShowDeleteConfirm(false); qc.invalidateQueries({ queryKey: ['certificates', node] }); },
+    onSuccess: () => {
+      setShowDeleteConfirm(false);
+      qc.invalidateQueries({ queryKey: ['certificates', node] });
+      toast.success('Custom certificate deleted', 'Reverted to self-signed.');
+    },
+    onError: (err) => toast.error('Delete failed', err instanceof Error ? err.message : String(err)),
   });
 
   const registerAccountM = useMutation({
     mutationFn: () => api.acme.registerAccount('default', acmeEmail),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['acme', 'accounts'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['acme', 'accounts'] });
+      toast.success('ACME account registered', acmeEmail);
+    },
+    onError: (err) => toast.error('Registration failed', err instanceof Error ? err.message : String(err)),
   });
 
   const orderCertM = useMutation({
     mutationFn: () => api.certificates.orderAcme(node),
-    onSuccess: (upid) => setTaskUpid(upid),
+    onSuccess: (upid) => {
+      setTaskUpid(upid);
+      toast.success('Certificate order queued', upid.slice(0, 48));
+    },
+    onError: (err) => toast.error('Order failed', err instanceof Error ? err.message : String(err)),
   });
 
   const activeCert = certs?.find((c) => c.filename === 'pveproxy-ssl.pem') ?? certs?.[0];
