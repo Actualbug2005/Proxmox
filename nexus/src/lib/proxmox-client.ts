@@ -177,6 +177,8 @@ import type {
   ClusterStatus,
   PVEPool,
   PoolParams,
+  DiskListEntry,
+  SmartData,
 } from '@/types/proxmox';
 
 export const api = {
@@ -351,6 +353,13 @@ export const api = {
   network: {
     list: (node: string, type?: string) =>
       proxmox.get<NodeNetwork[]>(`nodes/${node}/network${type ? `?type=${type}` : ''}`),
+  },
+
+  // Physical disks (S.M.A.R.T.)
+  disks: {
+    list: (node: string) => proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
+    smart: (node: string, disk: string) =>
+      proxmox.get<SmartData>(`nodes/${node}/disks/smart?disk=${encodeURIComponent(disk)}`),
   },
 
   // Cluster

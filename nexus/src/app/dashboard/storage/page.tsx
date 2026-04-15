@@ -1,14 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
-import { Loader2, HardDrive, Database } from 'lucide-react';
+import { Loader2, HardDrive, Database, ServerCog } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { PVEStorage } from '@/types/proxmox';
+import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
+
+type Tab = 'pools' | 'disks';
 
 function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
   const usedPct = memPercent(storage.used, storage.total);
@@ -50,6 +55,7 @@ function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
 }
 
 export default function StoragePage() {
+  const [tab, setTab] = useState<Tab>('pools');
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
   const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
@@ -65,7 +71,7 @@ export default function StoragePage() {
       );
       return results.flat();
     },
-    enabled: nodeNames.length > 0,
+    enabled: nodeNames.length > 0 && tab === 'pools',
     refetchInterval: 30_000,
   });
 
@@ -89,49 +95,76 @@ export default function StoragePage() {
       <div>
         <h1 className="text-xl font-semibold text-white">Storage</h1>
         <p className="text-sm text-gray-500">
-          {unique.length} storage pool{unique.length !== 1 ? 's' : ''} ·{' '}
-          {formatBytes(totalUsed)} used of {formatBytes(totalCapacity)}
+          {tab === 'pools'
+            ? `${unique.length} storage pool${unique.length !== 1 ? 's' : ''} · ${formatBytes(totalUsed)} used of ${formatBytes(totalCapacity)}`
+            : 'Per-node physical disks and S.M.A.R.T. health'}
         </p>
       </div>
 
-      {/* Summary */}
-      {totalCapacity > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-2">
-            <span>Total cluster storage</span>
-            <span>{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
-          </div>
-          <ProgressBar value={memPercent(totalUsed, totalCapacity)} />
-          <div className="flex justify-between text-xs text-gray-500 mt-2">
-            <span>{formatBytes(totalUsed)} used</span>
-            <span>{formatBytes(totalCapacity - totalUsed)} free</span>
-          </div>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-800">
+        {([['pools', 'Storage Pools', Database], ['disks', 'Physical Disks', ServerCog]] as const).map(
+          ([id, label, Icon]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
+                tab === id
+                  ? 'border-orange-500 text-orange-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-300',
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {label}
+            </button>
+          ),
+        )}
+      </div>
+
+      {tab === 'pools' && (
+        <>
+          {totalCapacity > 0 && (
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Total cluster storage</span>
+                <span>{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
+              </div>
+              <ProgressBar value={memPercent(totalUsed, totalCapacity)} />
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>{formatBytes(totalUsed)} used</span>
+                <span>{formatBytes(totalCapacity - totalUsed)} free</span>
+              </div>
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+            </div>
+          )}
+
+          {!isLoading && (
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+                <Database className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-300">Storage Pools</span>
+              </div>
+              <div className="divide-y divide-gray-800/50 p-2">
+                {unique.length === 0 ? (
+                  <p className="text-sm text-gray-600 py-8 text-center">No storage found</p>
+                ) : (
+                  unique.map((s) => (
+                    <StorageRow key={`${s.node}:${s.storage}`} storage={s} />
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {isLoading && (
-        <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-        </div>
-      )}
-
-      {!isLoading && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-            <Database className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-300">Storage Pools</span>
-          </div>
-          <div className="divide-y divide-gray-800/50 p-2">
-            {unique.length === 0 ? (
-              <p className="text-sm text-gray-600 py-8 text-center">No storage found</p>
-            ) : (
-              unique.map((s) => (
-                <StorageRow key={`${s.node}:${s.storage}`} storage={s} />
-              ))
-            )}
-          </div>
-        </div>
-      )}
+      {tab === 'disks' && <PhysicalDisksTable />}
     </div>
   );
 }

@@ -189,6 +189,71 @@ export interface PVEStorage {
   used_fraction?: number;
 }
 
+// ─── Physical Disks (S.M.A.R.T.) ─────────────────────────────────────────────
+
+/** Coarse PVE disk-type classification. */
+export type DiskKind = 'hdd' | 'ssd' | 'usb' | 'nvme' | 'unknown';
+
+/** Overall S.M.A.R.T. verdict from `smartctl -H`. PVE normalises this to
+ *  one of three uppercase strings; any other value is treated as UNKNOWN. */
+export type SmartHealth = 'PASSED' | 'FAILED' | 'UNKNOWN';
+
+/** Row shape returned by GET /nodes/{node}/disks/list. Field set follows
+ *  pve-storage Diskmanage.pm — most are optional because PVE omits them
+ *  when they're not applicable to the underlying device. */
+export interface DiskListEntry {
+  devpath: string;
+  size: number;
+  model?: string;
+  serial?: string;
+  vendor?: string;
+  type: DiskKind;
+  /** SSD wear-leveling indicator: 0–100 (% remaining) or "N/A" string. */
+  wearout?: number | string;
+  /** Top-level S.M.A.R.T. health surfaced in the listing for quick badges. */
+  health?: SmartHealth;
+  wwn?: string;
+  rpm?: number;
+  by_id_link?: string;
+  /** What's currently using the disk: 'ZFS' | 'LVM' | 'partitions' | 'mounted' | etc.
+   *  Empty string when the disk is unused/free. */
+  used?: string;
+  /** 1 if the disk has a GPT partition table. */
+  gpt?: 0 | 1;
+  /** Ceph OSD id; -1 (or omitted) when not part of a Ceph cluster. */
+  osdid?: number;
+  parttype?: string;
+}
+
+/** One row from `smartctl -A` (ATA) or the NVMe SMART/Health Information log.
+ *  ATA reports populate id/value/worst/threshold/raw; NVMe reports tend to
+ *  populate name/value only. All numeric fields are optional so the same
+ *  type carries both shapes without lossy coercion. */
+export interface SmartAttribute {
+  /** ATA attribute id (1..255); absent on NVMe. */
+  id?: number;
+  name: string;
+  value?: number;
+  worst?: number;
+  threshold?: number;
+  /** Vendor-specific raw counter — kept as string because it can be huge or
+   *  contain hex digits / suffixes like "0h+0m+0.000s". */
+  raw?: string;
+  /** smartctl flags (e.g. "Pre-fail  Always       -"). */
+  flags?: string;
+}
+
+/** GET /nodes/{node}/disks/smart?disk={device} response. PVE either returns
+ *  structured ATA/NVMe attributes or, for unrecognised report formats, a
+ *  raw text dump in `text`. */
+export interface SmartData {
+  type: 'ata' | 'nvme' | 'text';
+  health: SmartHealth;
+  attributes?: SmartAttribute[];
+  /** Raw smartctl output — populated only when type='text'. */
+  text?: string;
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export type TaskStatus = 'running' | 'stopped' | 'OK' | 'error';
