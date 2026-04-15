@@ -10,9 +10,10 @@ import { api } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import { Loader2, Share2, Trash2, Lock, Unlock } from 'lucide-react';
+import { Loader2, Share2, Trash2, Lock, Unlock, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { NasShare, NasProtocol } from '@/types/nas';
+import { FileBrowserSheet } from './file-browser-sheet';
 
 interface Props {
   node: string;
@@ -33,6 +34,7 @@ export function NasSharesTable({ node }: Props) {
   const qc = useQueryClient();
   const toast = useToast();
   const [pendingDelete, setPendingDelete] = useState<NasShare | null>(null);
+  const [activeBrowse, setActiveBrowse] = useState<NasShare | null>(null);
 
   const { data: shares, isLoading, error } = useQuery({
     queryKey: ['nas-shares', node],
@@ -62,6 +64,15 @@ export function NasSharesTable({ node }: Props) {
 
   return (
     <>
+      {activeBrowse && (
+        <FileBrowserSheet
+          node={node}
+          shareId={activeBrowse.id}
+          shareName={activeBrowse.name}
+          onClose={() => setActiveBrowse(null)}
+        />
+      )}
+
       {pendingDelete && (
         <ConfirmDialog
           title={`Delete share "${pendingDelete.name}"?`}
@@ -103,7 +114,7 @@ export function NasSharesTable({ node }: Props) {
                 <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Protocols</th>
                 <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Access</th>
                 <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Status</th>
-                <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-16">Actions</th>
+                <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -135,14 +146,23 @@ export function NasSharesTable({ node }: Props) {
                     <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button
-                      onClick={() => setPendingDelete(s)}
-                      disabled={deleteM.isPending}
-                      aria-label={`Delete ${s.name}`}
-                      className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setActiveBrowse(s)}
+                        aria-label={`Browse ${s.name}`}
+                        className="p-1.5 text-gray-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-md transition"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setPendingDelete(s)}
+                        disabled={deleteM.isPending}
+                        aria-label={`Delete ${s.name}`}
+                        className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -184,6 +184,7 @@ import type {
   NasShare,
   NasService,
   CreateNasSharePayload,
+  FileNode,
 } from '@/types/nas';
 
 /**
@@ -419,6 +420,34 @@ export const api = {
       nasRequest<{ services: NasService[] }>(
         `/api/nas/services?node=${encodeURIComponent(node)}`,
       ).then((r) => r.services),
+
+    browse: (node: string, shareId: string, path: string = ''): Promise<FileNode[]> =>
+      nasRequest<{ files: FileNode[] }>(
+        `/api/nas/browse?node=${encodeURIComponent(node)}&shareId=${encodeURIComponent(shareId)}&path=${encodeURIComponent(path)}`,
+      ).then((r) => r.files),
+
+    /**
+     * Download a single file. Returns the raw `Response` — the endpoint emits
+     * `application/octet-stream`, so we can't go through `nasRequest` (which
+     * would try JSON-parsing the body). Caller calls `.blob()` / `.body` as
+     * needed. Non-2xx responses are translated to `ProxmoxAPIError` with the
+     * server's error message surfaced through the JSON envelope.
+     */
+    download: async (node: string, shareId: string, path: string): Promise<Response> => {
+      const url = `/api/nas/download?node=${encodeURIComponent(node)}&shareId=${encodeURIComponent(shareId)}&path=${encodeURIComponent(path)}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) {
+        let message = res.statusText;
+        try {
+          const body = await res.json();
+          message = body?.error ?? body?.message ?? message;
+        } catch {
+          // non-JSON error body — stick with statusText
+        }
+        throw new ProxmoxAPIError(res.status, res.statusText, message);
+      }
+      return res;
+    },
   },
 
   // Cluster
