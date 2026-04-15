@@ -19,7 +19,8 @@
       "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/cts/[node]/[vmid]/)",
       "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]/[vmid]/)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/.env*)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"

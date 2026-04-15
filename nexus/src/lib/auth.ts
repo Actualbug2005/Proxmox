@@ -66,7 +66,7 @@ export async function startSession(
   data: PVEAuthSession,
 ): Promise<{ sessionId: string; csrfToken: string }> {
   const sessionId = newSessionId();
-  putSession(sessionId, data);
+  await putSession(sessionId, data);
   const csrfToken = deriveCsrfToken(sessionId);
 
   const isProd = process.env.NODE_ENV === 'production';
@@ -102,13 +102,13 @@ export async function getSessionId(): Promise<string | null> {
 export async function getSession(): Promise<PVEAuthSession | null> {
   const sessionId = await getSessionId();
   if (!sessionId) return null;
-  return getStoredSession(sessionId);
+  return await getStoredSession(sessionId);
 }
 
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
   const sid = cookieStore.get(SESSION_COOKIE)?.value;
-  if (sid) deleteStoredSession(sid);
+  if (sid) await deleteStoredSession(sid);
   cookieStore.delete(SESSION_COOKIE);
   cookieStore.delete(CSRF_COOKIE);
 }
