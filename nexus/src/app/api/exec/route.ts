@@ -9,11 +9,31 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { execFile } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import { promisify } from 'node:util';
 import { getSession } from '@/lib/auth';
 
 const execFileP = promisify(execFile);
+
+interface PVEMembers {
+  nodelist?: Record<string, { ip?: string; online?: number }>;
+}
+
+/** Look up a cluster node's IP via pmxcfs /etc/pve/.members — this is written
+ *  automatically when nodes join the cluster, and contains the corosync IPs
+ *  that actually route, regardless of DNS. Falls back to the node name. */
+async function resolveNodeAddress(node: string): Promise<string> {
+  try {
+    const raw = await readFile('/etc/pve/.members', 'utf8');
+    const parsed = JSON.parse(raw) as PVEMembers;
+    const ip = parsed.nodelist?.[node]?.ip;
+    if (ip) return ip;
+  } catch {
+    // File missing or unparseable — standalone PVE or restricted perms. Fall through.
+  }
+  return node;
+}
 
 interface ExecRequest {
   command: string;
@@ -44,19 +64,23 @@ export async function POST(req: NextRequest) {
   const maxBuffer = 10 * 1024 * 1024;
 
   try {
-    const { stdout, stderr } = target
-      ? await execFileP(
-          'ssh',
-          [
-            '-o', 'StrictHostKeyChecking=accept-new',
-            '-o', 'BatchMode=yes',
-            '-o', 'ConnectTimeout=10',
-            `root@${target}`,
-            'bash', '-c', body.command,
-          ],
-          { timeout, maxBuffer },
-        )
-      : await execFileP('bash', ['-c', body.command], { timeout, maxBuffer });
+    let stdout: string, stderr: string;
+    if (target) {
+      const address = await resolveNodeAddress(target);
+      ({ stdout, stderr } = await execFileP(
+        'ssh',
+        [
+          '-o', 'StrictHostKeyChecking=accept-new',
+          '-o', 'BatchMode=yes',
+          '-o', 'ConnectTimeout=10',
+          `root@${address}`,
+          'bash', '-c', body.command,
+        ],
+        { timeout, maxBuffer },
+      ));
+    } else {
+      ({ stdout, stderr } = await execFileP('bash', ['-c', body.command], { timeout, maxBuffer }));
+    }
 
     return NextResponse.json({ stdout, stderr, exitCode: 0 });
   } catch (err) {
