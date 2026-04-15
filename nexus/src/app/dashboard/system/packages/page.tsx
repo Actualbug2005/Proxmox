@@ -7,6 +7,7 @@ import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, ArrowUpCircle, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
 
 type Tab = 'pve' | 'system';
 
@@ -17,6 +18,7 @@ export default function PackagesPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [taskUpid, setTaskUpid] = useState('');
   const qc = useQueryClient();
+  const toast = useToast();
 
   const { data: pvePackages, isLoading: pveLoading, refetch: refetchPve } = useQuery({
     queryKey: ['apt', 'versions', node],
@@ -38,20 +40,25 @@ export default function PackagesPage() {
     mutationFn: () => api.apt.update(node),
     onSuccess: (upid) => {
       setTaskUpid(upid);
+      toast.success('Refreshing apt cache', `Task ${upid.slice(0, 24)}…`);
       setTimeout(() => {
         refetchPve();
         refetchSys();
       }, 3000);
     },
+    onError: (err) => toast.error('Refresh failed', err instanceof Error ? err.message : String(err)),
   });
 
   const installM = useMutation({
     mutationFn: (packages: string[]) => api.apt.install(node, packages),
-    onSuccess: (upid) => {
+    onSuccess: (upid, variables) => {
       setTaskUpid(upid);
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ['apt'] });
+      const what = variables.length > 0 ? `${variables.length} package${variables.length !== 1 ? 's' : ''}` : 'full upgrade';
+      toast.success(`Upgrade queued: ${what}`, `Watch Tasks page for progress`);
     },
+    onError: (err) => toast.error('Upgrade failed', err instanceof Error ? err.message : String(err)),
   });
 
   const filteredSystem = (upgradable ?? []).filter(
