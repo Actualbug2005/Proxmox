@@ -17,6 +17,9 @@ import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
+import { TabBar } from '@/components/dashboard/tab-bar';
+import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
+import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
 import type { UpdateVMConfigParams } from '@/types/proxmox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -168,7 +171,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   const vmid = parseInt(vmidStr, 10);
   const router = useRouter();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'summary' | 'hardware' | 'snapshots' | 'backups' | 'metrics'>('summary');
+  const [tab, setTab] = useState<'summary' | 'hardware' | 'snapshots' | 'backups' | 'firewall' | 'metrics'>('summary');
   const [showDelete, setShowDelete] = useState(false);
   const [showClone, setShowClone] = useState(false);
   const [showMigrate, setShowMigrate] = useState(false);
@@ -252,6 +255,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
     { id: 'hardware', label: 'Hardware' },
     { id: 'snapshots', label: 'Snapshots' },
     { id: 'backups', label: 'Backups' },
+    { id: 'firewall', label: 'Firewall' },
     { id: 'metrics', label: 'Metrics' },
   ] as const;
 
@@ -577,6 +581,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         <BackupsTab kind="qemu" node={node} vmid={vmid} />
       )}
 
+      {/* Firewall tab */}
+      {tab === 'firewall' && (
+        <VMFirewallSubtabs node={node} vmid={vmid} kind="vm" />
+      )}
+
       {/* Metrics tab */}
       {tab === 'metrics' && (
         <VMMetricsChart node={node} vmid={vmid} type="qemu" />
@@ -609,6 +618,23 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           onCancel={() => setShowMigrate(false)}
         />
       )}
+    </div>
+  );
+}
+
+// ── Firewall subtabs ──────────────────────────────────────────────────────────
+
+function VMFirewallSubtabs({ node, vmid, kind }: { node: string; vmid: number; kind: 'vm' | 'ct' }) {
+  const [sub, setSub] = useState<'rules' | 'options'>('rules');
+  const scope = { kind, node, vmid } as const;
+  return (
+    <div className="space-y-4">
+      <TabBar
+        tabs={[{ id: 'rules', label: 'Rules' }, { id: 'options', label: 'Options' }]}
+        value={sub}
+        onChange={setSub}
+      />
+      {sub === 'rules' ? <FirewallRulesTab scope={scope} /> : <FirewallOptionsTab scope={scope} />}
     </div>
   );
 }
