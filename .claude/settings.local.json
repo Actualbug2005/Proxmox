@@ -24,7 +24,13 @@
       "Bash(./node_modules/.bin/tsc --noEmit --noUnusedLocals)",
       "Bash(echo \"EXIT=$?\")",
       "Bash(tee /tmp/tsc.out)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "mcp__plugin_serena_serena__activate_project",
+      "mcp__plugin_serena_serena__check_onboarding_performed",
+      "mcp__plugin_serena_serena__onboarding",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__write_memory",
+      "mcp__plugin_serena_serena__list_memories"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
