@@ -7,11 +7,12 @@ import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { formatUptime } from '@/lib/utils';
 import { PowerOff, RotateCcw, Loader2, Clock } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
 
 export default function PowerPage() {
   const { node } = useSystemNode();
+  const toast = useToast();
   const [pending, setPending] = useState<'reboot' | 'shutdown' | null>(null);
-  const [toast, setToast] = useState('');
 
   const { data: status } = useQuery({
     queryKey: ['node', node, 'status'],
@@ -24,9 +25,12 @@ export default function PowerPage() {
     mutationFn: (command: 'reboot' | 'shutdown') => api.nodes.power(node, command),
     onSuccess: (_, command) => {
       setPending(null);
-      setToast(`${command === 'reboot' ? 'Reboot' : 'Shutdown'} initiated for ${node}`);
-      setTimeout(() => setToast(''), 5000);
+      toast.success(
+        `${command === 'reboot' ? 'Reboot' : 'Shutdown'} initiated`,
+        `Node ${node} will ${command === 'reboot' ? 'restart' : 'power off'} shortly.`,
+      );
     },
+    onError: (err) => toast.error('Power action failed', err instanceof Error ? err.message : String(err)),
   });
 
   if (!node) {
@@ -39,12 +43,6 @@ export default function PowerPage() {
 
   return (
     <>
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-gray-800 border border-gray-700 text-gray-200 text-sm px-4 py-3 rounded-xl shadow-lg">
-          {toast}
-        </div>
-      )}
-
       {pending && (
         <ConfirmDialog
           title={`${pending === 'reboot' ? 'Reboot' : 'Shut down'} ${node}?`}
