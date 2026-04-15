@@ -252,10 +252,31 @@ export const api = {
     },
   },
 
-  // Node exec (for community scripts)
+  // Local shell executor — hits our own /api/exec, which runs on the PVE host
+  // that's hosting Nexus. PVE's /nodes/{node}/execute is an API-batch endpoint,
+  // not a shell runner, so we bypass it entirely for shell work.
   exec: {
-    shellCmd: (node: string, commands: string) =>
-      proxmox.post<string>(`nodes/${node}/execute`, { commands }),
+    shellCmd: async (node: string, command: string) => {
+      const res = await fetch('/api/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command, node }),
+        credentials: 'include',
+      });
+      const data = (await res.json()) as {
+        stdout?: string;
+        stderr?: string;
+        exitCode?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new ProxmoxAPIError(res.status, res.statusText, data.error ?? res.statusText);
+      }
+      if (data.exitCode !== 0) {
+        throw new ProxmoxAPIError(200, 'Command failed', data.stderr || data.error || `exit ${data.exitCode}`);
+      }
+      return (data.stdout ?? '').trim();
+    },
   },
 
   apt: {
@@ -266,11 +287,12 @@ export const api = {
     upgradable: (node: string) =>
       proxmox.get<AptUpdatablePackage[]>(`nodes/${node}/apt/update`),
     install: (node: string, packages: string[]) =>
-      proxmox.post<string>(`nodes/${node}/execute`, {
-        commands: packages.length > 0
-          ? `apt-get install -y ${packages.join(' ')}`
-          : `apt-get dist-upgrade -y`,
-      }),
+      api.exec.shellCmd(
+        node,
+        packages.length > 0
+          ? `DEBIAN_FRONTEND=noninteractive apt-get install -y ${packages.join(' ')}`
+          : `DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y`,
+      ),
   },
 
   // Note: named networkIfaces (not network) to avoid shadowing the existing api.network.list method

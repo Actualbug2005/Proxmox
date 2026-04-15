@@ -51,12 +51,11 @@ export default function PackagesPage() {
 
   const installM = useMutation({
     mutationFn: (packages: string[]) => api.apt.install(node, packages),
-    onSuccess: (upid, variables) => {
-      setTaskUpid(upid);
+    onSuccess: (_stdout, variables) => {
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ['apt'] });
       const what = variables.length > 0 ? `${variables.length} package${variables.length !== 1 ? 's' : ''}` : 'full upgrade';
-      toast.success(`Upgrade queued: ${what}`, `Watch Tasks page for progress`);
+      toast.success(`Upgrade complete: ${what}`);
     },
     onError: (err) => toast.error('Upgrade failed', err instanceof Error ? err.message : String(err)),
   });
