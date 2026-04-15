@@ -19,6 +19,7 @@ export const unasProvider: NasProvider = {
   createShare: async () => notImplemented(),
   deleteShare: async () => notImplemented(),
   getServices: async () => notImplemented(),
+  listDirectory: async () => notImplemented(),
 };
 
 export { nativeProvider };

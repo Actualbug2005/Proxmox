@@ -17,6 +17,7 @@
  */
 import type {
   CreateNasSharePayload,
+  FileNode,
   NasProtocol,
   NasProvider,
   NasShare,
@@ -277,6 +278,102 @@ fi
  *  when any unit is inactive. */
 const SERVICES_SCRIPT = `systemctl is-active smbd nfs-kernel-server 2>/dev/null || true`;
 
+/**
+ * Build the directory-listing script.
+ *
+ * Three layers of traversal defense:
+ *   1. Caller (route/provider) rejects '..' and leading '/' in subPath.
+ *   2. Base64 round-trip prevents shell injection in sharePath/subPath.
+ *   3. `realpath -e` resolves symlinks, then we prefix-check the result
+ *      against the share's own resolved root — catches symlinks inside the
+ *      share that point to /etc, /root, etc.
+ *
+ * Output is the GNU-find -printf JSON-fragment format: one object per entry,
+ * comma-terminated. bash strips the trailing comma and wraps in [...] to
+ * produce a parseable JSON array. Known limitation: filenames containing
+ * ", \\, or raw control characters will break JSON.parse — we surface that
+ * as a clear error rather than silently dropping entries.
+ */
+function buildListDirScript(sharePath: string, subPath: string): string {
+  return `set -euo pipefail
+SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
+SUB_PATH="$(printf '%s' '${b64(subPath)}' | base64 -d)"
+
+if [ -n "$SUB_PATH" ]; then
+  TARGET="$SHARE_PATH/$SUB_PATH"
+else
+  TARGET="$SHARE_PATH"
+fi
+
+# Canonicalise both paths and verify the target still lives under the share
+# root. -e forces existence; any missing component fails the script.
+REAL_SHARE="$(realpath -e "$SHARE_PATH")"
+REAL_TARGET="$(realpath -e "$TARGET")"
+
+case "$REAL_TARGET" in
+  "$REAL_SHARE"|"$REAL_SHARE"/*) ;;
+  *)
+    echo "Path escapes share root" >&2
+    exit 3
+    ;;
+esac
+
+if [ ! -d "$REAL_TARGET" ]; then
+  echo "Not a directory" >&2
+  exit 2
+fi
+
+# One level deep; GNU -printf emits the JSON-fragment format we strip below.
+OUTPUT=$(find "$REAL_TARGET" -mindepth 1 -maxdepth 1 -printf '{"name":"%f","type":"%y","size":%s,"mtime":%T@},')
+# Strip the trailing ',' so JSON.parse accepts the result. Empty listing ⇒ [].
+OUTPUT="\${OUTPUT%,}"
+printf '[%s]' "$OUTPUT"
+`;
+}
+
+interface FindEntryRaw {
+  name: string;
+  type: string;
+  size: number;
+  mtime: number;
+}
+
+/** Map GNU find's single-letter type codes to our FileNode['type']. Returns
+ *  null for socket/fifo/block/char-device entries — the UI has nothing
+ *  sensible to do with them, so drop rather than surface as 'file'. */
+function mapGnuType(c: string): FileNode['type'] | null {
+  if (c === 'd') return 'dir';
+  if (c === 'f') return 'file';
+  if (c === 'l') return 'symlink';
+  return null;
+}
+
+function parseListDirOutput(stdout: string, subPath: string): FileNode[] {
+  const trimmed = stdout.trim();
+  if (!trimmed) return [];
+  let parsed: FindEntryRaw[];
+  try {
+    parsed = JSON.parse(trimmed) as FindEntryRaw[];
+  } catch (err) {
+    throw new Error(
+      `listDirectory: failed to parse find output — likely a filename with ", \\\\, or control chars (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
+  const out: FileNode[] = [];
+  for (const e of parsed) {
+    const type = mapGnuType(e.type);
+    if (!type) continue;
+    out.push({
+      name: e.name,
+      type,
+      size: e.size,
+      mtime: e.mtime,
+      relativePath: subPath ? `${subPath}/${e.name}` : e.name,
+    });
+  }
+  return out;
+}
+
 // ─── Provider implementation ────────────────────────────────────────────────
 
 /**
@@ -371,5 +468,35 @@ export const nativeProvider: NasProvider = {
       { protocol: 'smb', status: smbdStatus === 'active' ? 'running' : 'stopped' },
       { protocol: 'nfs', status: nfsStatus === 'active' ? 'running' : 'stopped' },
     ];
+  },
+
+  async listDirectory(node: string, shareId: string, subPath: string): Promise<FileNode[]> {
+    // Layer 1: reject traversal at the TS boundary — regex-only, no
+    // filesystem state involved.
+    if (subPath.includes('..')) {
+      throw new Error('Invalid path: contains directory traversal (..)');
+    }
+    if (subPath.startsWith('/')) {
+      throw new Error('Invalid path: must be relative to the share root');
+    }
+
+    // Resolve shareId → share record so we know the share's root path.
+    const shares = await fetchAllShares(node);
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) {
+      throw new Error(`Share not found: id=${shareId}`);
+    }
+
+    // Layers 2 + 3 live inside the script (base64 injection + realpath
+    // prefix check).
+    const script = buildListDirScript(share.path, subPath);
+    const res = await runScriptOnNode(node, script, { timeoutMs: 15_000 });
+    if (res.exitCode !== 0) {
+      throw new Error(
+        `listDirectory: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 300)}`,
+      );
+    }
+
+    return parseListDirOutput(res.stdout, subPath);
   },
 };

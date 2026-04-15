@@ -40,6 +40,24 @@ export interface NasService {
 }
 
 /**
+ * One directory entry returned by the read-only file browser.
+ *
+ * `relativePath` is the path-from-share-root that the client feeds back
+ * into listDirectory's subPath to drill into a subdirectory (or, later,
+ * into a download endpoint). Caller composes `currentPath + '/' + name`
+ * server-side so the client can trust what comes back without rebuilding
+ * the string (and accidentally traversing).
+ */
+export interface FileNode {
+  name: string;
+  type: 'file' | 'dir' | 'symlink';
+  size: number;
+  /** Unix modification time in seconds since epoch (float — GNU find's %T@). */
+  mtime: number;
+  relativePath: string;
+}
+
+/**
  * Abstract backend contract. All methods are async because every
  * implementation does I/O (REST or SSH shell-out). The interface accepts an
  * explicit `node` on every call so a single provider instance can serve
@@ -50,4 +68,11 @@ export interface NasProvider {
   createShare(node: string, payload: CreateNasSharePayload): Promise<NasShare>;
   deleteShare(node: string, id: string): Promise<void>;
   getServices(node: string): Promise<NasService[]>;
+  /**
+   * List one level of `shareId`'s content at `subPath`. `subPath` is always
+   * relative to the share root — never an absolute path — and must not
+   * contain '..'. The provider is responsible for verifying the resolved
+   * target hasn't escaped the share boundary via symlinks.
+   */
+  listDirectory(node: string, shareId: string, subPath: string): Promise<FileNode[]>;
 }
