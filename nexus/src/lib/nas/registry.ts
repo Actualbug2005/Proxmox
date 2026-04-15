@@ -20,6 +20,7 @@ export const unasProvider: NasProvider = {
   deleteShare: async () => notImplemented(),
   getServices: async () => notImplemented(),
   listDirectory: async () => notImplemented(),
+  downloadFile: async () => notImplemented(),
 };
 
 export { nativeProvider };

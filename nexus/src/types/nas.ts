@@ -75,4 +75,18 @@ export interface NasProvider {
    * target hasn't escaped the share boundary via symlinks.
    */
   listDirectory(node: string, shareId: string, subPath: string): Promise<FileNode[]>;
+
+  /**
+   * Stream the contents of a single regular file under `shareId`.
+   *
+   * Promise resolves once the provider has enough information to return a
+   * valid HTTP response — specifically once the file size is known — but
+   * before any body bytes are pulled. The returned `stream` is a Web
+   * ReadableStream the caller hands to `new Response(...)`.
+   */
+  downloadFile(
+    node: string,
+    shareId: string,
+    subPath: string,
+  ): Promise<{ stream: ReadableStream<Uint8Array>; filename: string; size: number }>;
 }

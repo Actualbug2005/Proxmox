@@ -23,7 +23,8 @@ import type {
   NasShare,
   NasService,
 } from '@/types/nas';
-import { runScriptOnNode } from '@/lib/remote-shell';
+import { Readable } from 'node:stream';
+import { runScriptOnNode, spawnScriptStream } from '@/lib/remote-shell';
 
 // ─── Parsing helpers (pure, unit-testable) ──────────────────────────────────
 
@@ -348,6 +349,40 @@ function mapGnuType(c: string): FileNode['type'] | null {
   return null;
 }
 
+/**
+ * Build the atomic validate+stream script. realpath prefix-check and the
+ * cat that streams the file live in the same process — there's no TS round
+ * trip between "is this path safe?" and "open this path for reading", so a
+ * symlink swap between check and use can't bait us onto a different file.
+ *
+ * Size goes to stderr so stdout stays a pure byte stream the HTTP layer
+ * can forward unchanged.
+ */
+function buildDownloadScript(sharePath: string, subPath: string): string {
+  return `set -euo pipefail
+SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
+SUB_PATH="$(printf '%s' '${b64(subPath)}' | base64 -d)"
+TARGET="$SHARE_PATH/$SUB_PATH"
+REAL_SHARE="$(realpath -e "$SHARE_PATH")"
+REAL_TARGET="$(realpath -e "$TARGET")"
+
+case "$REAL_TARGET" in
+  "$REAL_SHARE"|"$REAL_SHARE"/*)
+    if [ ! -f "$REAL_TARGET" ]; then
+      echo "Not a regular file" >&2
+      exit 4
+    fi
+    stat -c "%s" "$REAL_TARGET" >&2
+    exec cat "$REAL_TARGET"
+    ;;
+  *)
+    echo "Path escapes share root" >&2
+    exit 3
+    ;;
+esac
+`;
+}
+
 function parseListDirOutput(stdout: string, subPath: string): FileNode[] {
   const trimmed = stdout.trim();
   if (!trimmed) return [];
@@ -498,5 +533,115 @@ export const nativeProvider: NasProvider = {
     }
 
     return parseListDirOutput(res.stdout, subPath);
+  },
+
+  async downloadFile(
+    node: string,
+    shareId: string,
+    subPath: string,
+  ): Promise<{ stream: ReadableStream<Uint8Array>; filename: string; size: number }> {
+    // Layer 1: same string-level traversal rejection as listDirectory.
+    if (subPath.includes('..')) {
+      throw new Error('Invalid path: contains directory traversal (..)');
+    }
+    if (subPath.startsWith('/')) {
+      throw new Error('Invalid path: must be relative to the share root');
+    }
+    if (subPath === '') {
+      throw new Error('Invalid path: cannot download the share root itself');
+    }
+
+    const shares = await fetchAllShares(node);
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) {
+      throw new Error(`Share not found: id=${shareId}`);
+    }
+
+    const script = buildDownloadScript(share.path, subPath);
+    const child = await spawnScriptStream(node, script);
+    const { stdout, stderr } = child;
+    if (!stdout || !stderr) {
+      // 'pipe' stdio was requested, so this should never fire — guard for TS.
+      child.kill('SIGKILL');
+      throw new Error('downloadFile: child process has no stdio pipes');
+    }
+
+    // Wait for either:
+    //   • The first full line on stderr (the size, as decimal digits), OR
+    //   • The child exiting with a non-zero code before emitting size.
+    // Whichever happens first resolves/rejects this promise — once resolved,
+    // the caller owns the stdout stream.
+    const size = await new Promise<number>((resolve, reject) => {
+      let stderrBuf = '';
+      let settled = false;
+
+      const finish = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        stderr.off('data', onStderr);
+        child.off('exit', onExit);
+        child.off('error', onError);
+        fn();
+      };
+
+      const onStderr = (chunk: Buffer) => {
+        stderrBuf += chunk.toString('utf8');
+        const nl = stderrBuf.indexOf('\n');
+        if (nl === -1) return;
+        const firstLine = stderrBuf.slice(0, nl).trim();
+        if (/^\d+$/.test(firstLine)) {
+          finish(() => resolve(parseInt(firstLine, 10)));
+        } else {
+          child.kill('SIGTERM');
+          finish(() =>
+            reject(
+              new Error(
+                `downloadFile: unexpected stderr before size: ${stderrBuf.slice(0, 300)}`,
+              ),
+            ),
+          );
+        }
+      };
+
+      const onExit = (code: number | null) => {
+        finish(() =>
+          reject(
+            new Error(
+              `downloadFile: child exited ${code ?? 'null'} before emitting size: ${stderrBuf.slice(0, 300)}`,
+            ),
+          ),
+        );
+      };
+
+      const onError = (err: Error) => {
+        finish(() => reject(err));
+      };
+
+      stderr.on('data', onStderr);
+      child.on('exit', onExit);
+      child.on('error', onError);
+    });
+
+    // After the promise resolves we still want to know if the child crashes
+    // mid-stream — unhandled 'error' events on the Node process crash the
+    // Node runtime, so attach a no-op listener. `Readable.toWeb` propagates
+    // the error to the Web stream consumer.
+    child.on('error', (err) => {
+      console.warn('[nas.downloadFile] child error after handoff:', err.message);
+    });
+    // Drain stderr so the buffer doesn't fill and back-pressure the child.
+    stderr.resume();
+    // If the consumer aborts the Web stream, Readable.toWeb destroys stdout,
+    // which propagates EPIPE → ssh/bash exit. Belt-and-braces: also kill the
+    // child when stdout closes unexpectedly so we never leak a remote cat.
+    stdout.on('close', () => {
+      if (!child.killed && child.exitCode === null) {
+        child.kill('SIGTERM');
+      }
+    });
+
+    const filename = subPath.split('/').pop() ?? 'download';
+    const webStream = Readable.toWeb(stdout) as ReadableStream<Uint8Array>;
+    return { stream: webStream, filename, size };
   },
 };

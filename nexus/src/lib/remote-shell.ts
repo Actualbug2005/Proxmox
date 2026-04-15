@@ -7,7 +7,7 @@
  * (script payload always travels over stdin, never via argv or string
  * interpolation).
  */
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
 
@@ -128,4 +128,41 @@ export async function runScriptOnNode(
     script,
     opts,
   );
+}
+
+/**
+ * Spawn `script` on `node` and hand back the raw ChildProcess so the caller
+ * can stream stdout/stderr directly — skipping the string buffering that
+ * runScriptOnNode performs. Used for binary/large payloads (file downloads).
+ *
+ * The script is piped via stdin (same injection-safe path as runScriptOnNode).
+ * The caller is responsible for:
+ *   • attaching 'error' / 'exit' listeners,
+ *   • killing the child if the consumer aborts,
+ *   • consuming stderr (which often carries side-channel data like file size).
+ */
+export async function spawnScriptStream(
+  node: string,
+  script: string,
+): Promise<ChildProcess> {
+  const isLocal = node === hostname();
+  let child: ChildProcess;
+  if (isLocal) {
+    child = spawn('bash', ['-s'], { stdio: ['pipe', 'pipe', 'pipe'] });
+  } else {
+    const address = await resolveNodeAddress(node);
+    child = spawn(
+      'ssh',
+      [
+        '-o', 'StrictHostKeyChecking=accept-new',
+        '-o', 'BatchMode=yes',
+        '-o', 'ConnectTimeout=10',
+        `root@${address}`,
+        'bash', '-s',
+      ],
+      { stdio: ['pipe', 'pipe', 'pipe'] },
+    );
+  }
+  child.stdin?.end(script);
+  return child;
 }
