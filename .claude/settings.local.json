@@ -50,7 +50,9 @@
       "mcp__plugin_serena_serena__get_symbols_overview",
       "Bash(git checkout *)",
       "Bash(npm test *)",
-      "Bash(gitnexus detect_changes)"
+      "Bash(gitnexus detect_changes)",
+      "Bash(sed -n '120,135p' src/app/dashboard/storage/page.tsx)",
+      "Bash(sed -n '15,30p' src/components/storage/physical-disks-table.tsx)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
