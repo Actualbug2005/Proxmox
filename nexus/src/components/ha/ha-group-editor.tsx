@@ -5,10 +5,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, Save, X } from 'lucide-react';
-import type { HAGroup, HAGroupParams } from '@/types/proxmox';
+import type { HAGroupPublic, HAGroupParamsPublic } from '@/types/proxmox';
 
 interface HAGroupEditorProps {
-  initial?: HAGroup | null;
+  initial?: HAGroupPublic | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -31,12 +31,12 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
     }
     return out;
   });
-  const [restricted, setRestricted] = useState(initial?.restricted === 1);
-  const [nofailback, setNofailback] = useState(initial?.nofailback === 1);
+  const [restricted, setRestricted] = useState(initial?.restricted ?? false);
+  const [nofailback, setNofailback] = useState(initial?.nofailback ?? false);
   const [comment, setComment] = useState(initial?.comment ?? '');
 
   const saveM = useMutation({
-    mutationFn: (params: HAGroupParams) =>
+    mutationFn: (params: HAGroupParamsPublic) =>
       isEdit && initial ? api.ha.groups.update(initial.group, params) : api.ha.groups.create(params),
     onSuccess: () => {
       toast.success(isEdit ? 'Group updated' : 'Group created');
@@ -63,8 +63,8 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
     saveM.mutate({
       group: groupName,
       nodes: nodesStr,
-      restricted: restricted ? 1 : 0,
-      nofailback: nofailback ? 1 : 0,
+      restricted,
+      nofailback,
       ...(comment ? { comment } : {}),
     });
   };

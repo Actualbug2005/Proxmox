@@ -16,7 +16,7 @@ export function ClusterStatusPanel() {
   const clusterEntry = data?.find((d) => d.type === 'cluster');
   const nodeEntries = (data ?? []).filter((d) => d.type === 'node');
   const online = nodeEntries.filter((n) => n.online === 1).length;
-  const quorate = clusterEntry?.quorate === 1;
+  const quorate = clusterEntry?.quorate ?? false;
 
   if (isLoading) {
     return (

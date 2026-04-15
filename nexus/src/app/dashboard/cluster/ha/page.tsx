@@ -15,7 +15,7 @@ import { HAMigrateDialog } from '@/components/ha/ha-migrate-dialog';
 import {
   HeartPulse, Plus, Trash2, Pencil, ArrowRightLeft, Shuffle, Layers, Loader2,
 } from 'lucide-react';
-import type { HAResource, HAGroup } from '@/types/proxmox';
+import type { HAResource, HAGroupPublic } from '@/types/proxmox';
 
 type Tab = 'resources' | 'groups' | 'status';
 
@@ -55,9 +55,9 @@ export default function HAPage() {
   const [deleteRes, setDeleteRes] = useState<HAResource | null>(null);
   const [migrateTarget, setMigrateTarget] = useState<{ r: HAResource; kind: 'migrate' | 'relocate' } | null>(null);
 
-  const [editGroup, setEditGroup] = useState<HAGroup | null>(null);
+  const [editGroup, setEditGroup] = useState<HAGroupPublic | null>(null);
   const [showNewGroup, setShowNewGroup] = useState(false);
-  const [deleteGroup, setDeleteGroup] = useState<HAGroup | null>(null);
+  const [deleteGroup, setDeleteGroup] = useState<HAGroupPublic | null>(null);
 
   const deleteResM = useMutation({
     mutationFn: (r: HAResource) => api.ha.resources.delete(r.sid),
@@ -70,7 +70,7 @@ export default function HAPage() {
   });
 
   const deleteGroupM = useMutation({
-    mutationFn: (g: HAGroup) => api.ha.groups.delete(g.group),
+    mutationFn: (g: HAGroupPublic) => api.ha.groups.delete(g.group),
     onSuccess: () => {
       setDeleteGroup(null);
       qc.invalidateQueries({ queryKey: ['ha', 'groups'] });

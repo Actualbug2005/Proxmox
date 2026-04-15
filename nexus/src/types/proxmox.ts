@@ -1058,6 +1058,11 @@ export interface HAGroupParams {
   [key: string]: unknown;
 }
 
+/** Boolean-facing shapes of the HA Group types. `restricted` and `nofailback`
+ *  are unwired from PveBool at the HTTP boundary. */
+export type HAGroupPublic = UnwireBool<HAGroup, 'restricted' | 'nofailback'>;
+export type HAGroupParamsPublic = UnwireBool<HAGroupParams, 'restricted' | 'nofailback'>;
+
 export interface HAStatus {
   id: string;
   sid?: string;
@@ -1069,6 +1074,9 @@ export interface HAStatus {
   status?: string;
   quorate?: PveBool;
 }
+
+/** Boolean-facing shape of HAStatus — `quorate` unwired from PveBool. */
+export type HAStatusPublic = UnwireBool<HAStatus, 'quorate'>;
 
 export interface ClusterStatus {
   type: 'cluster' | 'node';
@@ -1083,6 +1091,11 @@ export interface ClusterStatus {
   local?: PveBool;
   nodeid?: number;
 }
+
+/** Boolean-facing shape of ClusterStatus — only `quorate` is unwired this
+ *  phase per scope. `online` and `local` remain PveBool and are compared
+ *  against `=== 1` at read sites until a later phase broadens coverage. */
+export type ClusterStatusPublic = UnwireBool<ClusterStatus, 'quorate'>;
 
 // ─── Tier 3 — Pools ──────────────────────────────────────────────────────────
 

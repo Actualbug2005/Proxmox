@@ -117,6 +117,34 @@ const encodeRestore = (
 ): Record<string, unknown> =>
   encodeBoolFields(params, RESTORE_BOOL_KEYS) as Record<string, unknown>;
 
+// ─── HA / Cluster Status Codec Bindings ───────────────────────────────────────
+
+const HA_GROUP_BOOL_KEYS = ['restricted', 'nofailback'] as const satisfies
+  readonly (keyof HAGroup)[];
+
+const HA_STATUS_BOOL_KEYS = ['quorate'] as const satisfies
+  readonly (keyof HAStatus)[];
+
+const CLUSTER_STATUS_BOOL_KEYS = ['quorate'] as const satisfies
+  readonly (keyof ClusterStatus)[];
+
+const decodeHAGroup = (raw: HAGroup): HAGroupPublic =>
+  decodeBoolFields(raw, HA_GROUP_BOOL_KEYS) as HAGroupPublic;
+
+const encodeHAGroupParams = (
+  params: Partial<HAGroupParamsPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(params, HA_GROUP_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeHAStatus = (rows: HAStatus[]): HAStatusPublic[] =>
+  rows.map((r) => decodeBoolFields(r, HA_STATUS_BOOL_KEYS) as HAStatusPublic);
+
+/** Only `quorate` is unwired this phase; `online` and `local` remain PveBool
+ *  on the returned objects. Consumers continue to compare them against
+ *  `=== 1` at read sites until a later phase broadens coverage. */
+const decodeClusterStatus = (rows: ClusterStatus[]): ClusterStatusPublic[] =>
+  rows.map((r) => decodeBoolFields(r, CLUSTER_STATUS_BOOL_KEYS) as ClusterStatusPublic);
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -290,9 +318,12 @@ import type {
   HAResource,
   HAResourceParams,
   HAGroup,
-  HAGroupParams,
+  HAGroupPublic,
+  HAGroupParamsPublic,
   HAStatus,
+  HAStatusPublic,
   ClusterStatus,
+  ClusterStatusPublic,
   PVEPool,
   PoolParams,
   DiskListEntry,
@@ -604,7 +635,8 @@ export const api = {
     resources: () => proxmox.get<ClusterResource[]>('cluster/resources'),
     tasks: () => proxmox.get<PVETask[]>('cluster/tasks'),
     nextid: () => proxmox.get<number>('cluster/nextid'),
-    status: () => proxmox.get<ClusterStatus[]>('cluster/status'),
+    status: async (): Promise<ClusterStatusPublic[]> =>
+      decodeClusterStatus(await proxmox.get<ClusterStatus[]>('cluster/status')),
   },
 
   // Tasks
@@ -994,7 +1026,8 @@ export const api = {
 
   ha: {
     status: {
-      current: () => proxmox.get<HAStatus[]>('cluster/ha/status/current'),
+      current: async (): Promise<HAStatusPublic[]> =>
+        decodeHAStatus(await proxmox.get<HAStatus[]>('cluster/ha/status/current')),
       managerStatus: () => proxmox.get<Record<string, unknown>>('cluster/ha/status/manager_status'),
     },
     resources: {
@@ -1012,12 +1045,21 @@ export const api = {
         proxmox.post<null>(`cluster/ha/resources/${encodeURIComponent(sid)}/relocate`, { node: target }),
     },
     groups: {
-      list: () => proxmox.get<HAGroup[]>('cluster/ha/groups'),
-      get: (group: string) => proxmox.get<HAGroup>(`cluster/ha/groups/${encodeURIComponent(group)}`),
-      create: (params: HAGroupParams) =>
-        proxmox.post<null>('cluster/ha/groups', params as Record<string, unknown>),
-      update: (group: string, params: Partial<HAGroupParams>) =>
-        proxmox.put<null>(`cluster/ha/groups/${encodeURIComponent(group)}`, params as Record<string, unknown>),
+      list: async (): Promise<HAGroupPublic[]> => {
+        const rows = await proxmox.get<HAGroup[]>('cluster/ha/groups');
+        return rows.map(decodeHAGroup);
+      },
+      get: async (group: string): Promise<HAGroupPublic> =>
+        decodeHAGroup(
+          await proxmox.get<HAGroup>(`cluster/ha/groups/${encodeURIComponent(group)}`),
+        ),
+      create: (params: HAGroupParamsPublic) =>
+        proxmox.post<null>('cluster/ha/groups', encodeHAGroupParams(params)),
+      update: (group: string, params: Partial<HAGroupParamsPublic>) =>
+        proxmox.put<null>(
+          `cluster/ha/groups/${encodeURIComponent(group)}`,
+          encodeHAGroupParams(params),
+        ),
       delete: (group: string) =>
         proxmox.delete<null>(`cluster/ha/groups/${encodeURIComponent(group)}`),
     },
