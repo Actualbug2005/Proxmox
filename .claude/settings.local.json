@@ -53,7 +53,8 @@
       "Bash(gitnexus detect_changes)",
       "Bash(sed -n '120,135p' src/app/dashboard/storage/page.tsx)",
       "Bash(sed -n '15,30p' src/components/storage/physical-disks-table.tsx)",
-      "Bash(gitnexus clean *)"
+      "Bash(gitnexus clean *)",
+      "Bash(gitnexus --version)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
