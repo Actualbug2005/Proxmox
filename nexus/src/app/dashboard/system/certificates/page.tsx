@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useSystemNode } from '@/app/dashboard/system/node-context';
@@ -24,7 +24,17 @@ function CertBadge({ days }: { days: number | null }) {
   return <Badge variant="success">{days}d left</Badge>;
 }
 
-const TUNNEL_PROVIDERS = [
+interface TunnelProvider {
+  id: string;
+  name: string;
+  binary: string;
+  service: string;
+  installCmd: string;
+  configFields: { key: string; label: string; placeholder: string }[];
+  configCmd: (vals: Record<string, string>) => string;
+}
+
+const TUNNEL_PROVIDERS: readonly TunnelProvider[] = [
   {
     id: 'cloudflared',
     name: 'Cloudflare Tunnel',
@@ -59,37 +69,65 @@ ngrok --version`,
     configCmd: (vals: Record<string, string>) =>
       `ngrok config add-authtoken ${vals.authtoken} && ngrok http ${vals.port ?? '8080'} --log=stdout &`,
   },
-];
+] as const;
 
-function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_PROVIDERS[number] }) {
+/** Script that emits exactly one line describing the provider's state on
+ *  the target node. Hoisted outside the component so the closure identity
+ *  stays stable across renders. */
+function buildStatusProbe(binary: string, service: string): string {
+  return `if ! command -v ${binary} >/dev/null 2>&1; then
+  echo not-installed
+elif ! systemctl cat ${service} >/dev/null 2>&1; then
+  echo not-configured
+elif systemctl is-active ${service} >/dev/null 2>&1; then
+  echo active
+else
+  echo stopped
+fi`;
+}
+
+type TunnelStatus = 'not-installed' | 'not-configured' | 'stopped' | 'active' | 'unknown';
+
+interface TunnelFlags {
+  status: TunnelStatus;
+  installed: boolean;
+  configured: boolean;
+  active: boolean;
+}
+
+function deriveTunnelFlags(raw: string | undefined): TunnelFlags {
+  const status = ((raw ?? '').trim() as TunnelStatus) || 'unknown';
+  const installed = status === 'not-configured' || status === 'stopped' || status === 'active';
+  const configured = status === 'stopped' || status === 'active';
+  const active = status === 'active';
+  return { status, installed, configured, active };
+}
+
+function TunnelCard({ node, provider }: { node: string; provider: TunnelProvider }) {
   const qc = useQueryClient();
   const toast = useToast();
   const [configVals, setConfigVals] = useState<Record<string, string>>({});
   const [showConfig, setShowConfig] = useState(false);
   const [output, setOutput] = useState('');
 
+  // Hoist the probe script so the queryFn closure and its string argument
+  // stay reference-stable between renders.
+  const probe = useMemo(
+    () => buildStatusProbe(provider.binary, provider.service),
+    [provider.binary, provider.service],
+  );
+
   const { data: checkData } = useQuery({
     queryKey: ['tunnel', node, provider.id, 'check'],
-    queryFn: () => api.exec.shellCmd(
-      node,
-      `if ! command -v ${provider.binary} >/dev/null 2>&1; then
-  echo not-installed
-elif ! systemctl cat ${provider.service} >/dev/null 2>&1; then
-  echo not-configured
-elif systemctl is-active ${provider.service} >/dev/null 2>&1; then
-  echo active
-else
-  echo stopped
-fi`,
-    ),
+    queryFn: () => api.exec.shellCmd(node, probe),
     enabled: !!node,
     refetchInterval: 10_000,
   });
 
-  const status = (checkData ?? '').trim();
-  const installed = status === 'not-configured' || status === 'stopped' || status === 'active';
-  const configured = status === 'stopped' || status === 'active';
-  const active = status === 'active';
+  const { installed, configured, active } = useMemo(
+    () => deriveTunnelFlags(checkData),
+    [checkData],
+  );
 
   const execM = useMutation({
     mutationFn: (cmd: string) => api.exec.shellCmd(node, cmd),
@@ -260,8 +298,16 @@ export default function CertificatesPage() {
     onError: (err) => toast.error('Order failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const activeCert = certs?.find((c) => c.filename === 'pveproxy-ssl.pem') ?? certs?.[0];
-  const days = daysUntil(activeCert?.notafter);
+  const activeCert = useMemo(
+    () => certs?.find((c) => c.filename === 'pveproxy-ssl.pem') ?? certs?.[0],
+    [certs],
+  );
+  const days = useMemo(() => daysUntil(activeCert?.notafter), [activeCert]);
+
+  const tunnelCards = useMemo(
+    () => TUNNEL_PROVIDERS.map((p) => <TunnelCard key={p.id} node={node} provider={p} />),
+    [node],
+  );
 
   if (!node) {
     return (
@@ -437,12 +483,11 @@ export default function CertificatesPage() {
 
       {tab === 'tunnels' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">Install and manage reverse tunnel agents on {node}.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {TUNNEL_PROVIDERS.map((p) => (
-              <TunnelCard key={p.id} node={node} provider={p} />
-            ))}
-          </div>
+          <p className="text-sm text-gray-500">
+            Install and manage reverse tunnel agents on {node}. Requires{' '}
+            <span className="font-mono text-gray-400">Sys.Modify</span> on the node.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{tunnelCards}</div>
         </div>
       )}
     </>

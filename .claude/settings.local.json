@@ -17,7 +17,9 @@
       "Bash(awk '/\"name\" : \"resources\"/,/\"text\" : \"resources\"/')",
       "Bash(echo \"EXIT:$?\")",
       "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/cts/[node]/[vmid]/)",
-      "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]/[vmid]/)"
+      "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]/[vmid]/)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"exit=$?\")"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
