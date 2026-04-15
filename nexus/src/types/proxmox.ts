@@ -556,3 +556,390 @@ export interface JournalParams {
   until?: string;
   [key: string]: unknown;
 }
+
+// ─── Tier 2 — Snapshots ──────────────────────────────────────────────────────
+
+export interface PVESnapshot {
+  name: string;
+  description?: string;
+  snaptime?: number;
+  parent?: string;
+  vmstate?: 0 | 1;
+  running?: 0 | 1;
+}
+
+export interface CreateSnapshotParams {
+  snapname: string;
+  description?: string;
+  vmstate?: 0 | 1;
+  [key: string]: unknown;
+}
+
+// ─── Tier 2 — Backups ────────────────────────────────────────────────────────
+
+export type BackupMode = 'snapshot' | 'suspend' | 'stop';
+export type BackupCompress = '0' | '1' | 'gzip' | 'lzo' | 'zstd';
+
+export interface BackupJob {
+  id: string;
+  schedule: string;
+  enabled?: 0 | 1;
+  all?: 0 | 1;
+  vmid?: string;
+  exclude?: string;
+  pool?: string;
+  node?: string;
+  storage: string;
+  mode: BackupMode;
+  compress?: BackupCompress;
+  mailto?: string;
+  mailnotification?: 'always' | 'failure';
+  'notes-template'?: string;
+  comment?: string;
+  starttime?: string;
+  dow?: string;
+  'prune-backups'?: string;
+  remove?: 0 | 1;
+  protected?: 0 | 1;
+}
+
+export interface BackupJobParams extends Partial<Omit<BackupJob, 'id'>> {
+  [key: string]: unknown;
+}
+
+export interface BackupFile {
+  volid: string;
+  ctime: number;
+  size: number;
+  format?: string;
+  vmid?: number;
+  subtype?: 'qemu' | 'lxc';
+  notes?: string;
+  protected?: 0 | 1;
+  verification?: {
+    state: 'ok' | 'failed' | 'none';
+    upid?: string;
+  };
+  encrypted?: string;
+}
+
+export interface VzdumpParams {
+  vmid?: number | string;
+  all?: 0 | 1;
+  node?: string;
+  storage: string;
+  mode?: BackupMode;
+  compress?: BackupCompress;
+  notes?: string;
+  protected?: 0 | 1;
+  remove?: 0 | 1;
+  'notes-template'?: string;
+  [key: string]: unknown;
+}
+
+export interface RestoreParams {
+  vmid: number;
+  archive: string;
+  storage?: string;
+  force?: 0 | 1;
+  unique?: 0 | 1;
+  pool?: string;
+  start?: 0 | 1;
+  [key: string]: unknown;
+}
+
+// ─── Tier 2 — Storage content / upload ───────────────────────────────────────
+
+export type StorageContentType = 'iso' | 'vztmpl' | 'backup' | 'images' | 'rootdir' | 'snippets';
+
+export interface IsoUploadParams {
+  node: string;
+  storage: string;
+  content: 'iso' | 'vztmpl';
+  filename: string;
+  file: File;
+}
+
+export interface DownloadUrlParams {
+  node: string;
+  storage: string;
+  content: 'iso' | 'vztmpl';
+  url: string;
+  filename: string;
+  checksum?: string;
+  'checksum-algorithm'?: 'md5' | 'sha1' | 'sha224' | 'sha256' | 'sha384' | 'sha512';
+  [key: string]: unknown;
+}
+
+// ─── Tier 3 — Firewall ───────────────────────────────────────────────────────
+
+export type FirewallRuleType = 'in' | 'out' | 'group';
+
+export interface FirewallRule {
+  pos: number;
+  type: FirewallRuleType;
+  action: string;
+  enable?: 0 | 1;
+  macro?: string;
+  source?: string;
+  dest?: string;
+  proto?: string;
+  sport?: string;
+  dport?: string;
+  iface?: string;
+  log?: 'emerg' | 'alert' | 'crit' | 'err' | 'warning' | 'notice' | 'info' | 'debug' | 'nolog';
+  comment?: string;
+  ipversion?: 4 | 6;
+  'icmp-type'?: string;
+  digest?: string;
+}
+
+export interface FirewallRuleParams extends Partial<Omit<FirewallRule, 'pos'>> {
+  [key: string]: unknown;
+}
+
+export interface FirewallAlias {
+  name: string;
+  cidr: string;
+  comment?: string;
+  ipversion?: 4 | 6;
+  digest?: string;
+}
+
+export interface FirewallIPSet {
+  name: string;
+  comment?: string;
+  digest?: string;
+}
+
+export interface FirewallIPSetEntry {
+  cidr: string;
+  comment?: string;
+  nomatch?: 0 | 1;
+  digest?: string;
+}
+
+export interface FirewallGroup {
+  group: string;
+  comment?: string;
+  digest?: string;
+}
+
+export interface FirewallOptions {
+  enable?: 0 | 1;
+  log_level_in?: string;
+  log_level_out?: string;
+  policy_in?: 'ACCEPT' | 'DROP' | 'REJECT';
+  policy_out?: 'ACCEPT' | 'DROP' | 'REJECT';
+  ebtables?: 0 | 1;
+  nosmurfs?: 0 | 1;
+  tcpflags?: 0 | 1;
+  macfilter?: 0 | 1;
+  // VM-specific
+  dhcp?: 0 | 1;
+  ipfilter?: 0 | 1;
+  ndp?: 0 | 1;
+  radv?: 0 | 1;
+  digest?: string;
+  [key: string]: unknown;
+}
+
+// ─── Tier 3 — Access control ─────────────────────────────────────────────────
+
+export interface PVEUser {
+  userid: string;
+  email?: string;
+  enable?: 0 | 1;
+  expire?: number;
+  firstname?: string;
+  lastname?: string;
+  comment?: string;
+  groups?: string;
+  keys?: string;
+  tokens?: unknown[];
+  realm?: string;
+}
+
+export interface UserParams {
+  userid: string;
+  password?: string;
+  email?: string;
+  enable?: 0 | 1;
+  expire?: number;
+  firstname?: string;
+  lastname?: string;
+  comment?: string;
+  groups?: string;
+  keys?: string;
+  [key: string]: unknown;
+}
+
+export interface PVEGroup {
+  groupid: string;
+  comment?: string;
+  users?: string;
+}
+
+export interface GroupParams {
+  groupid: string;
+  comment?: string;
+  [key: string]: unknown;
+}
+
+export interface PVERole {
+  roleid: string;
+  privs?: string;
+  special?: 0 | 1;
+}
+
+export interface RoleParams {
+  roleid: string;
+  privs?: string;
+  [key: string]: unknown;
+}
+
+export type RealmType = 'pam' | 'pve' | 'ldap' | 'ad' | 'openid';
+
+export interface PVERealm {
+  realm: string;
+  type: RealmType;
+  comment?: string;
+  default?: 0 | 1;
+  tfa?: string;
+  // LDAP/AD
+  server1?: string;
+  server2?: string;
+  base_dn?: string;
+  user_attr?: string;
+  bind_dn?: string;
+  secure?: 0 | 1;
+  port?: number;
+  // OpenID
+  'issuer-url'?: string;
+  'client-id'?: string;
+  'client-key'?: string;
+  autocreate?: 0 | 1;
+  digest?: string;
+  [key: string]: unknown;
+}
+
+export interface RealmParams extends Partial<PVERealm> {
+  [key: string]: unknown;
+}
+
+export interface PVEACL {
+  path: string;
+  type: 'user' | 'group' | 'token';
+  ugid: string;
+  roleid: string;
+  propagate?: 0 | 1;
+}
+
+export interface ACLParams {
+  path: string;
+  roles: string;
+  users?: string;
+  groups?: string;
+  tokens?: string;
+  propagate?: 0 | 1;
+  delete?: 0 | 1;
+  [key: string]: unknown;
+}
+
+// ─── Tier 3 — HA + Cluster ───────────────────────────────────────────────────
+
+export type HAResourceType = 'vm' | 'ct';
+export type HAState = 'started' | 'stopped' | 'enabled' | 'disabled' | 'ignored';
+
+export interface HAResource {
+  sid: string;
+  type: HAResourceType;
+  state: HAState;
+  group?: string;
+  max_restart?: number;
+  max_relocate?: number;
+  comment?: string;
+  digest?: string;
+}
+
+export interface HAResourceParams {
+  sid: string;
+  type?: HAResourceType;
+  state?: HAState;
+  group?: string;
+  max_restart?: number;
+  max_relocate?: number;
+  comment?: string;
+  [key: string]: unknown;
+}
+
+export interface HAGroup {
+  group: string;
+  nodes: string;
+  restricted?: 0 | 1;
+  nofailback?: 0 | 1;
+  comment?: string;
+  type?: 'group';
+  digest?: string;
+}
+
+export interface HAGroupParams {
+  group: string;
+  nodes: string;
+  restricted?: 0 | 1;
+  nofailback?: 0 | 1;
+  comment?: string;
+  [key: string]: unknown;
+}
+
+export interface HAStatus {
+  id: string;
+  sid?: string;
+  state?: string;
+  node?: string;
+  crm_state?: string;
+  request_state?: string;
+  type: 'node' | 'service' | 'quorum' | 'master' | 'lrm';
+  status?: string;
+  quorate?: 0 | 1;
+}
+
+export interface ClusterStatus {
+  type: 'cluster' | 'node';
+  name: string;
+  id?: string;
+  quorate?: 0 | 1;
+  version?: number;
+  nodes?: number;
+  online?: 0 | 1;
+  ip?: string;
+  level?: string;
+  local?: 0 | 1;
+  nodeid?: number;
+}
+
+// ─── Tier 3 — Pools ──────────────────────────────────────────────────────────
+
+export interface PVEPoolMember {
+  id: string;
+  type: 'qemu' | 'lxc' | 'storage';
+  node?: string;
+  storage?: string;
+  vmid?: number;
+  name?: string;
+}
+
+export interface PVEPool {
+  poolid: string;
+  comment?: string;
+  members?: PVEPoolMember[];
+}
+
+export interface PoolParams {
+  poolid: string;
+  comment?: string;
+  vms?: string;
+  storage?: string;
+  delete?: 0 | 1;
+  [key: string]: unknown;
+}
