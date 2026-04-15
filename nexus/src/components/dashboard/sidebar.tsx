@@ -20,6 +20,12 @@ import {
   ShieldCheck,
   ScrollText,
   ChevronDown,
+  Layers,
+  HeartPulse,
+  Shield,
+  Users,
+  FolderTree,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +48,14 @@ const systemNav = [
   { href: '/dashboard/system/logs', label: 'Logs', icon: ScrollText },
 ];
 
+const clusterNav = [
+  { href: '/dashboard/cluster/ha', label: 'Status & HA', icon: HeartPulse },
+  { href: '/dashboard/cluster/firewall', label: 'Firewall', icon: Shield },
+  { href: '/dashboard/cluster/access', label: 'Users & ACL', icon: Users },
+  { href: '/dashboard/cluster/pools', label: 'Pools', icon: FolderTree },
+  { href: '/dashboard/cluster/backups', label: 'Backups', icon: Archive },
+];
+
 interface SidebarProps {
   username?: string;
 }
@@ -51,6 +65,7 @@ export function Sidebar({ username }: SidebarProps) {
   const router = useRouter();
 
   const systemActive = pathname.startsWith('/dashboard/system');
+  const clusterActive = pathname.startsWith('/dashboard/cluster');
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -123,6 +138,46 @@ export function Sidebar({ username }: SidebarProps) {
           {systemActive && (
             <div className="ml-3 pl-3 border-l border-gray-800 mt-0.5 space-y-0.5">
               {systemNav.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href || pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition',
+                      active
+                        ? 'bg-orange-500/10 text-orange-400'
+                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Cluster group */}
+        <div>
+          <Link
+            href="/dashboard/cluster/ha"
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition w-full',
+              clusterActive
+                ? 'bg-orange-500/10 text-orange-400'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+            )}
+          >
+            <Layers className="w-4 h-4 shrink-0" />
+            <span className="flex-1">Cluster</span>
+            <ChevronDown className={cn('w-3 h-3 opacity-60 transition-transform', clusterActive && 'rotate-180')} />
+          </Link>
+
+          {clusterActive && (
+            <div className="ml-3 pl-3 border-l border-gray-800 mt-0.5 space-y-0.5">
+              {clusterNav.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href || pathname.startsWith(href);
                 return (
                   <Link
