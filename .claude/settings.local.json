@@ -59,7 +59,8 @@
       "Bash(grep -n \"configDraft\\\\|UpdateCTConfigParams\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/cts/[node]/[vmid]/page.tsx)",
       "mcp__plugin_serena_serena__replace_content",
       "Bash(grep -c \"\\\\$1\\\\|\\\\$2\" nexus/src/lib/proxmox-client.ts)",
-      "Bash(grep -n \"params as Record<string, unknown>\\\\|\\\\$!1\\\\|\\\\$!2\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/lib/proxmox-client.ts)"
+      "Bash(grep -n \"params as Record<string, unknown>\\\\|\\\\$!1\\\\|\\\\$!2\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/lib/proxmox-client.ts)",
+      "Read(//Users/devlin/**)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
