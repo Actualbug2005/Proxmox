@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
@@ -61,6 +61,7 @@ export default function StoragePage() {
   const [tab, setTab] = useState<Tab>('pools');
   const [nasNode, setNasNode] = useState<string>('');
   const [showCreateShare, setShowCreateShare] = useState(false);
+  const qc = useQueryClient();
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
   const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
@@ -187,9 +188,10 @@ export default function StoragePage() {
               node={nasNode}
               onClose={() => setShowCreateShare(false)}
               onCreated={() => {
-                // TanStack Query invalidation happens inside NasSharesTable via
-                // the queryKey ['nas-shares', node]; we force a refetch here by
-                // invalidating through the shared QueryClient below.
+                // Force an immediate refetch instead of waiting up to 30s for
+                // the NasSharesTable's polling interval — the new row should
+                // appear the moment the dialog closes.
+                qc.invalidateQueries({ queryKey: ['nas-shares', nasNode] });
               }}
             />
           )}
