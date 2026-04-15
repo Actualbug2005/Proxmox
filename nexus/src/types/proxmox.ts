@@ -1,3 +1,23 @@
+// ─── Proxmox Wire Primitives ──────────────────────────────────────────────────
+//
+// Proxmox's HTTP API uses integer 0/1 on the wire for boolean flags (ExtJS
+// heritage). `PveBool` is the wire representation; consumers should use native
+// `boolean` via the codec in `lib/proxmox-client.ts`.
+//
+// `WireBool<T, K>` and `UnwireBool<T, K>` are mapped type helpers that flip
+// specified keys of an interface between the two representations, used during
+// the phased migration away from wire-shaped types in the UI layer.
+
+export type PveBool = 0 | 1;
+
+export type WireBool<T, K extends keyof T> = Omit<T, K> & {
+  [P in K]: undefined extends T[P] ? PveBool | undefined : PveBool;
+};
+
+export type UnwireBool<T, K extends keyof T> = Omit<T, K> & {
+  [P in K]: undefined extends T[P] ? boolean | undefined : boolean;
+};
+
 // ─── Proxmox API Response Types ───────────────────────────────────────────────
 
 export interface PVEApiResponse<T> {
@@ -217,7 +237,7 @@ export interface StorageCreatePayload {
   smbversion?: string;
   // Directory
   path?: string;
-  mkdir?: 0 | 1;
+  mkdir?: PveBool;
 }
 
 /** Body for `PUT /api2/json/storage/{id}`. PVE rejects attempts to change
@@ -261,7 +281,7 @@ export interface DiskListEntry {
    *  Empty string when the disk is unused/free. */
   used?: string;
   /** 1 if the disk has a GPT partition table. */
-  gpt?: 0 | 1;
+  gpt?: PveBool;
   /** Ceph OSD id; -1 (or omitted) when not part of a Ceph cluster. */
   osdid?: number;
   parttype?: string;
@@ -671,14 +691,14 @@ export interface PVESnapshot {
   description?: string;
   snaptime?: number;
   parent?: string;
-  vmstate?: 0 | 1;
-  running?: 0 | 1;
+  vmstate?: PveBool;
+  running?: PveBool;
 }
 
 export interface CreateSnapshotParams {
   snapname: string;
   description?: string;
-  vmstate?: 0 | 1;
+  vmstate?: PveBool;
   [key: string]: unknown;
 }
 
@@ -690,8 +710,8 @@ export type BackupCompress = '0' | '1' | 'gzip' | 'lzo' | 'zstd';
 export interface BackupJob {
   id: string;
   schedule: string;
-  enabled?: 0 | 1;
-  all?: 0 | 1;
+  enabled?: PveBool;
+  all?: PveBool;
   vmid?: string;
   exclude?: string;
   pool?: string;
@@ -706,8 +726,8 @@ export interface BackupJob {
   starttime?: string;
   dow?: string;
   'prune-backups'?: string;
-  remove?: 0 | 1;
-  protected?: 0 | 1;
+  remove?: PveBool;
+  protected?: PveBool;
 }
 
 export interface BackupJobParams extends Partial<Omit<BackupJob, 'id'>> {
@@ -722,7 +742,7 @@ export interface BackupFile {
   vmid?: number;
   subtype?: 'qemu' | 'lxc';
   notes?: string;
-  protected?: 0 | 1;
+  protected?: PveBool;
   verification?: {
     state: 'ok' | 'failed' | 'none';
     upid?: string;
@@ -732,14 +752,14 @@ export interface BackupFile {
 
 export interface VzdumpParams {
   vmid?: number | string;
-  all?: 0 | 1;
+  all?: PveBool;
   node?: string;
   storage: string;
   mode?: BackupMode;
   compress?: BackupCompress;
   notes?: string;
-  protected?: 0 | 1;
-  remove?: 0 | 1;
+  protected?: PveBool;
+  remove?: PveBool;
   'notes-template'?: string;
   [key: string]: unknown;
 }
@@ -748,10 +768,10 @@ export interface RestoreParams {
   vmid: number;
   archive: string;
   storage?: string;
-  force?: 0 | 1;
-  unique?: 0 | 1;
+  force?: PveBool;
+  unique?: PveBool;
   pool?: string;
-  start?: 0 | 1;
+  start?: PveBool;
   [key: string]: unknown;
 }
 
@@ -786,7 +806,7 @@ export interface FirewallRule {
   pos: number;
   type: FirewallRuleType;
   action: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   macro?: string;
   source?: string;
   dest?: string;
@@ -822,7 +842,7 @@ export interface FirewallIPSet {
 export interface FirewallIPSetEntry {
   cidr: string;
   comment?: string;
-  nomatch?: 0 | 1;
+  nomatch?: PveBool;
   digest?: string;
 }
 
@@ -833,20 +853,20 @@ export interface FirewallGroup {
 }
 
 export interface FirewallOptions {
-  enable?: 0 | 1;
+  enable?: PveBool;
   log_level_in?: string;
   log_level_out?: string;
   policy_in?: 'ACCEPT' | 'DROP' | 'REJECT';
   policy_out?: 'ACCEPT' | 'DROP' | 'REJECT';
-  ebtables?: 0 | 1;
-  nosmurfs?: 0 | 1;
-  tcpflags?: 0 | 1;
-  macfilter?: 0 | 1;
+  ebtables?: PveBool;
+  nosmurfs?: PveBool;
+  tcpflags?: PveBool;
+  macfilter?: PveBool;
   // VM-specific
-  dhcp?: 0 | 1;
-  ipfilter?: 0 | 1;
-  ndp?: 0 | 1;
-  radv?: 0 | 1;
+  dhcp?: PveBool;
+  ipfilter?: PveBool;
+  ndp?: PveBool;
+  radv?: PveBool;
   digest?: string;
   [key: string]: unknown;
 }
@@ -856,7 +876,7 @@ export interface FirewallOptions {
 export interface PVEUser {
   userid: string;
   email?: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   expire?: number;
   firstname?: string;
   lastname?: string;
@@ -871,7 +891,7 @@ export interface UserParams {
   userid: string;
   password?: string;
   email?: string;
-  enable?: 0 | 1;
+  enable?: PveBool;
   expire?: number;
   firstname?: string;
   lastname?: string;
@@ -896,7 +916,7 @@ export interface GroupParams {
 export interface PVERole {
   roleid: string;
   privs?: string;
-  special?: 0 | 1;
+  special?: PveBool;
 }
 
 export interface RoleParams {
@@ -911,7 +931,7 @@ export interface PVERealm {
   realm: string;
   type: RealmType;
   comment?: string;
-  default?: 0 | 1;
+  default?: PveBool;
   tfa?: string;
   // LDAP/AD
   server1?: string;
@@ -919,13 +939,13 @@ export interface PVERealm {
   base_dn?: string;
   user_attr?: string;
   bind_dn?: string;
-  secure?: 0 | 1;
+  secure?: PveBool;
   port?: number;
   // OpenID
   'issuer-url'?: string;
   'client-id'?: string;
   'client-key'?: string;
-  autocreate?: 0 | 1;
+  autocreate?: PveBool;
   digest?: string;
   [key: string]: unknown;
 }
@@ -939,7 +959,7 @@ export interface PVEACL {
   type: 'user' | 'group' | 'token';
   ugid: string;
   roleid: string;
-  propagate?: 0 | 1;
+  propagate?: PveBool;
 }
 
 export interface ACLParams {
@@ -948,8 +968,8 @@ export interface ACLParams {
   users?: string;
   groups?: string;
   tokens?: string;
-  propagate?: 0 | 1;
-  delete?: 0 | 1;
+  propagate?: PveBool;
+  delete?: PveBool;
   [key: string]: unknown;
 }
 
@@ -983,8 +1003,8 @@ export interface HAResourceParams {
 export interface HAGroup {
   group: string;
   nodes: string;
-  restricted?: 0 | 1;
-  nofailback?: 0 | 1;
+  restricted?: PveBool;
+  nofailback?: PveBool;
   comment?: string;
   type?: 'group';
   digest?: string;
@@ -993,8 +1013,8 @@ export interface HAGroup {
 export interface HAGroupParams {
   group: string;
   nodes: string;
-  restricted?: 0 | 1;
-  nofailback?: 0 | 1;
+  restricted?: PveBool;
+  nofailback?: PveBool;
   comment?: string;
   [key: string]: unknown;
 }
@@ -1008,20 +1028,20 @@ export interface HAStatus {
   request_state?: string;
   type: 'node' | 'service' | 'quorum' | 'master' | 'lrm';
   status?: string;
-  quorate?: 0 | 1;
+  quorate?: PveBool;
 }
 
 export interface ClusterStatus {
   type: 'cluster' | 'node';
   name: string;
   id?: string;
-  quorate?: 0 | 1;
+  quorate?: PveBool;
   version?: number;
   nodes?: number;
-  online?: 0 | 1;
+  online?: PveBool;
   ip?: string;
   level?: string;
-  local?: 0 | 1;
+  local?: PveBool;
   nodeid?: number;
 }
 
@@ -1047,6 +1067,6 @@ export interface PoolParams {
   comment?: string;
   vms?: string;
   storage?: string;
-  delete?: 0 | 1;
+  delete?: PveBool;
   [key: string]: unknown;
 }

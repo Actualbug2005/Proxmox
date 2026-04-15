@@ -5,6 +5,60 @@
  * from both client and server components.
  */
 
+import type { PveBool } from '@/types/proxmox';
+
+// ─── PVE Boolean Codec ────────────────────────────────────────────────────────
+//
+// Proxmox's HTTP API accepts integer 0/1 for boolean flags. Consumers should
+// express these as native `boolean` and call through the codec only at the
+// HTTP boundary — never in UI state or JSX equality checks.
+//
+// These helpers are exported but not yet wired into request methods; Phase B
+// of the migration will thread them through per-domain request builders.
+
+export function toPveBool(v: boolean): PveBool;
+export function toPveBool(v: boolean | undefined): PveBool | undefined;
+export function toPveBool(v: boolean | undefined): PveBool | undefined {
+  return v === undefined ? undefined : v ? 1 : 0;
+}
+
+export function fromPveBool(v: PveBool | boolean | null | undefined): boolean {
+  return v === 1 || v === true;
+}
+
+/**
+ * Return a shallow copy of `obj` with each listed key's boolean value encoded
+ * as `PveBool`. Keys whose value is `undefined` are preserved as `undefined`.
+ * Non-listed keys pass through unchanged.
+ */
+export function encodeBoolFields<T extends object, K extends keyof T>(
+  obj: T,
+  keys: readonly K[],
+): { [P in keyof T]: P extends K ? PveBool | undefined : T[P] } {
+  const out = { ...obj } as Record<PropertyKey, unknown>;
+  for (const k of keys) {
+    const v = obj[k];
+    out[k as PropertyKey] = v === undefined ? undefined : v ? 1 : 0;
+  }
+  return out as { [P in keyof T]: P extends K ? PveBool | undefined : T[P] };
+}
+
+/**
+ * Inverse of `encodeBoolFields`. Decodes each listed key from `PveBool` to
+ * `boolean`. `undefined` survives. Useful for normalising response payloads.
+ */
+export function decodeBoolFields<T extends object, K extends keyof T>(
+  obj: T,
+  keys: readonly K[],
+): { [P in keyof T]: P extends K ? boolean | undefined : T[P] } {
+  const out = { ...obj } as Record<PropertyKey, unknown>;
+  for (const k of keys) {
+    const v = obj[k];
+    out[k as PropertyKey] = v === undefined ? undefined : v === 1 || v === true;
+  }
+  return out as { [P in keyof T]: P extends K ? boolean | undefined : T[P] };
+}
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
