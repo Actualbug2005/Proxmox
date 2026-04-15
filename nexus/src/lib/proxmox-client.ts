@@ -126,6 +126,16 @@ import type {
   AcmeAccount,
   JournalEntry,
   JournalParams,
+  PVESnapshot,
+  CreateSnapshotParams,
+  BackupJob,
+  BackupJobParams,
+  BackupFile,
+  VzdumpParams,
+  RestoreParams,
+  IsoUploadParams,
+  DownloadUrlParams,
+  StorageContentType,
 } from '@/types/proxmox';
 
 export const api = {
@@ -162,6 +172,20 @@ export const api = {
       proxmox.post<VNCProxyResponse>(`nodes/${node}/qemu/${vmid}/vncproxy`, { websocket: 1 }),
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/qemu/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
+    snapshot: {
+      list: (node: string, vmid: number) =>
+        proxmox.get<PVESnapshot[]>(`nodes/${node}/qemu/${vmid}/snapshot`),
+      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
+        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot`, params as Record<string, unknown>),
+      delete: (node: string, vmid: number, snapname: string, force = false) =>
+        proxmox.delete<string>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
+      rollback: (node: string, vmid: number, snapname: string) =>
+        proxmox.post<string>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}/rollback`),
+      getConfig: (node: string, vmid: number, snapname: string) =>
+        proxmox.get<Record<string, unknown>>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`),
+      updateDescription: (node: string, vmid: number, snapname: string, description: string) =>
+        proxmox.put<null>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`, { description }),
+    },
   },
 
   // LXC Containers
@@ -197,6 +221,20 @@ export const api = {
       proxmox.post<VNCProxyResponse>(`nodes/${node}/lxc/${vmid}/vncproxy`, { websocket: 1 }),
     rrd: (node: string, vmid: number, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/lxc/${vmid}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
+    snapshot: {
+      list: (node: string, vmid: number) =>
+        proxmox.get<PVESnapshot[]>(`nodes/${node}/lxc/${vmid}/snapshot`),
+      create: (node: string, vmid: number, params: CreateSnapshotParams) =>
+        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot`, params as Record<string, unknown>),
+      delete: (node: string, vmid: number, snapname: string, force = false) =>
+        proxmox.delete<string>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}${force ? '?force=1' : ''}`),
+      rollback: (node: string, vmid: number, snapname: string) =>
+        proxmox.post<string>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}/rollback`),
+      getConfig: (node: string, vmid: number, snapname: string) =>
+        proxmox.get<Record<string, unknown>>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`),
+      updateDescription: (node: string, vmid: number, snapname: string, description: string) =>
+        proxmox.put<null>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`, { description }),
+    },
   },
 
   // Storage
@@ -207,6 +245,21 @@ export const api = {
     content: (node: string, storage: string, content?: string) =>
       proxmox.get<StorageContent[]>(
         `nodes/${node}/storage/${storage}/content${content ? `?content=${content}` : ''}`,
+      ),
+    contentByType: (node: string, storage: string, content: StorageContentType) =>
+      proxmox.get<StorageContent[]>(
+        `nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=${content}`,
+      ),
+    deleteContent: (node: string, storage: string, volid: string) =>
+      proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
+    /** Upload via dedicated /api/iso-upload route (NOT the JSON proxy). Wired in a follow-up task. */
+    upload: async (_params: IsoUploadParams, _onProgress?: (pct: number) => void) => {
+      throw new Error('api.storage.upload is wired in a follow-up task (/api/iso-upload route pending).');
+    },
+    downloadUrl: (params: DownloadUrlParams) =>
+      proxmox.post<string>(
+        `nodes/${params.node}/storage/${encodeURIComponent(params.storage)}/download-url`,
+        { ...params } as Record<string, unknown>,
       ),
   },
 
@@ -277,6 +330,34 @@ export const api = {
       }
       return (data.stdout ?? '').trim();
     },
+  },
+
+  backups: {
+    jobs: {
+      list: () => proxmox.get<BackupJob[]>('cluster/backup'),
+      get: (id: string) => proxmox.get<BackupJob>(`cluster/backup/${encodeURIComponent(id)}`),
+      create: (params: BackupJobParams) =>
+        proxmox.post<null>('cluster/backup', params as Record<string, unknown>),
+      update: (id: string, params: BackupJobParams) =>
+        proxmox.put<null>(`cluster/backup/${encodeURIComponent(id)}`, params as Record<string, unknown>),
+      delete: (id: string) =>
+        proxmox.delete<null>(`cluster/backup/${encodeURIComponent(id)}`),
+    },
+    vzdump: (node: string, params: VzdumpParams) =>
+      proxmox.post<string>(`nodes/${node}/vzdump`, params as Record<string, unknown>),
+    files: (node: string, storage: string) =>
+      proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`),
+    delete: (node: string, storage: string, volid: string) =>
+      proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
+    restoreVM: (node: string, params: RestoreParams) =>
+      proxmox.post<string>(`nodes/${node}/qemu`, { ...params } as Record<string, unknown>),
+    restoreCT: (node: string, params: RestoreParams) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, { ...params } as Record<string, unknown>),
+    protect: (node: string, storage: string, volid: string, isProtected: boolean) =>
+      proxmox.put<null>(
+        `nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`,
+        { protected: isProtected ? 1 : 0 },
+      ),
   },
 
   apt: {
