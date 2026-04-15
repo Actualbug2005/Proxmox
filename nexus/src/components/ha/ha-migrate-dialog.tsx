@@ -1,0 +1,73 @@
+'use client';
+
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/proxmox-client';
+import { useToast } from '@/components/ui/toast';
+import { Loader2, ArrowRightLeft, X } from 'lucide-react';
+import type { HAResource } from '@/types/proxmox';
+
+interface HAMigrateDialogProps {
+  resource: HAResource;
+  kind: 'migrate' | 'relocate';
+  onClose: () => void;
+  onComplete: () => void;
+}
+
+export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigrateDialogProps) {
+  const toast = useToast();
+  const { data: status } = useQuery({ queryKey: ['cluster', 'status'], queryFn: () => api.cluster.status() });
+  const nodes = (status ?? []).filter((s) => s.type === 'node' && s.online === 1);
+
+  const [target, setTarget] = useState('');
+
+  const migrateM = useMutation({
+    mutationFn: () => (kind === 'migrate' ? api.ha.resources.migrate(resource.sid, target) : api.ha.resources.relocate(resource.sid, target)),
+    onSuccess: () => {
+      toast.success(`${kind === 'migrate' ? 'Migrate' : 'Relocate'} queued`, `${resource.sid} → ${target}`);
+      onComplete();
+      onClose();
+    },
+    onError: (err) => toast.error(`${kind} failed`, err instanceof Error ? err.message : String(err)),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-start justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white">
+            {kind === 'migrate' ? 'Migrate' : 'Relocate'} {resource.sid}
+          </h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">
+          {kind === 'migrate'
+            ? 'Online migration — guest stays running during the move. Not all storage types support this.'
+            : 'Relocate — HA stops the guest, moves it, and starts it on the target node. Incurs downtime.'}
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Target node</label>
+            <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50">
+              <option value="">Select a node…</option>
+              {nodes.map((n) => (
+                <option key={n.name} value={n.name}>{n.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex gap-3 justify-end mt-5">
+          <button onClick={onClose} disabled={migrateM.isPending} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition disabled:opacity-40">Cancel</button>
+          <button
+            onClick={() => migrateM.mutate()}
+            disabled={!target || migrateM.isPending}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+          >
+            {migrateM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
+            {kind === 'migrate' ? 'Migrate' : 'Relocate'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
