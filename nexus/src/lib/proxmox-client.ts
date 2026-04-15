@@ -85,6 +85,38 @@ const encodeFirewallOptions = (
 ): Record<string, unknown> =>
   encodeBoolFields(opts, FIREWALL_OPTIONS_BOOL_KEYS) as Record<string, unknown>;
 
+// ─── Storage / Restore Codec Bindings ─────────────────────────────────────────
+
+const STORAGE_CREATE_BOOL_KEYS = ['mkdir'] as const satisfies
+  readonly (keyof StorageCreatePayload)[];
+
+const DISK_LIST_BOOL_KEYS = ['gpt'] as const satisfies
+  readonly (keyof DiskListEntry)[];
+
+const RESTORE_BOOL_KEYS = ['force', 'unique', 'start'] as const satisfies
+  readonly (keyof RestoreParams)[];
+
+const encodeStorageCreate = (
+  payload: Partial<StorageCreatePayloadPublic>,
+): Record<string, unknown> =>
+  encodeBoolFields(payload, STORAGE_CREATE_BOOL_KEYS) as Record<string, unknown>;
+
+const encodeStorageUpdate = (
+  payload: StorageUpdatePayloadPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(payload, STORAGE_CREATE_BOOL_KEYS) as Record<string, unknown>;
+
+const decodeStorageConfig = (raw: PVEStorageConfig): PVEStorageConfigPublic =>
+  decodeBoolFields(raw, STORAGE_CREATE_BOOL_KEYS) as PVEStorageConfigPublic;
+
+const decodeDiskList = (rows: DiskListEntry[]): DiskListEntryPublic[] =>
+  rows.map((r) => decodeBoolFields(r, DISK_LIST_BOOL_KEYS) as DiskListEntryPublic);
+
+const encodeRestore = (
+  params: RestoreParamsPublic,
+): Record<string, unknown> =>
+  encodeBoolFields(params, RESTORE_BOOL_KEYS) as Record<string, unknown>;
+
 export class ProxmoxAPIError extends Error {
   constructor(
     public status: number,
@@ -240,6 +272,11 @@ import type {
   FirewallGroup,
   FirewallOptions,
   FirewallOptionsPublic,
+  StorageCreatePayloadPublic,
+  StorageUpdatePayloadPublic,
+  PVEStorageConfigPublic,
+  DiskListEntryPublic,
+  RestoreParamsPublic,
   PVEUser,
   UserParams,
   PVEGroup,
@@ -406,20 +443,22 @@ export const api = {
      *  per-node path) — the pool appears on every listed node once PVE's
      *  config is replicated. CSRF is handled by the shared `request<T>`
      *  wrapper inside `proxmox.post`. */
-    create: (payload: StorageCreatePayload): Promise<null> =>
-      proxmox.post<null>('storage', payload as unknown as Record<string, unknown>),
+    create: (payload: StorageCreatePayloadPublic): Promise<null> =>
+      proxmox.post<null>('storage', encodeStorageCreate(payload)),
     /** Cluster-wide: fetch the full persisted config for one storage pool.
      *  Used by the Edit flow to pre-fill the dialog with fields the list
      *  endpoint (GET /nodes/{node}/storage) doesn't include (server, export, …). */
-    get: (id: string) =>
-      proxmox.get<PVEStorageConfig>(`storage/${encodeURIComponent(id)}`),
+    get: async (id: string): Promise<PVEStorageConfigPublic> =>
+      decodeStorageConfig(
+        await proxmox.get<PVEStorageConfig>(`storage/${encodeURIComponent(id)}`),
+      ),
     /** Cluster-wide: patch a storage pool. PVE rejects changes to the ID or
      *  backend type, so callers must strip those from the payload. CSRF is
      *  added by `proxmox.put`. */
-    update: (id: string, payload: StorageUpdatePayload): Promise<null> =>
+    update: (id: string, payload: StorageUpdatePayloadPublic): Promise<null> =>
       proxmox.put<null>(
         `storage/${encodeURIComponent(id)}`,
-        payload as unknown as Record<string, unknown>,
+        encodeStorageUpdate(payload),
       ),
     /** Cluster-wide: detach a storage pool from PVE. Data on the underlying
      *  share is left untouched — PVE only removes the config entry. */
@@ -499,7 +538,10 @@ export const api = {
 
   // Physical disks (S.M.A.R.T.)
   disks: {
-    list: (node: string) => proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
+    list: async (node: string): Promise<DiskListEntryPublic[]> =>
+      decodeDiskList(
+        await proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
+      ),
     smart: (node: string, disk: string) =>
       proxmox.get<SmartData>(`nodes/${node}/disks/smart?disk=${encodeURIComponent(disk)}`),
   },
@@ -642,10 +684,10 @@ export const api = {
       proxmox.get<BackupFile[]>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content?content=backup`),
     delete: (node: string, storage: string, volid: string) =>
       proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
-    restoreVM: (node: string, params: RestoreParams) =>
-      proxmox.post<string>(`nodes/${node}/qemu`, { ...params } as Record<string, unknown>),
-    restoreCT: (node: string, params: RestoreParams) =>
-      proxmox.post<string>(`nodes/${node}/lxc`, { ...params } as Record<string, unknown>),
+    restoreVM: (node: string, params: RestoreParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/qemu`, encodeRestore(params)),
+    restoreCT: (node: string, params: RestoreParamsPublic) =>
+      proxmox.post<string>(`nodes/${node}/lxc`, encodeRestore(params)),
     protect: (node: string, storage: string, volid: string, isProtected: boolean) =>
       proxmox.put<null>(
         `nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`,

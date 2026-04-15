@@ -254,6 +254,18 @@ export interface PVEStorageConfig extends StorageCreatePayload {
   digest?: string;
 }
 
+/** Boolean-facing shape of StorageCreatePayload. `mkdir` is unwired from
+ *  PveBool; the client encodes it at the HTTP boundary. */
+export type StorageCreatePayloadPublic = UnwireBool<StorageCreatePayload, 'mkdir'>;
+
+/** Boolean-facing shape of StorageUpdatePayload (partial of the Public body). */
+export type StorageUpdatePayloadPublic = Partial<
+  Omit<StorageCreatePayloadPublic, 'storage' | 'type'>
+>;
+
+/** Boolean-facing shape of PVEStorageConfig (read path). */
+export type PVEStorageConfigPublic = UnwireBool<PVEStorageConfig, 'mkdir'>;
+
 // ─── Physical Disks (S.M.A.R.T.) ─────────────────────────────────────────────
 
 /** Coarse PVE disk-type classification. */
@@ -289,6 +301,10 @@ export interface DiskListEntry {
   osdid?: number;
   parttype?: string;
 }
+
+/** Boolean-facing shape of DiskListEntry. `gpt` is unwired from PveBool at
+ *  the HTTP boundary. */
+export type DiskListEntryPublic = UnwireBool<DiskListEntry, 'gpt'>;
 
 /** One row from `smartctl -A` (ATA) or the NVMe SMART/Health Information log.
  *  ATA reports populate id/value/worst/threshold/raw; NVMe reports tend to
@@ -777,6 +793,10 @@ export interface RestoreParams {
   start?: PveBool;
   [key: string]: unknown;
 }
+
+/** Boolean-facing shape of RestoreParams. `force` / `unique` / `start` are
+ *  unwired from PveBool at the HTTP boundary. */
+export type RestoreParamsPublic = UnwireBool<RestoreParams, 'force' | 'unique' | 'start'>;
 
 // ─── Tier 2 — Storage content / upload ───────────────────────────────────────
 

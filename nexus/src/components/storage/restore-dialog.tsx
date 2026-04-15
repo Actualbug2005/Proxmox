@@ -6,7 +6,7 @@ import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, Undo2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { BackupFile, RestoreParams } from '@/types/proxmox';
+import type { BackupFile, RestoreParamsPublic } from '@/types/proxmox';
 
 interface RestoreDialogProps {
   backup: BackupFile;
@@ -40,7 +40,7 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
   }, [nextid, targetVmid]);
 
   const restoreM = useMutation({
-    mutationFn: (params: RestoreParams) =>
+    mutationFn: (params: RestoreParamsPublic) =>
       kind === 'qemu'
         ? api.backups.restoreVM(node, params)
         : api.backups.restoreCT(node, params),
@@ -58,9 +58,9 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
       vmid: targetVmid,
       archive: backup.volid,
       storage: targetStorage,
-      force: force ? 1 : 0,
-      unique: unique ? 1 : 0,
-      start: start ? 1 : 0,
+      force,
+      unique,
+      start,
     });
   };
 

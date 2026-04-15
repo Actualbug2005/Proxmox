@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
 import { Loader2, HardDrive, Database, ServerCog, Share2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { PVEStorage, PVEStorageConfig } from '@/types/proxmox';
+import type { PVEStorage, PVEStorageConfigPublic } from '@/types/proxmox';
 import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
 import { MapStorageDialog } from '@/components/storage/map-storage-dialog';
 import { NasServicesCard } from '@/components/nas/nas-services-card';
@@ -110,7 +110,7 @@ export default function StoragePage() {
   const [nasNode, setNasNode] = useState<string>('');
   const [showCreateShare, setShowCreateShare] = useState(false);
   const [showMapStorage, setShowMapStorage] = useState(false);
-  const [editTarget, setEditTarget] = useState<PVEStorageConfig | null>(null);
+  const [editTarget, setEditTarget] = useState<PVEStorageConfigPublic | null>(null);
   const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const qc = useQueryClient();
