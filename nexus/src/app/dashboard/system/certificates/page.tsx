@@ -30,7 +30,12 @@ const TUNNEL_PROVIDERS = [
     name: 'Cloudflare Tunnel',
     binary: 'cloudflared',
     service: 'cloudflared',
-    installCmd: 'curl -L https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null && echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared bookworm main" | tee /etc/apt/sources.list.d/cloudflared.list && apt-get update && apt-get install -y cloudflared',
+    installCmd: `set -e
+ARCH=$(dpkg --print-architecture)
+curl -fsSL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-\${ARCH}.deb" -o /tmp/cloudflared.deb
+dpkg -i /tmp/cloudflared.deb || apt-get install -f -y
+rm -f /tmp/cloudflared.deb
+cloudflared --version`,
     configFields: [{ key: 'token', label: 'Tunnel Token', placeholder: 'eyJhIjoi...' }],
     configCmd: (vals: Record<string, string>) =>
       `cloudflared service install ${vals.token}`,
@@ -40,7 +45,13 @@ const TUNNEL_PROVIDERS = [
     name: 'ngrok',
     binary: 'ngrok',
     service: 'ngrok',
-    installCmd: 'curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list && apt-get update && apt-get install -y ngrok',
+    installCmd: `set -e
+mkdir -p --mode=0755 /etc/apt/keyrings
+curl -fsSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc -o /etc/apt/keyrings/ngrok.asc
+echo "deb [signed-by=/etc/apt/keyrings/ngrok.asc] https://ngrok-agent.s3.amazonaws.com buster main" > /etc/apt/sources.list.d/ngrok.list
+apt-get update
+apt-get install -y ngrok
+ngrok --version`,
     configFields: [
       { key: 'authtoken', label: 'Auth Token', placeholder: '2abc...' },
       { key: 'port', label: 'Local Port', placeholder: '8080' },

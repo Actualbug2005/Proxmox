@@ -8,13 +8,67 @@
  * Auth: requires a valid Nexus session.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
-import { promisify } from 'node:util';
 import { getSession } from '@/lib/auth';
 
-const execFileP = promisify(execFile);
+interface RunResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
+
+/** Run a command by piping it through stdin to a bash login shell. This avoids
+ *  all shell-quoting issues that would otherwise mangle pipes, redirects, and
+ *  nested quotes — especially across an ssh hop where argv gets flattened. */
+function runViaStdin(
+  file: string,
+  args: string[],
+  script: string,
+  timeoutMs: number,
+  maxBuffer: number,
+): Promise<RunResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(file, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    let killed = false;
+
+    const timer = setTimeout(() => {
+      killed = true;
+      child.kill('SIGKILL');
+      reject(new Error(`Command timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    child.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString('utf8');
+      if (stdout.length > maxBuffer) {
+        killed = true;
+        child.kill('SIGKILL');
+        reject(new Error('stdout exceeded maxBuffer'));
+      }
+    });
+    child.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString('utf8');
+      if (stderr.length > maxBuffer) {
+        killed = true;
+        child.kill('SIGKILL');
+        reject(new Error('stderr exceeded maxBuffer'));
+      }
+    });
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      if (!killed) reject(err);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (!killed) resolve({ stdout, stderr, exitCode: code ?? 0 });
+    });
+
+    child.stdin.end(script);
+  });
+}
 
 interface PVEMembers {
   nodelist?: Record<string, { ip?: string; online?: number }>;
@@ -64,33 +118,33 @@ export async function POST(req: NextRequest) {
   const maxBuffer = 10 * 1024 * 1024;
 
   try {
-    let stdout: string, stderr: string;
-    if (target) {
-      const address = await resolveNodeAddress(target);
-      ({ stdout, stderr } = await execFileP(
-        'ssh',
-        [
-          '-o', 'StrictHostKeyChecking=accept-new',
-          '-o', 'BatchMode=yes',
-          '-o', 'ConnectTimeout=10',
-          `root@${address}`,
-          'bash', '-c', body.command,
-        ],
-        { timeout, maxBuffer },
-      ));
-    } else {
-      ({ stdout, stderr } = await execFileP('bash', ['-c', body.command], { timeout, maxBuffer }));
-    }
+    const result = target
+      ? await (async () => {
+          const address = await resolveNodeAddress(target);
+          return runViaStdin(
+            'ssh',
+            [
+              '-o', 'StrictHostKeyChecking=accept-new',
+              '-o', 'BatchMode=yes',
+              '-o', 'ConnectTimeout=10',
+              `root@${address}`,
+              'bash', '-s',
+            ],
+            body.command,
+            timeout,
+            maxBuffer,
+          );
+        })()
+      : await runViaStdin('bash', ['-s'], body.command, timeout, maxBuffer);
 
-    return NextResponse.json({ stdout, stderr, exitCode: 0 });
+    return NextResponse.json(result);
   } catch (err) {
-    const e = err as { stdout?: string; stderr?: string; code?: number; message?: string };
     return NextResponse.json(
       {
-        stdout: e.stdout ?? '',
-        stderr: e.stderr ?? '',
-        exitCode: e.code ?? 1,
-        error: e.message ?? 'Command failed',
+        stdout: '',
+        stderr: '',
+        exitCode: 1,
+        error: err instanceof Error ? err.message : String(err),
       },
       { status: 200 },
     );
