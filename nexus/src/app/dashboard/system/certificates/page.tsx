@@ -70,13 +70,26 @@ function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_
 
   const { data: checkData } = useQuery({
     queryKey: ['tunnel', node, provider.id, 'check'],
-    queryFn: () => api.exec.shellCmd(node, `which ${provider.binary} && systemctl is-active ${provider.service} 2>/dev/null || echo inactive`),
+    queryFn: () => api.exec.shellCmd(
+      node,
+      `if ! command -v ${provider.binary} >/dev/null 2>&1; then
+  echo not-installed
+elif ! systemctl cat ${provider.service} >/dev/null 2>&1; then
+  echo not-configured
+elif systemctl is-active ${provider.service} >/dev/null 2>&1; then
+  echo active
+else
+  echo stopped
+fi`,
+    ),
     enabled: !!node,
     refetchInterval: 10_000,
   });
 
-  const installed = typeof checkData === 'string' && checkData.includes('/');
-  const active = typeof checkData === 'string' && checkData.includes('active');
+  const status = (checkData ?? '').trim();
+  const installed = status === 'not-configured' || status === 'stopped' || status === 'active';
+  const configured = status === 'stopped' || status === 'active';
+  const active = status === 'active';
 
   const execM = useMutation({
     mutationFn: (cmd: string) => api.exec.shellCmd(node, cmd),
@@ -97,11 +110,10 @@ function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_
           <h3 className="text-sm font-semibold text-white">{provider.name}</h3>
         </div>
         <div className="flex items-center gap-2">
-          {installed ? (
-            <Badge variant={active ? 'success' : 'outline'}>{active ? 'Running' : 'Installed'}</Badge>
-          ) : (
-            <Badge variant="danger">Not Installed</Badge>
-          )}
+          {!installed && <Badge variant="danger">Not Installed</Badge>}
+          {installed && !configured && <Badge variant="warning">Installed · Not Configured</Badge>}
+          {configured && !active && <Badge variant="outline">Stopped</Badge>}
+          {active && <Badge variant="success">Running</Badge>}
         </div>
       </div>
 
@@ -116,7 +128,12 @@ function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_
             Install
           </button>
         )}
-        {installed && (
+        {installed && !configured && (
+          <p className="text-xs text-gray-500 w-full">
+            Binary installed. Use the Configure form below to register a token — this creates the systemd service.
+          </p>
+        )}
+        {configured && (
           <>
             <button
               onClick={() => execM.mutate(`systemctl ${active ? 'stop' : 'start'} ${provider.service}`)}
@@ -132,6 +149,10 @@ function TunnelCard({ node, provider }: { node: string; provider: typeof TUNNEL_
             >
               {active ? 'Disable autostart' : 'Enable autostart'}
             </button>
+          </>
+        )}
+        {installed && (
+          <>
             <button
               onClick={() => setShowConfig(!showConfig)}
               className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition"
