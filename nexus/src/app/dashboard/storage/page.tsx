@@ -1,19 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNodes } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Badge } from '@/components/ui/badge';
 import { formatBytes, memPercent } from '@/lib/utils';
-import { Loader2, HardDrive, Database, ServerCog } from 'lucide-react';
+import { Loader2, HardDrive, Database, ServerCog, Share2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PVEStorage } from '@/types/proxmox';
 import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
+import { NasServicesCard } from '@/components/nas/nas-services-card';
+import { NasSharesTable } from '@/components/nas/nas-shares-table';
+import { CreateShareDialog } from '@/components/nas/create-share-dialog';
 
-type Tab = 'pools' | 'disks';
+type Tab = 'pools' | 'disks' | 'nas';
 
 function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
   const usedPct = memPercent(storage.used, storage.total);
@@ -56,9 +59,16 @@ function StorageRow({ storage }: { storage: PVEStorage & { node: string } }) {
 
 export default function StoragePage() {
   const [tab, setTab] = useState<Tab>('pools');
+  const [nasNode, setNasNode] = useState<string>('');
+  const [showCreateShare, setShowCreateShare] = useState(false);
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
   const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
+
+  // Default the NAS node picker to the first cluster node once nodes arrive.
+  useEffect(() => {
+    if (!nasNode && nodeNames.length > 0) setNasNode(nodeNames[0]);
+  }, [nasNode, nodeNames]);
 
   const storageQueries = useQuery({
     queryKey: ['storage', 'all', nodeNames],
@@ -103,23 +113,27 @@ export default function StoragePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-800">
-        {([['pools', 'Storage Pools', Database], ['disks', 'Physical Disks', ServerCog]] as const).map(
-          ([id, label, Icon]) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
-                tab === id
-                  ? 'border-orange-500 text-orange-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-300',
-              )}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ),
-        )}
+        {(
+          [
+            ['pools', 'Storage Pools', Database],
+            ['disks', 'Physical Disks', ServerCog],
+            ['nas', 'NAS & Shares', Share2],
+          ] as const
+        ).map(([id, label, Icon]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
+              tab === id
+                ? 'border-orange-500 text-orange-400'
+                : 'border-transparent text-gray-500 hover:text-gray-300',
+            )}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === 'pools' && (
@@ -165,6 +179,64 @@ export default function StoragePage() {
       )}
 
       {tab === 'disks' && <PhysicalDisksTable />}
+
+      {tab === 'nas' && (
+        <>
+          {showCreateShare && nasNode && (
+            <CreateShareDialog
+              node={nasNode}
+              onClose={() => setShowCreateShare(false)}
+              onCreated={() => {
+                // TanStack Query invalidation happens inside NasSharesTable via
+                // the queryKey ['nas-shares', node]; we force a refetch here by
+                // invalidating through the shared QueryClient below.
+              }}
+            />
+          )}
+
+          {/* Node picker (only shown when there's a choice) */}
+          {nodeNames.length > 1 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {nodeNames.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setNasNode(n)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-medium transition',
+                    nasNode === n
+                      ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                      : 'text-gray-500 bg-gray-900 border border-gray-800 hover:text-gray-300',
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!nasNode ? (
+            <div className="flex items-center justify-center h-24">
+              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <NasServicesCard node={nasNode} />
+                </div>
+                <button
+                  onClick={() => setShowCreateShare(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Share
+                </button>
+              </div>
+              <NasSharesTable node={nasNode} />
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }

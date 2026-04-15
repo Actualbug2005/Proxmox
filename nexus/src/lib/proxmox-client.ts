@@ -180,6 +180,40 @@ import type {
   DiskListEntry,
   SmartData,
 } from '@/types/proxmox';
+import type {
+  NasShare,
+  NasService,
+  CreateNasSharePayload,
+} from '@/types/nas';
+
+/**
+ * Sibling to `request<T>` for endpoints that DON'T route through the PVE
+ * proxy — /api/nas/*, /api/tunnels/*, etc. Attaches the same CSRF header
+ * on mutating verbs and the credentials cookie on every call.
+ */
+async function nasRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? 'GET').toUpperCase();
+  const headers: Record<string, string> = { ...((init.headers as Record<string, string> | undefined) ?? {}) };
+  if (init.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+  if (MUTATING.has(method as HTTPMethod)) {
+    const csrf = readCsrfCookie();
+    if (csrf) headers['X-Nexus-CSRF'] = csrf;
+  }
+
+  const res = await fetch(path, { ...init, method, headers, credentials: 'include' });
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const err = await res.json();
+      message = err?.error ?? err?.message ?? message;
+    } catch {
+      // non-JSON error body
+    }
+    throw new ProxmoxAPIError(res.status, res.statusText, message);
+  }
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
 
 export const api = {
   // VMs (QEMU)
@@ -360,6 +394,31 @@ export const api = {
     list: (node: string) => proxmox.get<DiskListEntry[]>(`nodes/${node}/disks/list`),
     smart: (node: string, disk: string) =>
       proxmox.get<SmartData>(`nodes/${node}/disks/smart?disk=${encodeURIComponent(disk)}`),
+  },
+
+  // NAS shares & services (provider-pattern; hits /api/nas/* directly)
+  nas: {
+    getShares: (node: string): Promise<NasShare[]> =>
+      nasRequest<{ shares: NasShare[] }>(
+        `/api/nas/shares?node=${encodeURIComponent(node)}`,
+      ).then((r) => r.shares),
+
+    createShare: (node: string, payload: CreateNasSharePayload): Promise<NasShare> =>
+      nasRequest<{ share: NasShare }>('/api/nas/shares', {
+        method: 'POST',
+        body: JSON.stringify({ node, ...payload }),
+      }).then((r) => r.share),
+
+    deleteShare: (node: string, id: string): Promise<void> =>
+      nasRequest<void>(
+        `/api/nas/shares?node=${encodeURIComponent(node)}&id=${encodeURIComponent(id)}`,
+        { method: 'DELETE' },
+      ),
+
+    getServices: (node: string): Promise<NasService[]> =>
+      nasRequest<{ services: NasService[] }>(
+        `/api/nas/services?node=${encodeURIComponent(node)}`,
+      ).then((r) => r.services),
   },
 
   // Cluster

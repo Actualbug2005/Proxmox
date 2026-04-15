@@ -132,3 +132,43 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// ─── DELETE /api/nas/shares?node=<name>&id=<b64url> ─────────────────────────
+
+export async function DELETE(req: NextRequest) {
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const node = req.nextUrl.searchParams.get('node') ?? '';
+  const id = req.nextUrl.searchParams.get('id') ?? '';
+  if (!NODE_RE.test(node)) {
+    return NextResponse.json({ error: 'Invalid or missing node' }, { status: 400 });
+  }
+  // base64url alphabet: [A-Za-z0-9_-]=? — tight bound so we don't pass
+  // arbitrary strings through to the provider.
+  if (!id || !/^[A-Za-z0-9_-]+=*$/.test(id)) {
+    return NextResponse.json({ error: 'Invalid or missing id' }, { status: 400 });
+  }
+
+  if (!(await requireNodeSysModify(session, node))) {
+    return NextResponse.json(
+      { error: `Forbidden: Sys.Modify required on /nodes/${node}` },
+      { status: 403 },
+    );
+  }
+
+  try {
+    await getNasProvider(node).deleteShare(node, id);
+    return new NextResponse(null, { status: 204 });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : String(e) },
+      { status: 502 },
+    );
+  }
+}
