@@ -105,6 +105,15 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # Port (must match systemd service below)
 PORT=${PORT}
+
+# ── Session store (optional) ──────────────────────────────────────────────────
+# Single-node default: sessions live in an in-memory Map (lost on restart).
+# For HA deployments or multiple Nexus instances behind a load balancer,
+# uncomment and set REDIS_URL — ioredis will be used with native TTL and
+# sessions will survive restarts + share across instances.
+#
+# REDIS_URL=redis://127.0.0.1:6379
+# REDIS_URL=redis://:password@redis.internal:6379/2
 EOF
 
   success ".env.local written to $env_file"
