@@ -11,7 +11,7 @@ import { cpuPercent, formatBytes, memPercent, formatUptime, cn } from '@/lib/uti
 import {
   Play, Square, RotateCcw, PowerOff, Loader2, ChevronLeft,
   Box, Copy, MoveRight, Trash2, Terminal, Server,
-  Cpu, MemoryStick, HardDrive, Network, Save,
+  Cpu, MemoryStick, HardDrive, Network, Save, ExternalLink,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
@@ -241,6 +241,16 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             <Terminal className="w-4 h-4" />
             Console
           </Link>
+          <a
+            href={`/console/vnc?node=${encodeURIComponent(node)}&vmid=${vmid}&type=lxc`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm rounded-lg transition"
+            title="Open graphical console in a new tab"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Graphical Console
+          </a>
           <button onClick={() => setShowClone(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition">
             <Copy className="w-4 h-4" />
