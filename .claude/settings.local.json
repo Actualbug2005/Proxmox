@@ -54,7 +54,10 @@
       "Bash(sed -n '120,135p' src/app/dashboard/storage/page.tsx)",
       "Bash(sed -n '15,30p' src/components/storage/physical-disks-table.tsx)",
       "Bash(gitnexus clean *)",
-      "Bash(gitnexus --version)"
+      "Bash(gitnexus --version)",
+      "Bash(grep -n \"configDraft\\\\|UpdateVMConfigParams\\\\|UpdateCTConfigParams\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]/[vmid]/page.tsx)",
+      "Bash(grep -n \"configDraft\\\\|UpdateCTConfigParams\" /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/cts/[node]/[vmid]/page.tsx)",
+      "mcp__plugin_serena_serena__replace_content"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"
