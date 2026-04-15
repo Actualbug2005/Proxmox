@@ -69,13 +69,18 @@ export async function startSession(
   await putSession(sessionId, data);
   const csrfToken = deriveCsrfToken(sessionId);
 
-  const isProd = process.env.NODE_ENV === 'production';
   const cookieStore = await cookies();
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
 
+  // secure:false — Nexus is typically reached over plain HTTP on a LAN
+  // (e.g. http://10.x.x.x). Chrome silently drops Secure cookies on HTTP,
+  // which would log the user out immediately. The S-3 ticket-isolation
+  // patch already keeps the PVE ticket server-side, so an attacker who
+  // sniffs the cookie gets only an opaque sessionId, not root-equivalent
+  // PVE credentials. Flip back to true once the deployment is on HTTPS.
   cookieStore.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    secure: isProd,
+    secure: false,
     sameSite: 'strict',
     maxAge,
     path: '/',
@@ -84,7 +89,7 @@ export async function startSession(
   // echo it in the X-Nexus-CSRF header (double-submit pattern).
   cookieStore.set(CSRF_COOKIE, csrfToken, {
     httpOnly: false,
-    secure: isProd,
+    secure: false,
     sameSite: 'strict',
     maxAge,
     path: '/',
