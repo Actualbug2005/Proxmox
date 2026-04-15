@@ -6,7 +6,8 @@
  * 3. Returns a session ID the browser uses to join via ws://host/api/ws-relay?session=<id>
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, getSessionId } from '@/lib/auth';
+import { validateCsrf } from '@/lib/csrf';
 // createRelaySession is injected into globalThis by server.ts at startup.
 // Both run in the same Node.js process so the reference is always live.
 type CreateRelaySession = (params: {
@@ -29,23 +30,47 @@ import { randomUUID } from 'crypto';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
+const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
+const TYPE_SET = new Set(['qemu', 'lxc', 'node'] as const);
+type ValidType = 'qemu' | 'lxc' | 'node';
+
 export async function POST(req: NextRequest) {
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { node, vmid, type } = (await req.json()) as {
-    node: string;
-    vmid: number;
-    type: 'qemu' | 'lxc' | 'node';
+    node: unknown;
+    vmid: unknown;
+    type: unknown;
   };
+
+  if (typeof node !== 'string' || !NODE_RE.test(node)) {
+    return NextResponse.json({ error: 'Invalid node name' }, { status: 400 });
+  }
+  if (typeof type !== 'string' || !TYPE_SET.has(type as ValidType)) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  }
+  const validType = type as ValidType;
+  let vmidNum: number | null = null;
+  if (validType !== 'node') {
+    if (typeof vmid !== 'number' || !Number.isInteger(vmid) || vmid < 0 || vmid > 999_999_999) {
+      return NextResponse.json({ error: 'Invalid vmid' }, { status: 400 });
+    }
+    vmidNum = vmid;
+  }
 
   const host = session.proxmoxHost;
   const base = `https://${host}:8006/api2/json`;
 
   const termUrl =
-    type === 'node'
+    validType === 'node'
       ? `${base}/nodes/${node}/termproxy`
-      : `${base}/nodes/${node}/${type}/${vmid}/termproxy`;
+      : `${base}/nodes/${node}/${validType}/${vmidNum}/termproxy`;
 
   const res = await fetch(termUrl, {
     method: 'POST',
@@ -65,18 +90,18 @@ export async function POST(req: NextRequest) {
   const { ticket, port, upid } = data.data;
 
   const pveWsPath =
-    type === 'node'
+    validType === 'node'
       ? `/api2/json/nodes/${node}/vncwebsocket`
-      : `/api2/json/nodes/${node}/${type}/${vmid}/vncwebsocket`;
+      : `/api2/json/nodes/${node}/${validType}/${vmidNum}/vncwebsocket`;
 
-  const sessionId = randomUUID();
+  const relaySessionId = randomUUID();
 
   // Open the PVE WebSocket NOW (server-side) before the ticket expires.
   // The browser will join this already-open connection via the relay.
   try {
     const createRelaySession = getCreateRelaySession();
     await createRelaySession({
-      sessionId,
+      sessionId: relaySessionId,
       pveHost: host,
       pvePort: 8006,
       pveWsPath,
@@ -93,7 +118,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    sessionId,
+    sessionId: relaySessionId,
     upid,
   });
 }

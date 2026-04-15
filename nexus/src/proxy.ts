@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { getJwtSecret } from '@/lib/env';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'nexus-dev-secret-change-in-production',
-);
+// Fail-closed at module init. If JWT_SECRET is unset we refuse to serve
+// anything — the API routes also enforce this, but failing here means the
+// whole app surface goes down instead of silently accepting forged sessions.
+getJwtSecret();
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login'];
 
-export async function proxy(req: NextRequest) {
+// A valid nexus_session cookie is 32 bytes hex = 64 chars of [0-9a-f]. Any
+// other format is malformed and gets treated as unauthenticated. The
+// server-side API routes do the full store lookup; this check only decides
+// whether to render the dashboard shell or redirect to /login.
+const SESSION_ID_RE = /^[a-f0-9]{64}$/;
+
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Allow static assets
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
@@ -26,18 +31,14 @@ export async function proxy(req: NextRequest) {
 
   const token = req.cookies.get('nexus_session')?.value;
 
-  if (!token) {
-    return NextResponse.redirect(new URL('/login', req.url));
-  }
-
-  try {
-    await jwtVerify(token, JWT_SECRET);
-    return NextResponse.next();
-  } catch {
+  if (!token || !SESSION_ID_RE.test(token)) {
     const res = NextResponse.redirect(new URL('/login', req.url));
     res.cookies.delete('nexus_session');
+    res.cookies.delete('nexus_csrf');
     return res;
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

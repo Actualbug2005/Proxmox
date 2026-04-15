@@ -19,7 +19,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useClusterResources } from '@/hooks/use-cluster';
-import { api } from '@/lib/proxmox-client';
+import { api, readCsrfCookie } from '@/lib/proxmox-client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
 
@@ -80,7 +80,11 @@ export function CommandPalette() {
 
   async function handleLogout() {
     setOpen(false);
-    await fetch('/api/auth/logout', { method: 'POST' });
+    const csrf = readCsrfCookie();
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: csrf ? { 'X-Nexus-CSRF': csrf } : undefined,
+    });
     router.push('/login');
     router.refresh();
   }

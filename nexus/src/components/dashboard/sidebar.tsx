@@ -28,6 +28,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { readCsrfCookie } from '@/lib/proxmox-client';
 
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -68,7 +69,11 @@ export function Sidebar({ username }: SidebarProps) {
   const clusterActive = pathname.startsWith('/dashboard/cluster');
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    const csrf = readCsrfCookie();
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: csrf ? { 'X-Nexus-CSRF': csrf } : undefined,
+    });
     router.push('/login');
     router.refresh();
   }

@@ -5,13 +5,22 @@
  * - Otherwise SSHes to `root@{node}` — relies on PVE's cluster-wide SSH trust
  *   (pvecm adds each member's key to /etc/ssh/ssh_known_hosts and authorized_keys).
  *
- * Auth: requires a valid Nexus session.
+ * Auth:
+ *   1. Valid Nexus session cookie
+ *   2. Matching X-Nexus-CSRF header (double-submit)
+ *   3. Caller holds Sys.Modify on /nodes/<node> via the PVE ACL
+ *
+ * The command payload is piped over stdin — it never touches argv, so no
+ * amount of shell-metacharacters in it can affect how ssh/bash itself is
+ * invoked.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
-import { getSession } from '@/lib/auth';
+import { getSession, getSessionId } from '@/lib/auth';
+import { validateCsrf } from '@/lib/csrf';
+import { requireNodeSysModify } from '@/lib/permissions';
 
 interface RunResult {
   stdout: string;
@@ -19,9 +28,6 @@ interface RunResult {
   exitCode: number;
 }
 
-/** Run a command by piping it through stdin to a bash login shell. This avoids
- *  all shell-quoting issues that would otherwise mangle pipes, redirects, and
- *  nested quotes — especially across an ssh hop where argv gets flattened. */
 function runViaStdin(
   file: string,
   args: string[],
@@ -74,9 +80,6 @@ interface PVEMembers {
   nodelist?: Record<string, { ip?: string; online?: number }>;
 }
 
-/** Look up a cluster node's IP via pmxcfs /etc/pve/.members — this is written
- *  automatically when nodes join the cluster, and contains the corosync IPs
- *  that actually route, regardless of DNS. Falls back to the node name. */
 async function resolveNodeAddress(node: string): Promise<string> {
   try {
     const raw = await readFile('/etc/pve/.members', 'utf8');
@@ -84,7 +87,7 @@ async function resolveNodeAddress(node: string): Promise<string> {
     const ip = parsed.nodelist?.[node]?.ip;
     if (ip) return ip;
   } catch {
-    // File missing or unparseable — standalone PVE or restricted perms. Fall through.
+    // Standalone PVE or restricted perms — fall through.
   }
   return node;
 }
@@ -95,10 +98,14 @@ interface ExecRequest {
   timeoutMs?: number;
 }
 
-// Valid PVE node names: alphanumeric + dot/dash/underscore. Used to block SSH flag injection.
-const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}$/;
+const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
 
 export async function POST(req: NextRequest) {
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -108,14 +115,22 @@ export async function POST(req: NextRequest) {
   }
 
   const localHost = hostname();
-  const target = body.node && body.node !== localHost ? body.node : null;
+  const targetNode = body.node && body.node !== localHost ? body.node : localHost;
 
-  if (target !== null && !NODE_RE.test(target)) {
-    return NextResponse.json({ error: `Invalid node name: ${target}` }, { status: 400 });
+  if (!NODE_RE.test(targetNode)) {
+    return NextResponse.json({ error: `Invalid node name: ${targetNode}` }, { status: 400 });
+  }
+
+  if (!(await requireNodeSysModify(session, targetNode))) {
+    return NextResponse.json(
+      { error: 'Forbidden: Sys.Modify required on /nodes/' + targetNode },
+      { status: 403 },
+    );
   }
 
   const timeout = body.timeoutMs ?? 5 * 60 * 1000;
   const maxBuffer = 10 * 1024 * 1024;
+  const target = targetNode === localHost ? null : targetNode;
 
   try {
     const result = target

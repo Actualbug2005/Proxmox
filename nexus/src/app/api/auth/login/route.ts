@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { acquirePVETicket, setSessionCookie } from '@/lib/auth';
+import { acquirePVETicket, startSession } from '@/lib/auth';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const proxmoxHost = host ?? process.env.PROXMOX_HOST ?? 'localhost';
     const ticket = await acquirePVETicket(proxmoxHost, username, password, realm);
 
-    await setSessionCookie({
+    const { csrfToken } = await startSession({
       ticket: ticket.ticket,
       csrfToken: ticket.CSRFPreventionToken,
       username: ticket.username,
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       username: ticket.username,
       clustername: ticket.clustername,
+      csrfToken,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Authentication failed';

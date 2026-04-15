@@ -6,7 +6,8 @@
  * Injects PVEAuthCookie and CSRFPreventionToken from the session JWT.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, getSessionId } from '@/lib/auth';
+import { validateCsrf } from '@/lib/csrf';
 
 // Allow self-signed certs on the Proxmox host
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -15,9 +16,17 @@ const PVE_BASE = process.env.PROXMOX_HOST
   ? `https://${process.env.PROXMOX_HOST}:8006/api2/json`
   : 'https://localhost:8006/api2/json';
 
-async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const session = await getSession();
+const MUTATING = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
+async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const sessionId = await getSessionId();
+  if (!sessionId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (MUTATING.has(req.method) && !validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+  const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -60,10 +69,9 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
       },
     });
 
-    // PVE ticket expired while our JWT is still valid — clear the stale session
-    // so the browser drops it and the next navigation triggers a fresh login.
     if (pveRes.status === 401) {
       response.cookies.set('nexus_session', '', { httpOnly: true, maxAge: 0, path: '/' });
+      response.cookies.set('nexus_csrf', '', { httpOnly: false, maxAge: 0, path: '/' });
     }
 
     return response;

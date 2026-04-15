@@ -18,6 +18,17 @@ export class ProxmoxAPIError extends Error {
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
+const MUTATING = new Set<HTTPMethod>(['POST', 'PUT', 'DELETE']);
+
+/** Read the non-httpOnly nexus_csrf cookie set at login. Empty string in
+ *  non-browser contexts — mutating requests from the server happen inside
+ *  the Node process with direct session access, so they don't need CSRF. */
+export function readCsrfCookie(): string {
+  if (typeof document === 'undefined') return '';
+  const m = document.cookie.match(/(?:^|;\s*)nexus_csrf=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
 interface RequestOptions {
   method?: HTTPMethod;
   body?: Record<string, unknown>;
@@ -43,6 +54,11 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   } else if (body) {
     headers['Content-Type'] = 'application/json';
     fetchBody = JSON.stringify(body);
+  }
+
+  if (MUTATING.has(method)) {
+    const csrf = readCsrfCookie();
+    if (csrf) headers['X-Nexus-CSRF'] = csrf;
   }
 
   const res = await fetch(url, {
@@ -292,6 +308,8 @@ export const api = {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/iso-upload');
         xhr.withCredentials = true;
+        const csrf = readCsrfCookie();
+        if (csrf) xhr.setRequestHeader('X-Nexus-CSRF', csrf);
 
         if (onProgress) {
           xhr.upload.addEventListener('progress', (e) => {
@@ -377,9 +395,13 @@ export const api = {
   // not a shell runner, so we bypass it entirely for shell work.
   exec: {
     shellCmd: async (node: string, command: string) => {
+      const csrf = readCsrfCookie();
       const res = await fetch('/api/exec', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
+        },
         body: JSON.stringify({ command, node }),
         credentials: 'include',
       });

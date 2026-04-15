@@ -15,7 +15,8 @@
  * Response: JSON from PVE (typically a task UPID string wrapped in { data }).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, getSessionId } from '@/lib/auth';
+import { validateCsrf } from '@/lib/csrf';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -24,6 +25,11 @@ const PVE_BASE = process.env.PROXMOX_HOST
   : 'https://localhost:8006/api2/json';
 
 export async function POST(req: NextRequest) {
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

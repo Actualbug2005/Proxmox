@@ -8,6 +8,7 @@ import { Loader2, ScrollText, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Mode = 'table' | 'tail';
+type Priority = 'error' | 'warning' | 'info' | 'debug';
 
 interface ParsedEntry {
   raw: string;
@@ -15,16 +16,41 @@ interface ParsedEntry {
   host: string;
   unit: string;
   message: string;
+  priority: Priority;
 }
+
+// Priorities 0-3 map to error, 4 to warning, 5-6 to info, 7 to debug (syslog RFC 5424).
+// journalctl also writes a leading "<N>" prefix on kernel lines; otherwise we
+// infer from well-known keywords in the message body.
+const ERROR_RE = /<[0-3]>|\b(?:error|fatal|panic|segfault|crit(?:ical)?|emerg)\b/i;
+const WARN_RE = /<4>|\bwarn(?:ing)?\b/i;
+const DEBUG_RE = /<7>|\bdebug\b/i;
+
+function parsePriority(line: string, message: string): Priority {
+  const probe = `${line} ${message}`;
+  if (ERROR_RE.test(probe)) return 'error';
+  if (WARN_RE.test(probe)) return 'warning';
+  if (DEBUG_RE.test(probe)) return 'debug';
+  return 'info';
+}
+
+const PRIORITY_CLASS: Record<Priority, string> = {
+  error: 'bg-red-500/10 text-red-400 border border-red-500/20',
+  warning: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  info: 'bg-gray-700/40 text-gray-400 border border-gray-700',
+  debug: 'bg-gray-800 text-gray-500 border border-gray-800',
+};
 
 // Parse a journalctl text line: "Apr 14 23:06:22 pve pveproxy[12345]: message"
 // Falls back gracefully if format doesn't match.
 function parseEntry(raw: string): ParsedEntry {
   const m = raw.match(/^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:]+?):\s+(.*)$/);
-  if (!m) return { raw, time: '', host: '', unit: '', message: raw };
+  if (!m) {
+    return { raw, time: '', host: '', unit: '', message: raw, priority: parsePriority(raw, raw) };
+  }
   const [, time, host, unitWithPid, message] = m;
   const unit = unitWithPid.replace(/\[\d+\]$/, '');
-  return { raw, time, host, unit, message };
+  return { raw, time, host, unit, message, priority: parsePriority(raw, message) };
 }
 
 export default function LogsPage() {
@@ -32,6 +58,7 @@ export default function LogsPage() {
   const [mode, setMode] = useState<Mode>('table');
   const [search, setSearch] = useState('');
   const [unitFilter, setUnitFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
   const [page, setPage] = useState(1);
   const [paused, setPaused] = useState(false);
   const tailRef = useRef<HTMLPreElement>(null);
@@ -64,14 +91,18 @@ export default function LogsPage() {
     [parsed],
   );
 
-  const filtered = parsed.filter((e) => {
-    if (unitFilter && e.unit !== unitFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      if (!e.message.toLowerCase().includes(q) && !e.unit.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(
+    () => parsed.filter((e) => {
+      if (unitFilter && e.unit !== unitFilter) return false;
+      if (priorityFilter && e.priority !== priorityFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        if (!e.message.toLowerCase().includes(q) && !e.unit.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    }),
+    [parsed, unitFilter, priorityFilter, search],
+  );
 
   if (!node) {
     return (
@@ -121,6 +152,17 @@ export default function LogsPage() {
               <option value="">All units</option>
               {allUnits.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as Priority | '')}
+              className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+            >
+              <option value="">All priorities</option>
+              <option value="error">Error</option>
+              <option value="warning">Warning</option>
+              <option value="info">Info</option>
+              <option value="debug">Debug</option>
+            </select>
           </div>
 
           {isLoading ? (
@@ -132,6 +174,7 @@ export default function LogsPage() {
                   <thead>
                     <tr className="border-b border-gray-800">
                       <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-40">Time</th>
+                      <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-20">Priority</th>
                       <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-40">Unit</th>
                       <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Message</th>
                     </tr>
@@ -140,6 +183,11 @@ export default function LogsPage() {
                     {filtered.slice(0, PAGE_SIZE * page).map((entry, i) => (
                       <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20">
                         <td className="px-4 py-1.5 font-mono text-gray-500 whitespace-nowrap">{entry.time || '—'}</td>
+                        <td className="px-4 py-1.5">
+                          <span className={cn('inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide', PRIORITY_CLASS[entry.priority])}>
+                            {entry.priority}
+                          </span>
+                        </td>
                         <td className="px-4 py-1.5 font-mono text-gray-400 truncate max-w-[10rem]" title={entry.unit}>{entry.unit || '—'}</td>
                         <td className="px-4 py-1.5 text-gray-300 break-all">{entry.message}</td>
                       </tr>

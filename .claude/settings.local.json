@@ -15,7 +15,9 @@
       "Bash(awk '/\"name\" : \"journal\"/,/\"text\" : \"journal\"/')",
       "Bash(awk '/\"path\" : \"\\\\/cluster\\\\/resources\"/,/\"text\" : \"resources\"/')",
       "Bash(awk '/\"name\" : \"resources\"/,/\"text\" : \"resources\"/')",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/cts/[node]/[vmid]/)",
+      "Bash(ls /Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]/[vmid]/)"
     ],
     "additionalDirectories": [
       "/Users/devlin/Documents/GitHub/Proxmox/nexus/src/app/dashboard/vms/[node]"

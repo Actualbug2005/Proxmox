@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { useQuery } from '@tanstack/react-query';
 import { useClusterResources } from '@/hooks/use-cluster';
+import { readCsrfCookie } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
 import {
   Search,
@@ -189,9 +190,13 @@ export default function ScriptsPage() {
     setRunState({ scriptSlug: script.slug, status: 'running' });
 
     try {
+      const csrf = readCsrfCookie();
       const res = await fetch('/api/scripts/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
+        },
         body: JSON.stringify({ node, scriptUrl: script.scriptUrl, scriptName: script.name }),
       });
 

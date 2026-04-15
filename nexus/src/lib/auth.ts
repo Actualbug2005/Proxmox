@@ -1,18 +1,29 @@
 /**
- * Auth utilities — server-side only
- * Handles PVE ticket acquisition, JWT session encoding, and cookie management.
+ * Auth utilities — server-side only.
+ *
+ * The PVE ticket and CSRFPreventionToken are kept server-side in the session
+ * store; the browser only holds an opaque random sessionId. This stops anyone
+ * with LAN-sniffer access or dev-tools from lifting root-equivalent PVE
+ * credentials out of the cookie.
  */
-import { SignJWT, jwtVerify } from 'jose';
+import { randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import type { PVEAuthSession, PVETicketResponse } from '@/types/proxmox';
+import {
+  putSession,
+  getStoredSession,
+  deleteStoredSession,
+  SESSION_TTL_MS,
+} from '@/lib/session-store';
+import { deriveCsrfToken, CSRF_COOKIE } from '@/lib/csrf';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'nexus-dev-secret-change-in-production',
-);
-const SESSION_COOKIE = 'nexus_session';
-const MAX_AGE = 60 * 60 * 8; // 8 hours
+export const SESSION_COOKIE = 'nexus_session';
 
-// ─── PVE Ticket Auth ──────────────────────────────────────────────────────────
+// Re-exported for convenience; canonical definition lives in lib/env.ts so
+// the Edge-runtime proxy can import it without pulling in next/headers.
+export { getJwtSecret } from '@/lib/env';
+
+// ─── PVE Ticket Auth ─────────────────────────────────────────────────────────
 
 export async function acquirePVETicket(
   host: string,
@@ -26,7 +37,6 @@ export async function acquirePVETicket(
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username: fullUser, password }).toString(),
-    // PVE uses self-signed certs — NODE_TLS_REJECT_UNAUTHORIZED=0 handles this at process level
   });
 
   if (!res.ok) {
@@ -40,49 +50,65 @@ export async function acquirePVETicket(
   return json.data as PVETicketResponse;
 }
 
-// ─── JWT Session ──────────────────────────────────────────────────────────────
+// ─── Session id ─────────────────────────────────────────────────────────────
 
-export async function createSession(session: PVEAuthSession): Promise<string> {
-  return new SignJWT({ ...session })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE}s`)
-    .sign(JWT_SECRET);
+function newSessionId(): string {
+  return randomBytes(32).toString('hex');
 }
 
-export async function verifySession(token: string): Promise<PVEAuthSession | null> {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as unknown as PVEAuthSession;
-  } catch {
-    return null;
-  }
-}
+// ─── Cookie helpers ─────────────────────────────────────────────────────────
 
-// ─── Cookie helpers ───────────────────────────────────────────────────────────
+/**
+ * Create a server-side session, set the sessionId cookie + CSRF companion
+ * cookie, and return the CSRF token so the login response can include it.
+ */
+export async function startSession(
+  data: PVEAuthSession,
+): Promise<{ sessionId: string; csrfToken: string }> {
+  const sessionId = newSessionId();
+  putSession(sessionId, data);
+  const csrfToken = deriveCsrfToken(sessionId);
 
-export async function setSessionCookie(session: PVEAuthSession): Promise<void> {
-  const token = await createSession(session);
+  const isProd = process.env.NODE_ENV === 'production';
   const cookieStore = await cookies();
-  // Don't force Secure flag — app runs over plain HTTP on the Proxmox host.
-  // Secure cookies over HTTP are rejected by Chrome; Safari is more lenient.
-  cookieStore.set(SESSION_COOKIE, token, {
+  const maxAge = Math.floor(SESSION_TTL_MS / 1000);
+
+  cookieStore.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    maxAge: MAX_AGE,
+    secure: isProd,
+    sameSite: 'strict',
+    maxAge,
     path: '/',
   });
+  // Companion CSRF cookie: NOT httpOnly so the browser JS can read it and
+  // echo it in the X-Nexus-CSRF header (double-submit pattern).
+  cookieStore.set(CSRF_COOKIE, csrfToken, {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'strict',
+    maxAge,
+    path: '/',
+  });
+
+  return { sessionId, csrfToken };
 }
 
-export async function getSession(): Promise<PVEAuthSession | null> {
+export async function getSessionId(): Promise<string | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  return verifySession(token);
+  return cookieStore.get(SESSION_COOKIE)?.value ?? null;
+}
+
+/** Full session object (including PVE ticket) from the server-side store. */
+export async function getSession(): Promise<PVEAuthSession | null> {
+  const sessionId = await getSessionId();
+  if (!sessionId) return null;
+  return getStoredSession(sessionId);
 }
 
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
+  const sid = cookieStore.get(SESSION_COOKIE)?.value;
+  if (sid) deleteStoredSession(sid);
   cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete(CSRF_COOKIE);
 }
