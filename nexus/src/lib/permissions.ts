@@ -34,3 +34,18 @@ export async function requireNodeSysModify(
 ): Promise<boolean> {
   return userHasPrivilege(session, `/nodes/${node}`, 'Sys.Modify');
 }
+
+/**
+ * Sys.Audit allows read-only inspection of node state. Used for endpoints
+ * that surface diagnostics (process listings, service status) without
+ * exposing arbitrary shell execution. Sys.Modify implicitly satisfies
+ * Sys.Audit per PVE's privilege model — we check both so an admin without
+ * an explicit Sys.Audit grant still passes.
+ */
+export async function requireNodeSysAudit(
+  session: PVEAuthSession,
+  node: string,
+): Promise<boolean> {
+  if (await userHasPrivilege(session, `/nodes/${node}`, 'Sys.Audit')) return true;
+  return userHasPrivilege(session, `/nodes/${node}`, 'Sys.Modify');
+}

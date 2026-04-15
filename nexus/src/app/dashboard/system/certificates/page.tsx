@@ -2,13 +2,15 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/proxmox-client';
+import { api, ProxmoxAPIError } from '@/lib/proxmox-client';
 import { useSystemNode } from '@/app/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldCheck, AlertTriangle, Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
+
+type ToastApi = ReturnType<typeof useToast>;
 
 type Tab = 'current' | 'acme' | 'tunnels';
 
@@ -71,22 +73,24 @@ ngrok --version`,
   },
 ] as const;
 
-/** Script that emits exactly one line describing the provider's state on
- *  the target node. Hoisted outside the component so the closure identity
- *  stays stable across renders. */
-function buildStatusProbe(binary: string, service: string): string {
-  return `if ! command -v ${binary} >/dev/null 2>&1; then
-  echo not-installed
-elif ! systemctl cat ${service} >/dev/null 2>&1; then
-  echo not-configured
-elif systemctl is-active ${service} >/dev/null 2>&1; then
-  echo active
-else
-  echo stopped
-fi`;
+type TunnelStatus = 'not-installed' | 'not-configured' | 'stopped' | 'active' | 'unknown';
+
+interface TunnelStatusResponse {
+  providers: Partial<Record<string, TunnelStatus>>;
 }
 
-type TunnelStatus = 'not-installed' | 'not-configured' | 'stopped' | 'active' | 'unknown';
+const TUNNEL_STATUS_KEY = ['tunnel-status'] as const;
+
+async function fetchTunnelStatus(node: string): Promise<TunnelStatusResponse> {
+  const res = await fetch(`/api/tunnels/status?node=${encodeURIComponent(node)}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new ProxmoxAPIError(res.status, res.statusText, body.error ?? res.statusText);
+  }
+  return (await res.json()) as TunnelStatusResponse;
+}
 
 interface TunnelFlags {
   status: TunnelStatus;
@@ -95,38 +99,43 @@ interface TunnelFlags {
   active: boolean;
 }
 
-function deriveTunnelFlags(raw: string | undefined): TunnelFlags {
-  const status = ((raw ?? '').trim() as TunnelStatus) || 'unknown';
+function deriveTunnelFlags(status: TunnelStatus): TunnelFlags {
   const installed = status === 'not-configured' || status === 'stopped' || status === 'active';
   const configured = status === 'stopped' || status === 'active';
   const active = status === 'active';
   return { status, installed, configured, active };
 }
 
-function TunnelCard({ node, provider }: { node: string; provider: TunnelProvider }) {
+/** Translate a thrown ProxmoxAPIError into a user-facing toast. 403 is a
+ *  permission-denied case from the Sys.Modify gate on /api/exec — surface
+ *  that explicitly so the user knows it's an ACL issue, not a script bug. */
+function reportExecError(toast: ToastApi, providerName: string, err: unknown): void {
+  if (err instanceof ProxmoxAPIError && err.status === 403) {
+    toast.error('Permission Denied', 'Requires Sys.Modify on node.');
+    return;
+  }
+  toast.error(
+    `${providerName} command failed`,
+    err instanceof Error ? err.message : String(err),
+  );
+}
+
+interface TunnelCardProps {
+  node: string;
+  provider: TunnelProvider;
+  status: TunnelStatus;
+}
+
+function TunnelCard({ node, provider, status }: TunnelCardProps) {
   const qc = useQueryClient();
   const toast = useToast();
   const [configVals, setConfigVals] = useState<Record<string, string>>({});
   const [showConfig, setShowConfig] = useState(false);
   const [output, setOutput] = useState('');
 
-  // Hoist the probe script so the queryFn closure and its string argument
-  // stay reference-stable between renders.
-  const probe = useMemo(
-    () => buildStatusProbe(provider.binary, provider.service),
-    [provider.binary, provider.service],
-  );
-
-  const { data: checkData } = useQuery({
-    queryKey: ['tunnel', node, provider.id, 'check'],
-    queryFn: () => api.exec.shellCmd(node, probe),
-    enabled: !!node,
-    refetchInterval: 10_000,
-  });
-
   const { installed, configured, active } = useMemo(
-    () => deriveTunnelFlags(checkData),
-    [checkData],
+    () => deriveTunnelFlags(status),
+    [status],
   );
 
   const execM = useMutation({
@@ -134,10 +143,11 @@ function TunnelCard({ node, provider }: { node: string; provider: TunnelProvider
     onSuccess: (result) => {
       const output = typeof result === 'string' ? result : JSON.stringify(result);
       setOutput(output);
-      qc.invalidateQueries({ queryKey: ['tunnel', node, provider.id] });
+      // Refresh the page-level status query so the badge flips.
+      qc.invalidateQueries({ queryKey: TUNNEL_STATUS_KEY });
       toast.success(`${provider.name} command sent`, output.slice(0, 160));
     },
-    onError: (err) => toast.error(`${provider.name} command failed`, err instanceof Error ? err.message : String(err)),
+    onError: (err) => reportExecError(toast, provider.name, err),
   });
 
   return (
@@ -304,9 +314,29 @@ export default function CertificatesPage() {
   );
   const days = useMemo(() => daysUntil(activeCert?.notafter), [activeCert]);
 
+  const { data: tunnelStatus, isLoading: tunnelStatusLoading, error: tunnelStatusError } = useQuery({
+    queryKey: [...TUNNEL_STATUS_KEY, node],
+    queryFn: () => fetchTunnelStatus(node),
+    enabled: !!node && tab === 'tunnels',
+    refetchInterval: 10_000,
+    retry: (failureCount, err) => {
+      // Don't hammer the server retrying a 403 — the user lacks Sys.Audit.
+      if (err instanceof ProxmoxAPIError && (err.status === 403 || err.status === 401)) return false;
+      return failureCount < 2;
+    },
+  });
+
   const tunnelCards = useMemo(
-    () => TUNNEL_PROVIDERS.map((p) => <TunnelCard key={p.id} node={node} provider={p} />),
-    [node],
+    () =>
+      TUNNEL_PROVIDERS.map((p) => (
+        <TunnelCard
+          key={p.id}
+          node={node}
+          provider={p}
+          status={(tunnelStatus?.providers?.[p.id] ?? 'unknown') as TunnelStatus}
+        />
+      )),
+    [node, tunnelStatus],
   );
 
   if (!node) {
@@ -484,10 +514,25 @@ export default function CertificatesPage() {
       {tab === 'tunnels' && (
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Install and manage reverse tunnel agents on {node}. Requires{' '}
-            <span className="font-mono text-gray-400">Sys.Modify</span> on the node.
+            Install and manage reverse tunnel agents on {node}. Status requires{' '}
+            <span className="font-mono text-gray-400">Sys.Audit</span>; install / start / stop
+            actions require <span className="font-mono text-gray-400">Sys.Modify</span>.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{tunnelCards}</div>
+
+          {tunnelStatusError instanceof ProxmoxAPIError && tunnelStatusError.status === 403 && (
+            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-4 py-2 rounded-lg">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>Permission Denied: requires Sys.Audit on /nodes/{node} to view tunnel status.</span>
+            </div>
+          )}
+
+          {tunnelStatusLoading && !tunnelStatus ? (
+            <div className="flex items-center justify-center h-24">
+              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{tunnelCards}</div>
+          )}
         </div>
       )}
     </>
