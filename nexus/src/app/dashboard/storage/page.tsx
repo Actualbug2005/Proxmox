@@ -273,7 +273,7 @@ export default function StoragePage() {
           </div>
 
           {totalCapacity > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4 backdrop-blur-sm">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
               <div className="flex justify-between text-xs text-zinc-500 mb-2">
                 <span className="uppercase tracking-[0.1em] font-semibold text-[11px]">Total cluster storage</span>
                 <span className="tabular font-mono text-data text-zinc-300">{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
@@ -293,7 +293,7 @@ export default function StoragePage() {
           )}
 
           {!isLoading && (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden backdrop-blur-sm">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
               <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
                 <Database className="w-4 h-4 text-zinc-500" />
                 <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">Storage Pools</span>

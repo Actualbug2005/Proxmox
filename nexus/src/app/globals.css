@@ -25,7 +25,10 @@
    *  overlay   zinc-800  · popovers, modals, hover fills
    */
   --color-canvas: #09090b;
-  --color-glass: rgba(12, 12, 15, 0.75);
+  /* Glass material — highly translucent per Apple Liquid Glass HIG. The
+   * low alpha (45%) is intentional: the saturated-blur canvas behind
+   * should read clearly through the capsule. */
+  --color-glass: rgba(20, 20, 25, 0.45);
   --color-surface: #18181b;
   --color-elevated: #18181b;
   --color-overlay: #27272a;
@@ -93,14 +96,30 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Liquid Glass utility — centralised so the browser composites the blur
- * once per layer. Use on chrome (sidebar, top bar) not on workspace
- * surfaces; applying backdrop-filter to many stacked cards destroys the
- * frame rate on low-end GPUs. */
+/* Liquid Glass utility — Apple HIG material tuning.
+ *
+ *  backdrop-filter   40px blur + 200% saturation is the Apple spec for a
+ *                    regular/thick glass layer: deep enough to obscure
+ *                    body content but still carry colour through.
+ *  box-shadow        The 1px inset-top translucent-white highlight is the
+ *                    refractive edge of physical glass (light bending over
+ *                    the top lip). The outer drop-shadow grounds the
+ *                    capsule so it reads as elevated above the plane.
+ *  border            1px translucent white all around catches environment
+ *                    light and defines the capsule silhouette without
+ *                    committing to an opaque frame.
+ *
+ * Apply only to chrome (sidebar, top bar). Never stack backdrop-filter on
+ * workspace cards — it destroys perf and breaks the Industrial layer the
+ * HIG explicitly reserves for content. */
 .liquid-glass {
   background-color: var(--color-glass);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 20px 40px -20px rgba(0, 0, 0, 0.5);
 }
 
 /* Tabular+mono utility — used on every numeric cell. */

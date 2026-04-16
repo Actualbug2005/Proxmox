@@ -99,11 +99,11 @@ export function Sidebar({ username }: SidebarProps) {
 
   return (
     <aside
-      className="sticky top-0 z-40 flex h-screen w-56 shrink-0 flex-col
-                 liquid-glass border-r border-zinc-800/40"
+      className="fixed top-4 left-4 bottom-4 z-40 flex w-60 flex-col overflow-hidden
+                 liquid-glass rounded-[24px]"
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 border-b border-zinc-800/60 px-4 py-5">
+      <div className="flex items-center gap-2.5 border-b border-white/5 px-4 py-5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500">
           <Server className="h-4 w-4 text-white" />
         </div>
@@ -113,16 +113,17 @@ export function Sidebar({ username }: SidebarProps) {
         </div>
       </div>
 
-      {/* Command Palette trigger */}
-      <div className="border-b border-zinc-800/60 px-3 py-3">
+      {/* Command Palette trigger — translucent inside the capsule so it
+       * reads as part of the glass layer, not a solid inset panel. */}
+      <div className="border-b border-white/5 px-3 py-3">
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
           className="flex w-full cursor-pointer items-center gap-2 rounded-lg
-                     border border-zinc-800/60 bg-zinc-950 px-2.5 py-1.5 text-xs text-zinc-500
-                     transition hover:border-zinc-700 hover:text-zinc-300"
+                     border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-zinc-400
+                     transition hover:border-white/20 hover:bg-white/[0.06] hover:text-zinc-200"
         >
           <span className="flex-1 text-left">Search…</span>
-          <kbd className="tabular font-mono text-zinc-600">⌘K</kbd>
+          <kbd className="tabular font-mono text-zinc-500">⌘K</kbd>
         </button>
       </div>
 
@@ -141,10 +142,12 @@ export function Sidebar({ username }: SidebarProps) {
                     key={href}
                     href={href}
                     className={cn(
-                      'group flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors',
+                      // rounded-xl for the inner pills gives a clean concentric
+                      // ratio against the 24px capsule (roughly 1:2).
+                      'group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-colors',
                       active
-                        ? 'bg-zinc-800 font-medium text-zinc-100'
-                        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100',
+                        ? 'bg-white/10 font-medium text-zinc-50 ring-1 ring-inset ring-white/10'
+                        : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100',
                     )}
                   >
                     <Icon
@@ -163,9 +166,9 @@ export function Sidebar({ username }: SidebarProps) {
       </nav>
 
       {/* User */}
-      <div className="border-t border-zinc-800/60 p-3">
+      <div className="border-t border-white/5 p-3">
         <div className="flex items-center gap-2.5 px-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-medium text-zinc-300">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-zinc-100 ring-1 ring-inset ring-white/10">
             {username?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="min-w-0 flex-1">

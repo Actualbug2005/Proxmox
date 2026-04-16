@@ -119,7 +119,7 @@ export function PhysicalDisksTable() {
       )}
 
       {!isLoading && !error && (
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden backdrop-blur-sm">
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
           <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-zinc-500" />
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">
