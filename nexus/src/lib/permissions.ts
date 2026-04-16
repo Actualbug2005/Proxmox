@@ -7,9 +7,21 @@
  * script-run endpoints behind Sys.Modify on the target node.
  */
 import type { PVEAuthSession } from '@/types/proxmox';
+import { pveFetch } from '@/lib/pve-fetch';
 
 type PermissionsResponse = { data?: Record<string, Record<string, number>> };
 
+/**
+ * Returns true only if PVE explicitly grants the privilege. Fails CLOSED on:
+ *  - HTTP non-2xx (invalid ticket, 403, 500, etc.)
+ *  - Transport errors (DNS, TLS handshake, connection refused, abort)
+ *  - Malformed response bodies
+ *
+ * The outer try/catch is load-bearing: if anyone later wraps this function
+ * with `.catch(() => true)` for "resilience", they can still exploit it,
+ * but at least nothing this function does will throw into the caller's
+ * catch block and silently fail open.
+ */
 export async function userHasPrivilege(
   session: PVEAuthSession,
   path: string,
@@ -18,14 +30,18 @@ export async function userHasPrivilege(
   const qs = new URLSearchParams({ path, userid: session.username }).toString();
   const url = `https://${session.proxmoxHost}:8006/api2/json/access/permissions?${qs}`;
 
-  const res = await fetch(url, {
-    headers: { Cookie: `PVEAuthCookie=${session.ticket}` },
-  });
-  if (!res.ok) return false;
-
-  const body = (await res.json()) as PermissionsResponse;
-  const entry = body.data?.[path];
-  return Boolean(entry && entry[privilege]);
+  try {
+    const res = await pveFetch(url, {
+      headers: { Cookie: `PVEAuthCookie=${session.ticket}` },
+    });
+    if (!res.ok) return false;
+    const body = (await res.json()) as PermissionsResponse;
+    const entry = body.data?.[path];
+    return Boolean(entry && entry[privilege]);
+  } catch (err) {
+    console.error('[userHasPrivilege] transport error:', err);
+    return false;
+  }
 }
 
 export async function requireNodeSysModify(

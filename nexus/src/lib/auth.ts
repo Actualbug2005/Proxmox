@@ -16,6 +16,7 @@ import {
   SESSION_TTL_MS,
 } from '@/lib/session-store';
 import { deriveCsrfToken, CSRF_COOKIE } from '@/lib/csrf';
+import { pveFetch } from '@/lib/pve-fetch';
 
 export const SESSION_COOKIE = 'nexus_session';
 
@@ -33,7 +34,7 @@ export async function acquirePVETicket(
 ): Promise<PVETicketResponse> {
   const fullUser = username.includes('@') ? username : `${username}@${realm}`;
 
-  const res = await fetch(`https://${host}:8006/api2/json/access/ticket`, {
+  const res = await pveFetch(`https://${host}:8006/api2/json/access/ticket`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username: fullUser, password }).toString(),
@@ -43,11 +44,11 @@ export async function acquirePVETicket(
     throw new Error(`PVE auth failed: ${res.status} ${res.statusText}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as { data?: PVETicketResponse };
   if (!json.data?.ticket) {
     throw new Error('Invalid credentials');
   }
-  return json.data as PVETicketResponse;
+  return json.data;
 }
 
 // ─── Session id ─────────────────────────────────────────────────────────────

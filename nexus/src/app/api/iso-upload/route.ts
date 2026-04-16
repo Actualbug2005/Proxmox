@@ -15,10 +15,13 @@
  * Response: JSON from PVE (typically a task UPID string wrapped in { data }).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { FormData as UndiciFormData } from 'undici';
 import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
+import { pveFetch } from '@/lib/pve-fetch';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification for PVE's self-signed cert is scoped to pveFetch.
+// Global NODE_TLS_REJECT_UNAUTHORIZED mutation removed per security audit.
 
 const PVE_BASE = process.env.PROXMOX_HOST
   ? `https://${process.env.PROXMOX_HOST}:8006/api2/json`
@@ -47,7 +50,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const outbound = new FormData();
+  // undici.FormData is what pveFetch (undici-based) expects. Runtime shape
+  // is identical to the global FormData; only the type declarations differ.
+  const outbound = new UndiciFormData();
   outbound.append('content', content);
   outbound.append('filename', filename);
   outbound.append('file', file, filename);
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
   const targetUrl = `${PVE_BASE}/nodes/${encodeURIComponent(node)}/storage/${encodeURIComponent(storage)}/upload`;
 
   try {
-    const pveRes = await fetch(targetUrl, {
+    const pveRes = await pveFetch(targetUrl, {
       method: 'POST',
       headers: {
         Cookie: `PVEAuthCookie=${session.ticket}`,

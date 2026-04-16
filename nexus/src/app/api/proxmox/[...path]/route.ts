@@ -8,9 +8,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
+import { pveFetch } from '@/lib/pve-fetch';
 
-// Allow self-signed certs on the Proxmox host
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification for PVE's self-signed cert is scoped to pveFetch, which
+// uses a dedicated undici Agent. We no longer mutate NODE_TLS_REJECT_UNAUTHORIZED
+// process-wide — that leaked to every outbound fetch in the Node runtime.
 
 const PVE_BASE = process.env.PROXMOX_HOST
   ? `https://${process.env.PROXMOX_HOST}:8006/api2/json`
@@ -46,7 +48,9 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   const contentType = req.headers.get('content-type');
   if (contentType) headers['Content-Type'] = contentType;
 
-  let body: BodyInit | undefined;
+  // Narrowed to `string` — the only shape req.text() produces. Avoids the
+  // global `BodyInit` vs undici's `BodyInit` type mismatch on this file.
+  let body: string | undefined;
   const method = req.method;
 
   if (method !== 'GET' && method !== 'HEAD') {
@@ -54,7 +58,7 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   }
 
   try {
-    const pveRes = await fetch(targetUrl, {
+    const pveRes = await pveFetch(targetUrl, {
       method,
       headers,
       body,

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { acquirePVETicket, startSession } from '@/lib/auth';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification for PVE's self-signed cert is handled inside pveFetch
+// (src/lib/pve-fetch.ts), which is scoped to the PVE host only. We do NOT
+// set NODE_TLS_REJECT_UNAUTHORIZED globally anymore — that leaked to every
+// outbound request in the Node process.
 
 export async function POST(req: NextRequest) {
   try {

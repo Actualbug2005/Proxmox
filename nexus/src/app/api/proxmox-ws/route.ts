@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
+import { pveFetch } from '@/lib/pve-fetch';
 // createRelaySession is injected into globalThis by server.ts at startup.
 // Both run in the same Node.js process so the reference is always live.
 type CreateRelaySession = (params: {
@@ -28,7 +29,8 @@ function getCreateRelaySession(): CreateRelaySession {
 }
 import { randomUUID } from 'crypto';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification for PVE's self-signed cert is scoped to pveFetch.
+// Global NODE_TLS_REJECT_UNAUTHORIZED mutation removed per security audit.
 
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
 const TYPE_SET = new Set(['qemu', 'lxc', 'node'] as const);
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
       ? `${base}/nodes/${node}/termproxy`
       : `${base}/nodes/${node}/${validType}/${vmidNum}/termproxy`;
 
-  const res = await fetch(termUrl, {
+  const res = await pveFetch(termUrl, {
     method: 'POST',
     headers: {
       Cookie: `PVEAuthCookie=${session.ticket}`,
@@ -86,7 +88,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `PVE termproxy failed: ${text}` }, { status: res.status });
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as {
+    data: { ticket: string; port: number; upid: string };
+  };
   const { ticket, port, upid } = data.data;
 
   const pveWsPath =

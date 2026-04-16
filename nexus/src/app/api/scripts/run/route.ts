@@ -19,7 +19,9 @@ import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
 import { requireNodeSysModify } from '@/lib/permissions';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// PVE's self-signed cert is handled inside pveFetch (used by permissions.ts).
+// No process-global NODE_TLS_REJECT_UNAUTHORIZED mutation — it leaked TLS
+// verification off for every outbound fetch in the Node runtime.
 
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
 const TRUSTED_ORIGINS = new Set([

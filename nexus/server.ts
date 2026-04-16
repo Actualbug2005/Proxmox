@@ -12,7 +12,11 @@ import next from 'next';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { ClientOptions } from 'ws';
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification for PVE's self-signed cert is scoped inside the process:
+//   - HTTP calls go through pveFetch (undici Agent with rejectUnauthorized: false)
+//   - WS call below passes rejectUnauthorized: false via ClientOptions
+// No process-global NODE_TLS_REJECT_UNAUTHORIZED — it leaked to all
+// outbound traffic in the Node runtime (critical finding C1).
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
