@@ -32,8 +32,9 @@ interface StatusDotProps {
 }
 
 const sizeClasses: Record<DotSize, string> = {
-  sm: 'h-1.5 w-1.5', // 6px
-  md: 'h-2 w-2',     // 8px
+  sm: 'h-2 w-2',      // 8px — replaces old 6px; the Solid Industrial
+                      // look wants the dot to register without a badge.
+  md: 'h-2.5 w-2.5',  // 10px — for detail pages / headers
 };
 
 /**

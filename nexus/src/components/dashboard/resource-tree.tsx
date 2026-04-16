@@ -8,10 +8,9 @@ import {
   Box,
   ChevronDown,
   ChevronRight,
-  Circle,
 } from 'lucide-react';
 import { cn, cpuPercent, formatBytes } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { StatusDot } from '@/components/ui/status-dot';
 import type { ClusterResourcePublic } from '@/types/proxmox';
 
 interface ResourceTreeProps {
@@ -28,22 +27,6 @@ type GroupedResources = {
   };
 };
 
-function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'outline' {
-  switch (status) {
-    case 'running':
-    case 'online':
-      return 'success';
-    case 'stopped':
-    case 'offline':
-      return 'danger';
-    case 'paused':
-    case 'suspended':
-      return 'warning';
-    default:
-      return 'outline';
-  }
-}
-
 function ResourceRow({
   resource,
   selected,
@@ -59,38 +42,41 @@ function ResourceRow({
     resource.type === 'node' ? Server : resource.type === 'qemu' ? Monitor : Box;
 
   const cpu = cpuPercent(resource.cpu);
+  // normalise node online/offline into StatusDot vocabulary
+  const dotStatus =
+    resource.status === 'online'
+      ? 'running'
+      : resource.status === 'offline'
+        ? 'stopped'
+        : resource.status;
 
   const inner = (
     <>
-      <Icon className="w-3.5 h-3.5 shrink-0 text-gray-500 group-hover:text-gray-400" />
-      <span className="flex-1 text-sm truncate">
+      <StatusDot status={dotStatus} size="sm" />
+      <Icon className="w-3.5 h-3.5 shrink-0 text-zinc-500 group-hover:text-zinc-300" />
+      <span className="flex-1 text-sm font-medium truncate text-zinc-200">
         {resource.name ?? resource.id}
-        {resource.vmid && (
-          <span className="text-gray-600 text-xs ml-1">({resource.vmid})</span>
-        )}
+        {resource.vmid ? (
+          <span className="text-zinc-600 text-xs ml-1 tabular font-mono">({resource.vmid})</span>
+        ) : null}
       </span>
       {resource.status === 'running' && resource.cpu !== undefined && (
-        <span className="text-xs text-gray-600 tabular-nums">{cpu.toFixed(0)}%</span>
+        <span className="text-xs text-zinc-500 tabular font-mono">{cpu.toFixed(0)}%</span>
       )}
       {resource.status === 'running' && resource.mem !== undefined && resource.maxmem && (
-        <span className="text-xs text-gray-600 tabular-nums">
+        <span className="text-xs text-zinc-500 tabular font-mono">
           {formatBytes(resource.mem)}
         </span>
       )}
-      <Badge variant={statusVariant(resource.status)}>
-        <Circle className="w-1.5 h-1.5 mr-1 fill-current" />
-        {resource.status ?? 'unknown'}
-      </Badge>
     </>
   );
 
   const cls = cn(
     'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition group',
     indent && 'ml-5',
-    selected ? 'bg-orange-500/10 text-orange-400' : 'hover:bg-gray-800 text-gray-300',
+    selected ? 'bg-zinc-800 text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300',
   );
 
-  // VMs and CTs navigate to their detail pages; nodes stay as selectable buttons
   if (resource.type === 'qemu' && resource.node && resource.vmid) {
     return (
       <Link href={`/dashboard/vms/${resource.node}/${resource.vmid}`} className={cls}>
@@ -115,7 +101,6 @@ function ResourceRow({
 export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreeProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
-  // Group by node
   const grouped = resources.reduce<GroupedResources>((acc, r) => {
     if (r.type === 'node') {
       if (!acc[r.node ?? r.id]) acc[r.node ?? r.id] = { vms: [], containers: [] };
@@ -135,7 +120,8 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
   function toggle(node: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      next.has(node) ? next.delete(node) : next.add(node);
+      if (next.has(node)) next.delete(node);
+      else next.add(node);
       return next;
     });
   }
@@ -149,11 +135,10 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
 
         return (
           <div key={nodeName}>
-            {/* Node header */}
             <div className="flex items-center">
               <button
                 onClick={() => toggle(nodeName)}
-                className="p-1 text-gray-600 hover:text-gray-400 transition"
+                className="p-1 text-zinc-500 hover:text-zinc-300 transition"
               >
                 {isCollapsed ? (
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -170,15 +155,14 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
                   />
                 </div>
               ) : (
-                <span className="flex-1 text-sm font-medium text-gray-400 px-2 py-1">
+                <span className="flex-1 text-sm font-medium text-zinc-300 px-2 py-1">
                   {nodeName}
                 </span>
               )}
             </div>
 
-            {/* Children */}
             {!isCollapsed && children.length > 0 && (
-              <div className="ml-2 border-l border-gray-800 pl-1 space-y-0.5 mt-0.5">
+              <div className="ml-2 border-l border-zinc-800/60 pl-1 space-y-0.5 mt-0.5">
                 {children.map((r) => (
                   <ResourceRow
                     key={r.id}

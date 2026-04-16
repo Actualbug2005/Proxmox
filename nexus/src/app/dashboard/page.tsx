@@ -31,12 +31,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white">Overview</h1>
-          <p className="text-sm text-gray-500">Cluster summary · Updated {lastUpdated}</p>
+          <h1 className="text-xl font-semibold text-zinc-50">Overview</h1>
+          <p className="text-sm text-zinc-500 tabular">Cluster summary · Updated {lastUpdated}</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/60 rounded-lg text-xs text-zinc-300 transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Refresh
@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
       {/* Error */}
       {isError && (
-        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
           <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
           <div>
             <p className="text-sm font-medium text-red-400">Failed to load cluster data</p>
@@ -79,10 +79,10 @@ export default function DashboardPage() {
             ].map(({ label, value, color }) => (
               <div
                 key={label}
-                className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3"
+                className="bg-zinc-900 border border-zinc-800/60 rounded-lg px-4 py-3"
               >
-                <p className="text-xs text-gray-500 mb-1">{label}</p>
-                <p className={`text-2xl font-semibold ${color}`}>{value}</p>
+                <p className="text-xs text-zinc-500 mb-1">{label}</p>
+                <p className={`text-2xl font-semibold tabular ${color}`}>{value}</p>
               </div>
             ))}
           </div>
@@ -90,8 +90,8 @@ export default function DashboardPage() {
           {/* Main grid */}
           <div className="grid grid-cols-[280px_1fr] gap-4">
             {/* Resource tree */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide px-2 mb-2">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-3">
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-2">
                 Resource Tree
               </p>
               <ResourceTree

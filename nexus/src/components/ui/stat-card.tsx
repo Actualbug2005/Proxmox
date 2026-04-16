@@ -12,13 +12,13 @@ interface StatCardProps {
 
 export function StatCard({ label, value, sub, percent, icon, className }: StatCardProps) {
   return (
-    <div className={cn('bg-gray-900 border border-gray-800 rounded-xl p-4', className)}>
+    <div className={cn('bg-zinc-900 border border-zinc-800/60 rounded-lg p-4', className)}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</span>
-        {icon && <span className="text-gray-600">{icon}</span>}
+        <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</span>
+        {icon && <span className="text-zinc-500">{icon}</span>}
       </div>
-      <div className="text-2xl font-semibold text-white mb-1">{value}</div>
-      {sub && <div className="text-xs text-gray-500 mb-2">{sub}</div>}
+      <div className="text-2xl font-semibold tabular text-zinc-50 mb-1">{value}</div>
+      {sub && <div className="text-xs text-zinc-500 mb-2 tabular">{sub}</div>}
       {percent !== undefined && <ProgressBar value={percent} />}
     </div>
   );

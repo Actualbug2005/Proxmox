@@ -1,57 +1,72 @@
 @import "tailwindcss";
 
 /*
- * Nexus "Midnight" design tokens
+ * Nexus "Solid Industrial" design tokens
  *
- * Tailwind v4 auto-generates utility classes from the namespaced CSS variables
- * declared inside @theme. Every --color-* token becomes bg-*/text-*/border-*,
- * every --text-* token becomes text-*, etc. The old tailwind.config.ts is not
- * present on purpose — this file IS the config.
+ * The remediation phase retires the Midnight/Glass palette: canvas stays
+ * zinc-950 but every elevated surface (cards, tables, sidebar) is solid
+ * zinc-900. Borders standardise on zinc-800 at 60% opacity so they read as
+ * structural dividers without becoming visual noise.
+ *
+ * Tailwind v4 auto-generates utility classes from the namespaced CSS
+ * variables inside @theme. This file IS the config — there is no
+ * tailwind.config.ts.
  */
 
 @theme {
-  /* ── Surfaces (layered, each step ~1 shade lighter than the canvas) ── */
-  --color-canvas: #09090b;          /* zinc-950  · app background */
-  --color-surface: #0f0f11;         /* between zinc-950/900 · sidebar, sunken panels */
-  --color-elevated: #18181b;        /* zinc-900  · cards, row hover */
-  --color-overlay: #27272a;         /* zinc-800  · popovers, modals */
+  /* ── Surfaces ────────────────────────────────────────────────────────
+   *  canvas    zinc-950  · app background (root only)
+   *  surface   zinc-900  · sidebar, sunken panels — identical to elevated
+   *  elevated  zinc-900  · cards, tables, rows
+   *  overlay   zinc-800  · popovers, modals, hover fills
+   *
+   *  surface == elevated on purpose; depth comes from borders not shade.
+   */
+  --color-canvas: #09090b;
+  --color-surface: #18181b;
+  --color-elevated: #18181b;
+  --color-overlay: #27272a;
 
-  /* ── Borders ── */
-  --color-border-subtle: #27272a;   /* zinc-800 */
-  --color-border-strong: #3f3f46;   /* zinc-700 */
-  --color-border-hairline: rgba(255, 255, 255, 0.06);
+  /* ── Borders (zinc-800 @ 60%) ────────────────────────────────────── */
+  --color-border-subtle: rgba(39, 39, 42, 0.6);
+  --color-border-strong: #3f3f46;
+  --color-border-hairline: rgba(39, 39, 42, 0.4);
 
   /* ── Foreground ── */
-  --color-fg: #fafafa;              /* zinc-50 */
-  --color-fg-secondary: #d4d4d8;    /* zinc-300 */
-  --color-fg-muted: #a1a1aa;        /* zinc-400 */
-  --color-fg-subtle: #71717a;       /* zinc-500 */
-  --color-fg-faint: #52525b;        /* zinc-600 */
+  --color-fg: #fafafa;
+  --color-fg-secondary: #d4d4d8;
+  --color-fg-muted: #a1a1aa;
+  --color-fg-subtle: #71717a;
+  --color-fg-faint: #52525b;
 
   /* ── Accent (orange — existing brand) ── */
-  --color-accent: #f97316;          /* orange-500 */
-  --color-accent-soft: rgba(249, 115, 22, 0.15);
+  --color-accent: #f97316;
+  --color-accent-soft: rgba(249, 115, 22, 0.12);
   --color-accent-ring: rgba(249, 115, 22, 0.30);
 
-  /* ── Modular type scale (1.125 — Major Second, 13px tabular data base) ── */
-  --text-micro: 0.625rem;           /* 10px · uppercase section labels */
-  --text-micro--line-height: 0.875rem;
-  --text-nano: 0.6875rem;            /* 11px · metric captions */
+  /* ── Radius standard ── */
+  --radius-lg: 0.5rem;           /* 8px · all containers */
+
+  /* ── Type scale — 11/12/13/14/16/18/24 ──
+   *  No 10px. Secondary meta starts at 12px (xs).
+   *  11px (nano) is reserved for ALL-CAPS section labels ONLY.
+   */
+  --text-nano: 0.6875rem;        /* 11px · SECTION LABELS, uppercase only */
   --text-nano--line-height: 1rem;
-  --text-xs: 0.75rem;               /* 12px · secondary table text, timestamps */
+  --text-xs: 0.75rem;            /* 12px · secondary meta, timestamps */
   --text-xs--line-height: 1rem;
-  --text-data: 0.8125rem;           /* 13px · TABULAR DATA BASE (CPU/MEM/ID) */
+  --text-data: 0.8125rem;        /* 13px · tabular data (CPU/MEM/ID) */
   --text-data--line-height: 1.125rem;
-  --text-sm: 0.875rem;              /* 14px · body */
+  --text-sm: 0.875rem;           /* 14px · body, primary data */
   --text-sm--line-height: 1.25rem;
-  --text-base: 1rem;                /* 16px · subheadings */
+  --text-base: 1rem;             /* 16px · subheadings */
   --text-base--line-height: 1.5rem;
-  --text-lg: 1.125rem;              /* 18px · section titles */
+  --text-lg: 1.125rem;           /* 18px · section titles */
   --text-lg--line-height: 1.5rem;
-  --text-xl: 1.5rem;                /* 24px · page titles */
+  --text-xl: 1.5rem;             /* 24px · page titles */
   --text-xl--line-height: 2rem;
 
-  /* ── Font families (Geist already loaded in layout.tsx via next/font) ── */
+  /* ── Font families (Geist loaded in layout.tsx via next/font) ── */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -66,8 +81,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* A single utility for tabular+mono — used on every numeric cell.
- * Shorter than writing "font-mono tabular-nums" on every cell. */
+/* Tabular+mono utility — used on every numeric cell. */
 @utility tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum", "cv11";
@@ -82,11 +96,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-subtle);
+  background: #27272a;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-strong);
+  background: #3f3f46;
 }
 
 /* xterm.js container */

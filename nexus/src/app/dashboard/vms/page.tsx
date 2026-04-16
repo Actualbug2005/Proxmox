@@ -122,14 +122,15 @@ export default function VMsPage() {
     return 0;
   });
 
-  function SortTh({ label, k }: { label: string; k: SortKey }) {
+  function SortTh({ label, k, align = 'left' }: { label: string; k: SortKey; align?: 'left' | 'right' }) {
     const active = sortKey === k;
     return (
       <th
         onClick={() => toggleSort(k)}
         className={cn(
-          'px-3 py-2 text-left text-micro font-semibold uppercase tracking-[0.1em] cursor-pointer select-none whitespace-nowrap',
-          active ? 'text-orange-400' : 'text-zinc-500 hover:text-zinc-300',
+          'px-3 py-3 text-[11px] font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap',
+          align === 'right' ? 'text-right' : 'text-left',
+          active ? 'text-zinc-200' : 'text-zinc-500 hover:text-zinc-300',
         )}
       >
         {label}
@@ -168,12 +169,12 @@ export default function VMsPage() {
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-zinc-900/60 border border-white/[0.06] rounded-lg text-sm text-zinc-200 placeholder-zinc-600 backdrop-blur-sm focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20"
+          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20"
         />
       </div>
 
       {/* Table */}
-      <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
@@ -185,20 +186,20 @@ export default function VMsPage() {
           </div>
         ) : (
           <table className="w-full">
-            <thead className="border-b border-white/[0.06]">
+            <thead className="border-b border-zinc-800/60 bg-zinc-900">
               <tr>
-                <SortTh label="ID" k="vmid" />
+                <SortTh label="ID" k="vmid" align="right" />
                 <SortTh label="Name" k="name" />
                 <SortTh label="Status" k="status" />
                 <SortTh label="Node" k="node" />
-                <th className="px-3 py-2 text-left text-micro font-semibold uppercase tracking-[0.1em] text-zinc-500">CPU</th>
-                <th className="px-3 py-2 text-left text-micro font-semibold uppercase tracking-[0.1em] text-zinc-500">Memory</th>
-                <th className="px-3 py-2 text-left text-micro font-semibold uppercase tracking-[0.1em] text-zinc-500">Disk</th>
-                <th className="px-3 py-2 text-left text-micro font-semibold uppercase tracking-[0.1em] text-zinc-500">Uptime</th>
-                <th className="px-3 py-2 text-right text-micro font-semibold uppercase tracking-[0.1em] text-zinc-500">Actions</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">CPU</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Memory</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Disk</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Uptime</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-zinc-800/60">
               {sorted.map((vm) => {
                 const cpu = cpuPercent(vm.cpu);
                 const mem = memPercent(vm.mem, vm.maxmem);
@@ -207,13 +208,13 @@ export default function VMsPage() {
                   <tr
                     key={vm.id}
                     onClick={() => router.push(`/dashboard/vms/${vm.node}/${vm.vmid}`)}
-                    className="hover:bg-white/[0.03] cursor-pointer transition group"
+                    className="hover:bg-zinc-800/40 cursor-pointer transition group"
                   >
-                    <td className="px-3 py-2 text-data tabular font-mono text-zinc-500">{vm.vmid}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-500">{vm.vmid}</td>
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <Monitor className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-                        <span className="text-data font-medium text-zinc-200 group-hover:text-white transition">
+                        <StatusDot status={vm.status} size="sm" />
+                        <span className="text-sm font-medium text-zinc-100 group-hover:text-white transition">
                           {vm.name ?? `VM ${vm.vmid}`}
                         </span>
                         {(vm.template ?? false) && (
@@ -221,47 +222,44 @@ export default function VMsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <StatusDot status={vm.status} size="sm" />
-                        <span className="text-data text-zinc-400 capitalize">
-                          {vm.status ?? 'unknown'}
-                        </span>
-                      </div>
+                    <td className="px-3 py-3">
+                      <span className="text-sm text-zinc-300 capitalize">
+                        {vm.status ?? 'unknown'}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-data text-zinc-400">{vm.node}</td>
-                    <td className="px-3 py-2 w-32">
+                    <td className="px-3 py-3 text-sm text-zinc-400">{vm.node}</td>
+                    <td className="px-3 py-3 w-32">
                       {vm.status === 'running' ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-data tabular font-mono text-zinc-200">{cpu.toFixed(1)}%</span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200">{cpu.toFixed(1)}%</span>
                           <Gauge value={cpu} label="CPU usage" />
                         </div>
-                      ) : <span className="text-xs text-zinc-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-3 py-2 w-36">
+                    <td className="px-3 py-3 w-40">
                       {vm.status === 'running' && vm.maxmem ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-data tabular font-mono text-zinc-200">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
                             {formatBytes(vm.mem ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(vm.maxmem)}
                           </span>
                           <Gauge value={mem} label="Memory usage" />
                         </div>
-                      ) : <span className="text-xs text-zinc-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-3 py-2 w-32">
+                    <td className="px-3 py-3 w-40">
                       {vm.maxdisk ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-data tabular font-mono text-zinc-200">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
                             {formatBytes(vm.disk ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(vm.maxdisk)}
                           </span>
                           <Gauge value={disk} label="Disk usage" />
                         </div>
-                      ) : <span className="text-xs text-zinc-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-3 py-2 text-data tabular font-mono text-zinc-400">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-400">
                       {vm.uptime ? formatUptime(vm.uptime) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <VMActions vm={vm} onDone={() => setTick((t) => t + 1)} />
                     </td>
                   </tr>

@@ -1,18 +1,14 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Gauge — compact 3px rail for table-row usage metrics.
+ * Gauge — compact usage bar for tables and cards.
  *
- * Thinner and denser than ProgressBar (which stays 4px post-refactor for
- * general UI). Uses a threshold-driven gradient fill so the colour encodes
- * both magnitude and severity at a glance:
+ * Solid Industrial rev: rail is h-2 (8px) and the fill is a single
+ * high-intent color, not a gradient. Severity encodes by threshold:
  *
- *   ≤65%  → emerald (healthy)
- *   66–85% → amber (attention)
- *   >85%  → red (critical)
- *
- * Gradient from a darker shade on the left to a brighter shade on the right
- * adds subtle depth without requiring a shadow.
+ *   ≤65%   → emerald-500 (healthy)
+ *   66–85% → amber-500   (attention)
+ *   >85%   → red-500     (critical)
  */
 
 interface GaugeProps {
@@ -23,10 +19,10 @@ interface GaugeProps {
   label?: string;
 }
 
-function gradientFor(pct: number): string {
-  if (pct > 85) return 'bg-gradient-to-r from-red-600 to-red-400';
-  if (pct > 65) return 'bg-gradient-to-r from-amber-600 to-amber-400';
-  return 'bg-gradient-to-r from-emerald-600 to-emerald-400';
+function colorFor(pct: number): string {
+  if (pct > 85) return 'bg-red-500';
+  if (pct > 65) return 'bg-amber-500';
+  return 'bg-emerald-500';
 }
 
 export function Gauge({ value, className, label }: GaugeProps) {
@@ -39,10 +35,10 @@ export function Gauge({ value, className, label }: GaugeProps) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={cn('h-[3px] w-full overflow-hidden rounded-full bg-zinc-800/70', className)}
+      className={cn('h-2 w-full overflow-hidden rounded-full bg-zinc-800', className)}
     >
       <div
-        className={cn('h-full rounded-full transition-all duration-500', gradientFor(clamped))}
+        className={cn('h-full rounded-full transition-all duration-500', colorFor(clamped))}
         style={{ width: `${clamped}%` }}
       />
     </div>

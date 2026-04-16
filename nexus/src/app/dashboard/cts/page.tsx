@@ -6,25 +6,16 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useClusterResources } from '@/hooks/use-cluster';
-import { Badge } from '@/components/ui/badge';
-import { ProgressBar } from '@/components/ui/progress-bar';
+import { Gauge } from '@/components/ui/gauge';
+import { StatusDot } from '@/components/ui/status-dot';
 import { cn, cpuPercent, formatBytes, memPercent, formatUptime } from '@/lib/utils';
 import {
   Play, Square, RotateCcw, PowerOff, Plus, Loader2,
-  Box, Circle, ChevronDown, Search,
+  Box, ChevronDown, Search,
 } from 'lucide-react';
 import type { ClusterResourcePublic } from '@/types/proxmox';
 
 type SortKey = 'vmid' | 'name' | 'status' | 'node' | 'cpu' | 'mem';
-
-function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'outline' {
-  switch (status) {
-    case 'running': return 'success';
-    case 'stopped': return 'danger';
-    case 'paused': case 'suspended': return 'warning';
-    default: return 'outline';
-  }
-}
 
 function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => void }) {
   const qc = useQueryClient();
@@ -52,7 +43,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
           onClick={(e) => { e.stopPropagation(); start.mutate(); }}
           disabled={pending}
           title="Start"
-          className="p-1.5 rounded-md text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
+          className="p-1.5 rounded-md text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
         >
           {start.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
         </button>
@@ -63,7 +54,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); shutdown.mutate(); }}
             disabled={pending}
             title="Shutdown"
-            className="p-1.5 rounded-md text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
           >
             {shutdown.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
           </button>
@@ -71,7 +62,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); reboot.mutate(); }}
             disabled={pending}
             title="Reboot"
-            className="p-1.5 rounded-md text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
           >
             {reboot.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
           </button>
@@ -79,7 +70,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); stop.mutate(); }}
             disabled={pending}
             title="Force Stop"
-            className="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
           >
             {stop.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}
           </button>
@@ -130,14 +121,15 @@ export default function CTsPage() {
     return 0;
   });
 
-  function SortTh({ label, k }: { label: string; k: SortKey }) {
+  function SortTh({ label, k, align = 'left' }: { label: string; k: SortKey; align?: 'left' | 'right' }) {
     const active = sortKey === k;
     return (
       <th
         onClick={() => toggleSort(k)}
         className={cn(
-          'px-4 py-3 text-left text-xs font-medium cursor-pointer select-none whitespace-nowrap',
-          active ? 'text-orange-400' : 'text-gray-500 hover:text-gray-300',
+          'px-3 py-3 text-[11px] font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap',
+          align === 'right' ? 'text-right' : 'text-left',
+          active ? 'text-zinc-200' : 'text-zinc-500 hover:text-zinc-300',
         )}
       >
         {label}
@@ -153,8 +145,8 @@ export default function CTsPage() {
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white">Containers</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl font-semibold text-zinc-50">Containers</h1>
+          <p className="text-sm text-zinc-500 mt-0.5 tabular">
             {cts.length} total · {runningCount} running · {stoppedCount} stopped
           </p>
         </div>
@@ -168,42 +160,42 @@ export default function CTsPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
         <input
           type="text"
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50"
+          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20"
         />
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
           </div>
         ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-600">
+          <div className="flex flex-col items-center justify-center h-48 text-zinc-600">
             <Box className="w-8 h-8 mb-2 opacity-40" />
             <p className="text-sm">{search ? 'No containers match your search' : 'No containers found'}</p>
           </div>
         ) : (
           <table className="w-full">
-            <thead className="border-b border-gray-800">
+            <thead className="border-b border-zinc-800/60 bg-zinc-900">
               <tr>
-                <SortTh label="ID" k="vmid" />
+                <SortTh label="ID" k="vmid" align="right" />
                 <SortTh label="Name" k="name" />
                 <SortTh label="Status" k="status" />
                 <SortTh label="Node" k="node" />
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">CPU</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Memory</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Disk</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Uptime</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Actions</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">CPU</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Memory</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Disk</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Uptime</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60">
+            <tbody className="divide-y divide-zinc-800/60">
               {sorted.map((ct) => {
                 const cpu = cpuPercent(ct.cpu);
                 const mem = memPercent(ct.mem, ct.maxmem);
@@ -212,56 +204,55 @@ export default function CTsPage() {
                   <tr
                     key={ct.id}
                     onClick={() => router.push(`/dashboard/cts/${ct.node}/${ct.vmid}`)}
-                    className="hover:bg-gray-800/50 cursor-pointer transition group"
+                    className="hover:bg-zinc-800/40 cursor-pointer transition group"
                   >
-                    <td className="px-4 py-3 text-sm font-mono text-gray-400">{ct.vmid}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-500">{ct.vmid}</td>
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <Box className="w-3.5 h-3.5 text-gray-600 shrink-0" />
-                        <span className="text-sm font-medium text-gray-200 group-hover:text-white transition">
+                        <StatusDot status={ct.status} size="sm" />
+                        <span className="text-sm font-medium text-zinc-100 group-hover:text-white transition">
                           {ct.name ?? `CT ${ct.vmid}`}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={statusVariant(ct.status)}>
-                        <Circle className="w-1.5 h-1.5 mr-1 fill-current" />
+                    <td className="px-3 py-3">
+                      <span className="text-sm text-zinc-300 capitalize">
                         {ct.status ?? 'unknown'}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-400">{ct.node}</td>
-                    <td className="px-4 py-3 w-32">
+                    <td className="px-3 py-3 text-sm text-zinc-400">{ct.node}</td>
+                    <td className="px-3 py-3 w-32">
                       {ct.status === 'running' ? (
-                        <div>
-                          <span className="text-xs text-gray-400 tabular-nums">{cpu.toFixed(1)}%</span>
-                          <ProgressBar value={cpu} className="mt-1" />
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200">{cpu.toFixed(1)}%</span>
+                          <Gauge value={cpu} label="CPU usage" />
                         </div>
-                      ) : <span className="text-xs text-gray-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-4 py-3 w-36">
+                    <td className="px-3 py-3 w-40">
                       {ct.status === 'running' && ct.maxmem ? (
-                        <div>
-                          <span className="text-xs text-gray-400 tabular-nums">
-                            {formatBytes(ct.mem ?? 0)} / {formatBytes(ct.maxmem)}
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
+                            {formatBytes(ct.mem ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(ct.maxmem)}
                           </span>
-                          <ProgressBar value={mem} className="mt-1" />
+                          <Gauge value={mem} label="Memory usage" />
                         </div>
-                      ) : <span className="text-xs text-gray-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-4 py-3 w-32">
+                    <td className="px-3 py-3 w-40">
                       {ct.maxdisk ? (
-                        <div>
-                          <span className="text-xs text-gray-400 tabular-nums">
-                            {formatBytes(ct.disk ?? 0)} / {formatBytes(ct.maxdisk)}
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
+                            {formatBytes(ct.disk ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(ct.maxdisk)}
                           </span>
-                          <ProgressBar value={disk} className="mt-1" />
+                          <Gauge value={disk} label="Disk usage" />
                         </div>
-                      ) : <span className="text-xs text-gray-600">—</span>}
+                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-400 tabular-nums">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-400">
                       {ct.uptime ? formatUptime(ct.uptime) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <CTActions ct={ct} onDone={() => setTick((t) => t + 1)} />
                     </td>
                   </tr>
