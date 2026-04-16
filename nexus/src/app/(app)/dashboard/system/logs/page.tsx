@@ -142,12 +142,12 @@ export default function LogsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search message or unit…"
-              className="flex-1 min-w-48 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="flex-1 min-w-48 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             />
             <select
               value={unitFilter}
               onChange={(e) => setUnitFilter(e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             >
               <option value="">All units</option>
               {allUnits.map((u) => <option key={u} value={u}>{u}</option>)}
@@ -155,7 +155,7 @@ export default function LogsPage() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value as Priority | '')}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             >
               <option value="">All priorities</option>
               <option value="error">Error</option>
@@ -166,7 +166,7 @@ export default function LogsPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : (
             <>
               <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
@@ -216,14 +216,14 @@ export default function LogsPage() {
               value={unitFilter}
               onChange={(e) => setUnitFilter(e.target.value)}
               placeholder="Filter by unit (e.g. pveproxy)"
-              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             />
             <button
               onClick={() => setPaused((p) => !p)}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition',
                 paused
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                  ? 'bg-zinc-100 hover:bg-white text-white'
                   : 'bg-zinc-800 hover:bg-zinc-800 text-zinc-300',
               )}
             >

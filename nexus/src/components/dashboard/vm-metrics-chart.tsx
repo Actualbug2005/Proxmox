@@ -31,7 +31,7 @@ export function VMMetricsChart({ node, vmid, type }: VMMetricsChartProps) {
         {
           label: 'CPU Usage',
           keys: ['CPU'],
-          colors: ['#f97316'],
+          colors: ['#818cf8'],
           gradIds: [`${prefix}-cpu`],
         },
         {

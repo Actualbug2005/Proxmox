@@ -17,7 +17,7 @@ export function NodeMetricsChart({ nodeName }: NodeMetricsChartProps) {
       {
         label: 'CPU Usage',
         keys: ['CPU'],
-        colors: ['#f97316'],
+        colors: ['#818cf8'],
         gradIds: [`node-${nodeName}-cpu`],
       },
       {

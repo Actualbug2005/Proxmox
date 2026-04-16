@@ -154,7 +154,7 @@ export default function VMsPage() {
         </div>
         <Link
           href="/dashboard/vms/create"
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition shadow-[0_0_20px_-6px_rgba(249,115,22,0.5)]"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Create VM
@@ -169,7 +169,7 @@ export default function VMsPage() {
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20"
+          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
         />
       </div>
 
@@ -177,7 +177,7 @@ export default function VMsPage() {
       <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
           </div>
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-zinc-600">

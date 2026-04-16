@@ -232,7 +232,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
   });
 
   const inputCls =
-    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50 font-mono disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50 font-mono disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <div
@@ -319,7 +319,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                     type="checkbox"
                     checked={content.has(c.id)}
                     onChange={() => toggleContent(c.id)}
-                    className="w-4 h-4 accent-orange-500 mt-0.5 shrink-0"
+                    className="w-4 h-4 accent-zinc-100 mt-0.5 shrink-0"
                   />
                   <div className="min-w-0">
                     <p className="text-xs text-zinc-200">{c.label}</p>
@@ -355,7 +355,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                       type="checkbox"
                       checked={selectedNodes.has(n)}
                       onChange={() => toggleNode(n)}
-                      className="w-4 h-4 accent-orange-500 shrink-0"
+                      className="w-4 h-4 accent-zinc-100 shrink-0"
                     />
                     <span className="text-xs text-zinc-200 font-mono truncate">{n}</span>
                   </label>
@@ -536,7 +536,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                     type="checkbox"
                     checked={mkdir}
                     onChange={(e) => setMkdir(e.target.checked)}
-                    className="w-4 h-4 accent-orange-500 mt-0.5 shrink-0"
+                    className="w-4 h-4 accent-zinc-100 mt-0.5 shrink-0"
                   />
                   <div className="min-w-0">
                     <p className="text-xs text-zinc-200">Create subdirectories</p>
@@ -565,7 +565,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           <button
             onClick={() => submitM.mutate()}
             disabled={!validation.ok || submitM.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {submitM.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {isEdit ? 'Save Changes' : 'Map Storage'}

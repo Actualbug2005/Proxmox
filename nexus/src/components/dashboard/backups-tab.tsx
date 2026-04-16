@@ -75,7 +75,7 @@ function BackupNowDialog({
     });
   };
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -135,7 +135,7 @@ function BackupNowDialog({
           <button
             onClick={submit}
             disabled={!storage || backupM.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
           >
             {backupM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
             Back up now
@@ -251,7 +251,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
           </p>
           <button
             onClick={() => setShowBackupNow(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
           >
             <Archive className="w-4 h-4" />
             Back up now
@@ -260,7 +260,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
 
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
           </div>
         ) : files.length === 0 ? (
           <EmptyState

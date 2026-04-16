@@ -50,7 +50,7 @@ export default function PoolsPage() {
         </div>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
         >
           <Plus className="w-4 h-4" /> New pool
         </button>
@@ -84,7 +84,7 @@ export default function PoolsPage() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-orange-500" /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
       ) : !pools || pools.length === 0 ? (
         <EmptyState
           icon={FolderTree}
@@ -100,7 +100,7 @@ export default function PoolsPage() {
                 onClick={() => setSelected(p.poolid)}
                 className={cn(
                   'w-full text-left bg-zinc-900 border rounded-lg p-3 transition',
-                  selected === p.poolid ? 'border-orange-500/50' : 'border-zinc-800/60 hover:border-zinc-800/60',
+                  selected === p.poolid ? 'border-zinc-300/50' : 'border-zinc-800/60 hover:border-zinc-800/60',
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ function PoolEditor({ initial, onClose, onSaved }: { initial: PVEPool | null; on
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -172,7 +172,7 @@ function PoolEditor({ initial, onClose, onSaved }: { initial: PVEPool | null; on
           <button
             onClick={() => saveM.mutate({ poolid, ...(comment ? { comment } : {}) })}
             disabled={!poolid || saveM.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
           >
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? 'Save' : 'Create'}
@@ -243,7 +243,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
 
   const typeFilteredCandidates = candidates.filter((c) => c.type === selectedType);
 
-  const inputCls = 'px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <>
@@ -319,7 +319,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
             <button
               onClick={addMember}
               disabled={!addTarget || addM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
             >
               {addM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Add

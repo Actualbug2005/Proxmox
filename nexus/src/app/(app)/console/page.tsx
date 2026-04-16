@@ -97,7 +97,7 @@ export default function ConsolePage() {
                   className={cn(
                     'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                     tabs.find((t) => t.id === n.id)
-                      ? 'bg-orange-500/10 text-orange-400'
+                      ? 'bg-white/5 text-indigo-400'
                       : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                   )}
                 >
@@ -121,7 +121,7 @@ export default function ConsolePage() {
                     className={cn(
                       'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                       tabs.find((t) => t.id === v.id)
-                        ? 'bg-orange-500/10 text-orange-400'
+                        ? 'bg-white/5 text-indigo-400'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                     )}
                   >
@@ -150,7 +150,7 @@ export default function ConsolePage() {
                     className={cn(
                       'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                       tabs.find((t) => t.id === c.id)
-                        ? 'bg-orange-500/10 text-orange-400'
+                        ? 'bg-white/5 text-indigo-400'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                     )}
                   >

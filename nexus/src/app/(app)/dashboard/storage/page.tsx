@@ -82,7 +82,7 @@ function StorageRow({
             onEdit(storage.storage);
           }}
           disabled={editLoading}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-orange-400 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-wait"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-wait"
           aria-label={`Edit ${storage.storage}`}
           title="Edit storage"
         >
@@ -212,7 +212,7 @@ export default function StoragePage() {
             className={cn(
               'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === id
-                ? 'border-orange-500 text-orange-400'
+                ? 'border-zinc-200 text-indigo-400'
                 : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
@@ -265,7 +265,7 @@ export default function StoragePage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowMapStorage(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               Map Storage
@@ -288,7 +288,7 @@ export default function StoragePage() {
 
           {isLoading && (
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
             </div>
           )}
 
@@ -345,7 +345,7 @@ export default function StoragePage() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                     nasNode === n
-                      ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                      ? 'bg-white/10 text-indigo-300 ring-1 ring-inset ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                       : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
                   )}
                 >
@@ -357,7 +357,7 @@ export default function StoragePage() {
 
           {!nasNode ? (
             <div className="flex items-center justify-center h-24">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           ) : (
             <>
@@ -367,7 +367,7 @@ export default function StoragePage() {
                 </div>
                 <button
                   onClick={() => setShowCreateShare(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   Create Share

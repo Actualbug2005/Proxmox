@@ -85,7 +85,7 @@ export default function StorageDetailPage({
         {canUpload && (
           <button
             onClick={() => setShowUpload(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
           >
             <Upload className="w-4 h-4" />
             Upload

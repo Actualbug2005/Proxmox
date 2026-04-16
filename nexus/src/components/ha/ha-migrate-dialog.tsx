@@ -48,7 +48,7 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
         <div className="space-y-3">
           <div>
             <label className="text-xs text-zinc-500 block mb-1">Target node</label>
-            <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50">
+            <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50">
               <option value="">Select a node…</option>
               {nodes.map((n) => (
                 <option key={n.name} value={n.name}>{n.name}</option>
@@ -61,7 +61,7 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
           <button
             onClick={() => migrateM.mutate()}
             disabled={!target || migrateM.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
           >
             {migrateM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
             {kind === 'migrate' ? 'Migrate' : 'Relocate'}

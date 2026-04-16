@@ -156,7 +156,7 @@ function ScriptCard({
       onClick={() => onOpen(script)}
       className="group text-left w-full env-glass-card rounded-lg p-4
                  transition hover:border-white/[0.14]
-                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -175,8 +175,8 @@ function ScriptCard({
         </div>
         <div className="shrink-0">
           <span
-            className="flex items-center gap-1 px-2.5 py-1 bg-orange-500/10 group-hover:bg-orange-500/20
-                       text-orange-400 text-xs rounded-md transition"
+            className="flex items-center gap-1 px-2.5 py-1 bg-white/5 group-hover:bg-white/10
+                       text-indigo-400 text-xs rounded-md transition"
           >
             <Play className="w-3 h-3" />
             Configure
@@ -340,7 +340,7 @@ function ScriptDetailDialog({
             onClick={onClose}
             aria-label="Close"
             className="p-1 text-zinc-500 hover:text-zinc-200 rounded-md
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
           >
             <X className="w-4 h-4" />
           </button>
@@ -371,7 +371,7 @@ function ScriptDetailDialog({
               <button
                 onClick={onClose}
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm rounded-lg transition
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
               >
                 Close
               </button>
@@ -395,7 +395,7 @@ function ScriptDetailDialog({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
                   >
                     <ExternalLink className="w-3 h-3" />
                     Website
@@ -407,7 +407,7 @@ function ScriptDetailDialog({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200
-                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
                   >
                     <BookOpen className="w-3 h-3" />
                     Docs
@@ -419,7 +419,7 @@ function ScriptDetailDialog({
               <div>
                 <label htmlFor="target-node" className="block text-xs font-medium text-zinc-300 mb-1.5">
                   Target Node
-                  <span className="ml-1 text-orange-400" aria-hidden>*</span>
+                  <span className="ml-1 text-indigo-400" aria-hidden>*</span>
                 </label>
                 <div className="relative">
                   <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -429,7 +429,7 @@ function ScriptDetailDialog({
                     onChange={(e) => setSelectedNode(e.target.value)}
                     className="w-full bg-zinc-950 border border-zinc-800/60 rounded-lg pl-9 pr-8 py-1.5
                                text-sm text-zinc-100 appearance-none
-                               focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                               focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
                   >
                     {nodes.length === 0 && <option value="">No nodes online</option>}
                     {nodes.map((n) => (
@@ -497,7 +497,7 @@ function ScriptDetailDialog({
                   <ul className="space-y-1">
                     {manifest.notes.map((n, i) => (
                       <li key={i} className="flex gap-2 text-xs text-zinc-400">
-                        <span className="text-orange-400 shrink-0">•</span>
+                        <span className="text-indigo-400 shrink-0">•</span>
                         <span>{n}</span>
                       </li>
                     ))}
@@ -524,7 +524,7 @@ function ScriptDetailDialog({
                 disabled={isExecuting}
                 className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50
                            text-zinc-200 text-sm rounded-lg transition
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
               >
                 Cancel
               </button>
@@ -536,9 +536,9 @@ function ScriptDetailDialog({
                     : !selectedNode ? 'Select a target node'
                     : undefined
                 }
-                className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/40
+                className="px-3 py-1.5 bg-zinc-100 hover:bg-white disabled:bg-zinc-100/40
                            disabled:cursor-not-allowed text-white text-sm rounded-lg transition
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300
                            flex items-center gap-1.5"
               >
                 {isExecuting ? (
@@ -607,14 +607,14 @@ function OptionField({
 
   const inputBase =
     'w-full bg-zinc-950 border border-zinc-800/60 rounded-lg px-3 py-1.5 text-sm text-zinc-100 ' +
-    'placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500';
+    'placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300';
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <label htmlFor={inputId} className="text-xs font-medium text-zinc-300">
           {option.label}
-          {option.required && <span className="ml-1 text-orange-400" aria-hidden>*</span>}
+          {option.required && <span className="ml-1 text-indigo-400" aria-hidden>*</span>}
         </label>
         <span className="text-[11px] text-zinc-600 font-mono">{option.type}</span>
       </div>
@@ -626,8 +626,8 @@ function OptionField({
             type="checkbox"
             checked={value === true}
             onChange={(e) => onChange(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-orange-500
-                       focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-zinc-400
+                       focus:outline-none focus:ring-2 focus:ring-zinc-300"
           />
           {option.description ?? 'Enabled'}
         </label>
@@ -721,7 +721,7 @@ export default function ScriptsPage() {
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center">
+        <div className="h-9 w-9 rounded-lg bg-white/5 text-indigo-400 flex items-center justify-center">
           <Code2 className="w-4 h-4" />
         </div>
         <div>
@@ -744,7 +744,7 @@ export default function ScriptsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg
                      text-sm text-zinc-100 placeholder-zinc-600
-                     focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                     focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
         />
       </div>
 
@@ -810,7 +810,7 @@ function CategoryTabRail({
   const tabClass = (on: boolean) =>
     cn(
       'shrink-0 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
       on
         ? 'bg-zinc-800 text-zinc-100 ring-1 ring-inset ring-zinc-700'
         : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200',

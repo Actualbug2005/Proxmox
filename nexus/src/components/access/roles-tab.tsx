@@ -36,12 +36,12 @@ export function RolesTab() {
 
       <div className="space-y-4">
         <div className="flex justify-end">
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition">
             <Plus className="w-4 h-4" /> New role
           </button>
         </div>
         {isLoading ? (
-          <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+          <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
         ) : !roles || roles.length === 0 ? (
           <EmptyState icon={ShieldCheck} title="No roles" />
         ) : (
@@ -92,7 +92,7 @@ function RoleEditor({ initial, onClose, onSaved }: { initial: PVERolePublic | nu
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -114,7 +114,7 @@ function RoleEditor({ initial, onClose, onSaved }: { initial: PVERolePublic | nu
         </div>
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
-          <button onClick={() => saveM.mutate({ roleid, ...(privs ? { privs } : {}) })} disabled={!roleid || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40">
+          <button onClick={() => saveM.mutate({ roleid, ...(privs ? { privs } : {}) })} disabled={!roleid || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40">
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? 'Save' : 'Create'}
           </button>

@@ -67,7 +67,7 @@ function Input({ value, onChange, type = 'text', placeholder, min, max }: {
   return (
     <input type={type} value={value} placeholder={placeholder} min={min} max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50" />
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50" />
   );
 }
 
@@ -76,7 +76,7 @@ function Select({ value, onChange, children }: {
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50">
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50">
       {children}
     </select>
   );
@@ -351,7 +351,7 @@ export default function CreateCTPage() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <Box className="w-5 h-5 text-orange-400" />
+          <Box className="w-5 h-5 text-indigo-400" />
           <h1 className="text-xl font-semibold text-white">Create Container</h1>
         </div>
       </div>
@@ -363,18 +363,18 @@ export default function CreateCTPage() {
             <div className="flex flex-col items-center">
               <div className={cn(
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition',
-                i < step ? 'bg-orange-500 text-white' :
-                i === step ? 'bg-orange-500/20 border-2 border-orange-500 text-orange-400' :
+                i < step ? 'bg-zinc-100 text-white' :
+                i === step ? 'bg-white/10 border-2 border-zinc-200 text-indigo-400' :
                 'bg-zinc-800 text-zinc-600',
               )}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-orange-400' : 'text-zinc-600')}>
+              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-indigo-400' : 'text-zinc-600')}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-orange-500/40' : 'bg-zinc-800')} />
+              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-zinc-100/40' : 'bg-zinc-800')} />
             )}
           </div>
         ))}
@@ -401,7 +401,7 @@ export default function CreateCTPage() {
           <button
             onClick={() => createM.mutate()}
             disabled={createM.isPending}
-            className="flex items-center gap-2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
           >
             {createM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Create CT
@@ -410,7 +410,7 @@ export default function CreateCTPage() {
           <button
             onClick={() => setStep((s) => s + 1)}
             disabled={!canNext()}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
           >
             Next
             <ChevronRight className="w-4 h-4" />

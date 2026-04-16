@@ -170,7 +170,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
           <button
             onClick={() => execM.mutate(provider.installCmd)}
             disabled={execM.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-xs rounded-lg transition disabled:opacity-40"
           >
             {execM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             Install
@@ -220,14 +220,14 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
                 value={configVals[field.key] ?? ''}
                 onChange={(e) => setConfigVals((p) => ({ ...p, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
               />
             </div>
           ))}
           <button
             onClick={() => execM.mutate(provider.configCmd(configVals))}
             disabled={execM.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-xs rounded-lg transition disabled:opacity-40"
           >
             {execM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             Apply Config
@@ -347,7 +347,7 @@ export default function CertificatesPage() {
     );
   }
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <>
@@ -379,7 +379,7 @@ export default function CertificatesPage() {
             onClick={() => setTab(t)}
             className={cn(
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
-              tab === t ? 'border-orange-500 text-orange-400' : 'border-transparent text-zinc-500 hover:text-zinc-300',
+              tab === t ? 'border-zinc-200 text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
             {label}
@@ -390,7 +390,7 @@ export default function CertificatesPage() {
       {tab === 'current' && (
         <div className="space-y-5">
           {isLoading ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : activeCert ? (
             <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
               <div className="flex items-center gap-3">
@@ -451,7 +451,7 @@ export default function CertificatesPage() {
             <button
               onClick={() => uploadM.mutate()}
               disabled={!certPem || !keyPem || uploadM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
             >
               {uploadM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Upload Certificate
@@ -483,7 +483,7 @@ export default function CertificatesPage() {
                 <button
                   onClick={() => registerAccountM.mutate()}
                   disabled={!acmeEmail || registerAccountM.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
                 >
                   {registerAccountM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Register Account
@@ -501,7 +501,7 @@ export default function CertificatesPage() {
             <button
               onClick={() => orderCertM.mutate()}
               disabled={!acmeDomain || orderCertM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
             >
               {orderCertM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Order Certificate
@@ -528,7 +528,7 @@ export default function CertificatesPage() {
 
           {tunnelStatusLoading && !tunnelStatus ? (
             <div className="flex items-center justify-center h-24">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{tunnelCards}</div>

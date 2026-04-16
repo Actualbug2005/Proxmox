@@ -23,12 +23,12 @@ export default function SystemLayout({ children }: { children: React.ReactNode }
         <div className="flex items-center gap-3">
           <span className="text-xs text-zinc-500 shrink-0">Node:</span>
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+            <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
           ) : (
             <select
               value={node}
               onChange={(e) => setNode(e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             >
               {nodes?.map((n) => {
                 const name = n.node ?? n.id ?? '';

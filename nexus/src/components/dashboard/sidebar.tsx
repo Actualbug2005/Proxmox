@@ -107,8 +107,8 @@ export function Sidebar({ username }: SidebarProps) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-white/5 px-4 py-5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500">
-          <Server className="h-4 w-4 text-white" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
+          <Server className="h-4 w-4 text-zinc-900" />
         </div>
         <div>
           <span className="text-sm font-semibold text-zinc-50">Nexus</span>
@@ -124,7 +124,7 @@ export function Sidebar({ username }: SidebarProps) {
           className="flex w-full cursor-pointer items-center gap-2 rounded-lg
                      border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-zinc-400
                      transition hover:border-white/20 hover:bg-white/[0.06] hover:text-zinc-200
-                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
         >
           <span className="flex-1 text-left">Search…</span>
           <kbd className="tabular font-mono text-zinc-500">⌘K</kbd>
@@ -151,7 +151,7 @@ export function Sidebar({ username }: SidebarProps) {
                       // rounded-xl for the inner pills gives a clean concentric
                       // ratio against the 24px capsule (roughly 1:2).
                       'group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
                       active
                         // mix-blend-plus-lighter: compositing the fill over
                         // the translucent glass additively produces an
@@ -194,7 +194,7 @@ export function Sidebar({ username }: SidebarProps) {
             title="Sign out"
             aria-label="Sign out"
             className="rounded-md p-1 text-zinc-500 transition hover:text-red-400
-                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
           >
             <LogOut className="h-4 w-4" />
           </button>

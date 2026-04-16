@@ -51,15 +51,15 @@ const sizeClasses: Record<DotSize, string> = {
  *   - amber    → user-initiated hold (paused / suspended — distinct hues via
  *                brightness: -400 vs -500)
  *   - red      → needs attention (error)
- *   - orange   → degraded but not failed (warning) — uses brand accent
+ *   - amber    → degraded but not failed (warning) — uses brand accent
  *   - zinc-600 → disconnected / no data (unknown)
  */
 const statusStyles: Record<DotStatus, { fill: string; ring: string; pulse: boolean }> = {
   running:   { fill: 'bg-emerald-400', ring: 'ring-emerald-400/25', pulse: false },
   stopped:   { fill: 'bg-zinc-500',    ring: 'ring-zinc-500/25',    pulse: false },
   paused:    { fill: 'bg-amber-400',   ring: 'ring-amber-400/25',   pulse: false },
-  suspended: { fill: 'bg-amber-500',   ring: 'ring-amber-500/25',   pulse: false },
-  warning:   { fill: 'bg-orange-400',  ring: 'ring-orange-400/30',  pulse: false },
+  suspended: { fill: 'bg-amber-600',   ring: 'ring-amber-600/25',   pulse: false },
+  warning:   { fill: 'bg-amber-500',   ring: 'ring-amber-500/30',   pulse: false },
   error:     { fill: 'bg-red-400',     ring: 'ring-red-400/30',     pulse: false },
   unknown:   { fill: 'bg-zinc-600',    ring: 'ring-zinc-600/25',    pulse: false },
 };

@@ -66,7 +66,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
   });
 
   const inputCls =
-    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50 font-mono';
+    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50 font-mono';
 
   return (
     <div
@@ -136,7 +136,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
                   type="checkbox"
                   checked={smb}
                   onChange={(e) => setSmb(e.target.checked)}
-                  className="w-4 h-4 accent-orange-500"
+                  className="w-4 h-4 accent-zinc-100"
                 />
                 <span className="text-sm text-zinc-300">SMB</span>
               </label>
@@ -145,7 +145,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
                   type="checkbox"
                   checked={nfs}
                   onChange={(e) => setNfs(e.target.checked)}
-                  className="w-4 h-4 accent-orange-500"
+                  className="w-4 h-4 accent-zinc-100"
                 />
                 <span className="text-sm text-zinc-300">NFS</span>
               </label>
@@ -196,7 +196,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
           <button
             onClick={() => createM.mutate()}
             disabled={!validation.ok || createM.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {createM.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Create Share

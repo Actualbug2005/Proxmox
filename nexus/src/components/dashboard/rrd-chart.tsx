@@ -133,7 +133,7 @@ export function RRDChart({
               onClick={() => onTimeframeChange(tf)}
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                 timeframe === tf
-                  ? 'bg-orange-500/20 text-orange-400'
+                  ? 'bg-white/10 text-indigo-400'
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -145,7 +145,7 @@ export function RRDChart({
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
         </div>
       ) : (
         <div className="space-y-4">

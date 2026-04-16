@@ -32,8 +32,8 @@ export function ConfirmDialog({ title, message, danger, onConfirm, onCancel }: C
           <button
             onClick={onConfirm}
             className={cn(
-              'px-4 py-2 text-sm font-medium rounded-lg transition text-white',
-              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600',
+              'px-4 py-2 text-sm font-medium rounded-lg transition',
+              danger ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-zinc-100 hover:bg-white text-zinc-900',
             )}
           >
             Confirm

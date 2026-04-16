@@ -21,7 +21,7 @@ export function ClusterStatusPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-24">
-        <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
       </div>
     );
   }
@@ -63,7 +63,7 @@ export function ClusterStatusPanel() {
               <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-emerald-400' : 'bg-red-400')} />
               <span className="font-mono">{n.name}</span>
               {n.ip && <span className="text-zinc-600 font-mono">{n.ip}</span>}
-              {(n.local ?? false) ? <span className="text-orange-400">(this node)</span> : null}
+              {(n.local ?? false) ? <span className="text-indigo-400">(this node)</span> : null}
             </div>
           ))}
         </div>

@@ -171,7 +171,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewRes(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               Add resource
@@ -179,7 +179,7 @@ export default function HAPage() {
           </div>
 
           {loadingRes ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : !resources || resources.length === 0 ? (
             <EmptyState
               icon={HeartPulse}
@@ -258,7 +258,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewGroup(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               New group
@@ -266,7 +266,7 @@ export default function HAPage() {
           </div>
 
           {loadingGroups ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : !groups || groups.length === 0 ? (
             <EmptyState
               icon={Layers}

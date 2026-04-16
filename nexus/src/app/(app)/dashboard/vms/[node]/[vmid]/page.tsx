@@ -69,7 +69,7 @@ function CloneDialog({
               placeholder={String(nextid ?? '...')}
               value={newid}
               onChange={(e) => setNewid(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             />
           </div>
           <div>
@@ -78,7 +78,7 @@ function CloneDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             />
           </div>
           <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
@@ -94,7 +94,7 @@ function CloneDialog({
           <button
             onClick={() => onConfirm(Number(newid) || (nextid ?? 0), name, full)}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Clone'}
           </button>
@@ -131,7 +131,7 @@ function MigrateDialog({
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             >
               <option value="">Select node…</option>
               {nodes.map((n) => (
@@ -154,7 +154,7 @@ function MigrateDialog({
           <button
             onClick={() => target && onConfirm(target, online)}
             disabled={!target || isLoading}
-            className="px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Migrate'}
           </button>
@@ -369,7 +369,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
             className={cn(
               'px-4 py-2 text-sm font-medium border-b-2 transition -mb-px',
               tab === t.id
-                ? 'border-orange-500 text-orange-400'
+                ? 'border-zinc-200 text-indigo-400'
                 : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
@@ -383,7 +383,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         <div className="space-y-4">
           {statusLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
             </div>
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -465,7 +465,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         <div className="space-y-4">
           {configLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
             </div>
           ) : config ? (
             <>
@@ -485,7 +485,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                         Cancel
                       </button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-50">
+                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50">
                         {saveConfigM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         Save
                       </button>
@@ -512,7 +512,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                               ...d,
                               [field]: ['cores','sockets','memory'].includes(field) ? Number(e.target.value) : e.target.value,
                             }))}
-                            className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+                            className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
                           />
                         )
                       ) : (

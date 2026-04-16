@@ -150,7 +150,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
             className={cn(
               'flex items-center gap-1 px-2 py-1 rounded-md transition',
               segments.length === 0
-                ? 'text-orange-400 bg-orange-500/10'
+                ? 'text-indigo-400 bg-white/5'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
             )}
           >
@@ -165,7 +165,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
                 className={cn(
                   'px-2 py-1 rounded-md transition font-mono',
                   i === segments.length - 1
-                    ? 'text-orange-400 bg-orange-500/10'
+                    ? 'text-indigo-400 bg-white/5'
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
                 )}
               >
@@ -179,7 +179,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           )}
 
@@ -247,7 +247,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
                             }}
                             disabled={isDownloading}
                             aria-label={`Download ${f.name}`}
-                            className="p-1.5 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-md transition disabled:opacity-40"
+                            className="p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-white/5 rounded-md transition disabled:opacity-40"
                           >
                             {isDownloading ? (
                               <Loader2 className="w-4 h-4 animate-spin" />

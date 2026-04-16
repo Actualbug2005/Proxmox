@@ -59,7 +59,7 @@ export function StorageContentTable({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
       </div>
     );
   }

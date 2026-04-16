@@ -64,7 +64,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
   };
 
   const inputCls =
-    'px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+    'px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className={cn('space-y-3', className)}>

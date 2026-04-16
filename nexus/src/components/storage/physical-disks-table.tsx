@@ -96,7 +96,7 @@ export function PhysicalDisksTable() {
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                 nodeFilter === n
-                  ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                  ? 'bg-white/10 text-indigo-300 ring-1 ring-inset ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
                   : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
               )}
             >
@@ -108,7 +108,7 @@ export function PhysicalDisksTable() {
 
       {isLoading && (
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
         </div>
       )}
 

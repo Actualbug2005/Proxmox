@@ -118,7 +118,7 @@ export default function PackagesPage() {
             className={cn(
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === t
-                ? 'border-orange-500 text-orange-400'
+                ? 'border-zinc-200 text-indigo-400'
                 : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
@@ -141,7 +141,7 @@ export default function PackagesPage() {
             <button
               onClick={() => installM.mutate([])}
               disabled={installM.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
             >
               {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
               Upgrade All PVE
@@ -150,7 +150,7 @@ export default function PackagesPage() {
 
           {pveLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           ) : (
             <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
@@ -193,20 +193,20 @@ export default function PackagesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search packages…"
-              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => installM.mutate(Array.from(selected))}
                 disabled={selected.size === 0 || installM.isPending}
-                className="px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-sm rounded-lg transition disabled:opacity-40"
+                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-indigo-400 text-sm rounded-lg transition disabled:opacity-40"
               >
                 Upgrade Selected ({selected.size})
               </button>
               <button
                 onClick={() => installM.mutate([])}
                 disabled={installM.isPending}
-                className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40"
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
               >
                 {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
                 Upgrade All
@@ -216,7 +216,7 @@ export default function PackagesPage() {
 
           {sysLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           ) : filteredSystem.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-zinc-500 gap-2">
@@ -248,7 +248,7 @@ export default function PackagesPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
                       <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.OldVersion}</td>
-                      <td className="px-4 py-3 font-mono text-orange-400 text-xs">{pkg.Version}</td>
+                      <td className="px-4 py-3 font-mono text-amber-400 text-xs">{pkg.Version}</td>
                       <td className="px-4 py-3 text-zinc-500 text-xs">{pkg.Section ?? '—'}</td>
                     </tr>
                   ))}

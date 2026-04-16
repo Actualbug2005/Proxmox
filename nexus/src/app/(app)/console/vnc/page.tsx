@@ -48,7 +48,7 @@ export default function VncConsolePage() {
           </>
         ) : (
           <>
-            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mx-auto" />
+            <Loader2 className="w-8 h-8 text-zinc-400 animate-spin mx-auto" />
             <h1 className="text-lg font-semibold text-white">Opening graphical console…</h1>
             <p className="text-sm text-zinc-500">
               Redirecting to Proxmox native noVNC client. You may be asked to log in to PVE directly if this is the first time.
@@ -58,7 +58,7 @@ export default function VncConsolePage() {
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open manually

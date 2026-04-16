@@ -46,7 +46,7 @@ export default function DashboardPage() {
       {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
         </div>
       )}
 
@@ -75,7 +75,7 @@ export default function DashboardPage() {
               { label: 'Nodes Online', value: `${onlineNodes}/${nodes.length}`, color: 'text-emerald-400' },
               { label: 'VMs Running', value: `${runningVMs}/${vms.length}`, color: 'text-blue-400' },
               { label: 'CTs Running', value: `${runningCTs}/${cts.length}`, color: 'text-purple-400' },
-              { label: 'Total Resources', value: String(vms.length + cts.length), color: 'text-orange-400' },
+              { label: 'Total Resources', value: String(vms.length + cts.length), color: 'text-indigo-400' },
             ].map(({ label, value, color }) => (
               <div
                 key={label}

@@ -100,7 +100,7 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           )}
 

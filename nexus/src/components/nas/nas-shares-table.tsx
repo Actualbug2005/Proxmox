@@ -99,7 +99,7 @@ export function NasSharesTable({ node }: Props) {
 
         {isLoading ? (
           <div className="flex items-center justify-center h-24">
-            <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
           </div>
         ) : sorted.length === 0 ? (
           <p className="text-sm text-zinc-600 py-10 text-center">
@@ -150,7 +150,7 @@ export function NasSharesTable({ node }: Props) {
                       <button
                         onClick={() => setActiveBrowse(s)}
                         aria-label={`Browse ${s.name}`}
-                        className="p-1.5 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-md transition"
+                        className="p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-white/5 rounded-md transition"
                       >
                         <FolderOpen className="w-4 h-4" />
                       </button>

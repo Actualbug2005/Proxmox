@@ -29,7 +29,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
   const [checksum, setChecksum] = useState('');
   const [checksumAlg, setChecksumAlg] = useState<'sha256' | 'sha512' | 'md5' | 'sha1' | 'sha224' | 'sha384'>('sha256');
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   const uploadM = useMutation({
     mutationFn: (params: IsoUploadParams) => api.storage.upload(params, setProgress),
@@ -147,7 +147,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
                     <span>{progress}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500 transition-all" style={{ width: `${progress}%` }} />
+                    <div className="h-full bg-zinc-100 transition-all" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
               )}
@@ -210,7 +210,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
               isPending ||
               (mode === 'upload' ? !file || !filename : !url || !urlFilename)
             }
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             {mode === 'upload' ? 'Upload' : 'Queue download'}

@@ -32,7 +32,7 @@ export default function NodesPage() {
 
       {isLoading && (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
         </div>
       )}
 
@@ -50,7 +50,7 @@ export default function NodesPage() {
                   className={cn(
                     'w-full text-left bg-zinc-900 border rounded-lg p-4 transition',
                     isSelected
-                      ? 'border-orange-500/60'
+                      ? 'border-zinc-300/60'
                       : 'border-zinc-800/60 hover:border-zinc-700',
                   )}
                 >

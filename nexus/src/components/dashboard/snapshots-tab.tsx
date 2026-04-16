@@ -41,7 +41,7 @@ function CreateSnapshotDialog({
   const [description, setDescription] = useState('');
   const [vmstate, setVmstate] = useState(false);
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -87,7 +87,7 @@ function CreateSnapshotDialog({
           <button
             onClick={() => onSubmit({ snapname, description: description || undefined, vmstate: kind === 'qemu' && vmstate })}
             disabled={!snapname || isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
             Create
@@ -113,7 +113,7 @@ function EditDescription({
         value={val}
         onChange={(e) => setVal(e.target.value)}
         rows={2}
-        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
+        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
       />
       <div className="flex gap-2 justify-end">
         <button
@@ -126,7 +126,7 @@ function EditDescription({
         <button
           onClick={() => onSave(val)}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
         >
           {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
           Save
@@ -242,7 +242,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
           >
             <Plus className="w-4 h-4" />
             Create snapshot
@@ -251,7 +251,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
 
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
           </div>
         ) : items.length === 0 ? (
           <EmptyState
@@ -278,7 +278,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                     <tr key={s.name} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20 align-top">
                       <td className="px-4 py-3 font-mono text-zinc-200">
                         <div className="flex items-center gap-2">
-                          {isCurrent && <ChevronRight className="w-3.5 h-3.5 text-orange-400" />}
+                          {isCurrent && <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />}
                           {s.name}
                           {s.vmstate ? (
                             <span className="text-xs text-blue-400 ml-1">(with RAM)</span>

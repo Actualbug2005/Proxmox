@@ -110,7 +110,7 @@ export default function TasksPage() {
               onClick={() => setNodeFilter(n)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 nodeFilter === n
-                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                  ? 'bg-white/10 text-indigo-400 border border-zinc-300/30'
                   : 'text-zinc-500 bg-zinc-900 border border-zinc-800/60 hover:text-zinc-300'
               }`}
             >
@@ -122,7 +122,7 @@ export default function TasksPage() {
 
       {isLoading && (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
         </div>
       )}
 

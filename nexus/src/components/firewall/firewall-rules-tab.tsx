@@ -56,7 +56,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
       <div className="flex justify-end">
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           New rule
@@ -83,7 +83,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+        <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={Shield}
