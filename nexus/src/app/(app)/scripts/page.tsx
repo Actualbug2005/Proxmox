@@ -122,7 +122,7 @@ function humanizeError(err: unknown): { title: string; message: string; icon: 't
 
 function ScriptCardSkeleton() {
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+    <div className="env-glass-card rounded-lg p-4">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0 space-y-2">
           <div className="h-4 w-32 rounded bg-zinc-800/50 animate-pulse" />
@@ -154,8 +154,8 @@ function ScriptCard({
   return (
     <button
       onClick={() => onOpen(script)}
-      className="group text-left w-full bg-zinc-900 border border-zinc-800/60 rounded-lg p-4
-                 transition hover:border-zinc-700 hover:bg-zinc-800/40
+      className="group text-left w-full env-glass-card rounded-lg p-4
+                 transition hover:border-white/[0.14]
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
     >
       <div className="flex items-start justify-between gap-3">
@@ -769,7 +769,7 @@ export default function ScriptsPage() {
 
       {/* Empty state (after load, no matches) */}
       {!isLoading && !error && visible.length === 0 && (
-        <div className="rounded-lg border border-zinc-800/60 bg-zinc-900 p-8 text-center">
+        <div className="env-glass-card rounded-lg p-8 text-center">
           <Code2 className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
           <p className="text-sm text-zinc-400">No scripts match the current filters.</p>
         </div>

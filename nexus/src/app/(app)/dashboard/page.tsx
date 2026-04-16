@@ -79,7 +79,7 @@ export default function DashboardPage() {
             ].map(({ label, value, color }) => (
               <div
                 key={label}
-                className="bg-zinc-900 border border-zinc-800/60 rounded-lg px-4 py-3"
+                className="env-glass-card rounded-lg px-4 py-3"
               >
                 <p className="text-xs text-zinc-500 mb-1">{label}</p>
                 <p className={`text-2xl font-semibold tabular ${color}`}>{value}</p>
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           {/* Main grid */}
           <div className="grid grid-cols-[280px_1fr] gap-4">
             {/* Resource tree */}
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-3">
+            <div className="env-glass-card rounded-lg p-3">
               <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-2">
                 Resource Tree
               </p>

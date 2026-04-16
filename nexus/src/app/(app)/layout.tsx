@@ -30,20 +30,17 @@ export default async function AppShellLayout({
 
   return (
     <>
-      {/* 1. Deep Aurora Mesh Background (z-index: -2) */}
+      {/* 1. Fluid Aurora Mesh Background (z-index: -2) */}
       <div className="ambient-container" aria-hidden="true">
         <div className="aurora-node aurora-1" />
         <div className="aurora-node aurora-2" />
         <div className="aurora-node aurora-3" />
       </div>
 
-      {/* 2. Matte Grain Texture Overlay (z-index: -1) */}
-      <div className="noise-overlay" aria-hidden="true" />
-
-      {/* 3. The Floating Glass Sidebar */}
+      {/* 2. The Floating Glass Sidebar */}
       <Sidebar username={session.username} />
 
-      {/* 4. The Universal Workspace Canvas */}
+      {/* 3. The Universal Workspace Canvas */}
       <main className="pl-[272px] pr-4 py-4 min-h-screen w-full transition-all duration-300">
         {children}
       </main>

@@ -77,9 +77,10 @@ export default function ConsolePage() {
     // internal scrollback never spills past the floating sidebar. The 32px
     // subtraction matches the master shell's py-4 (16px top + 16px bottom).
     <div className="flex h-[calc(100vh-32px)] overflow-hidden">
-      {/* Sidebar: resource picker */}
-      <div className="w-56 shrink-0 bg-zinc-900 border-r border-zinc-800/60 flex flex-col">
-        <div className="px-4 py-4 border-b border-zinc-800/60">
+      {/* Resource picker — macro-container glass so it reads as part of
+       *  the chrome environment, not a detached opaque panel. */}
+      <div className="env-glass-card rounded-lg w-56 shrink-0 flex flex-col">
+        <div className="px-4 py-4 border-b border-white/5">
           <h2 className="text-sm font-semibold text-white">Console</h2>
           <p className="text-xs text-zinc-500">Select a target</p>
         </div>

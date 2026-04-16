@@ -92,16 +92,21 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ─── High-Fidelity Aurora Mesh ────────────────────────────────────────────
+/* ─── High-Fidelity Fluid Aurora (radial gradients, no blur filter) ────────
  *
- * Three colour nodes blurred to 150px and scaled past the viewport
- * completely destroy their spherical origin. mix-blend-mode: screen on
- * each node additively combines the light values, preventing the muddied
- * overlaps that normal compositing would produce.
+ * The previous iteration used `filter: blur(150px)` on solid colour discs.
+ * Even with `will-change: transform` the GPU couldn't re-rasterise the
+ * blur each frame at 1080p+, causing the drift animation to freeze on
+ * integrated graphics. Replacing the blur with `radial-gradient` shifts
+ * the soft-edge work onto the compositor's gradient fast-path, which is
+ * hardware-accelerated and doesn't need to reblur on animation ticks.
  *
- * The .noise-overlay injects an SVG fractalNoise texture at mix-blend-mode:
- * overlay — this eliminates CSS gradient banding and gives the Liquid Glass
- * a matte, physically-textured surface to refract against. */
+ * mix-blend-mode: screen on each node mathematically adds the light
+ * values together — overlapping nodes compound brightness instead of
+ * muddying into one flat colour.
+ *
+ * The previous SVG noise overlay is gone — fractalNoise was too harsh
+ * against the new softer gradient field. */
 
 .ambient-container {
   position: fixed;
@@ -109,78 +114,88 @@ body {
   z-index: -2;
   pointer-events: none;
   overflow: hidden;
-  background-color: #020617; /* slate-950 base — deepest possible dark */
-}
-
-.noise-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.35;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-color: #020617; /* slate-950 — deepest base */
 }
 
 .aurora-node {
   position: absolute;
-  filter: blur(150px);
-  will-change: transform;
   border-radius: 50%;
   mix-blend-mode: screen;
+  will-change: transform;
 }
 
 .aurora-1 {
-  width: 120vw;
-  height: 120vh;
-  background-color: #2e1065;
-  top: -30%;
-  left: -20%;
-  animation: drift1 40s infinite ease-in-out alternate;
+  width: 150vw;
+  height: 150vh;
+  background: radial-gradient(circle, rgba(76, 29, 149, 0.4) 0%, rgba(0, 0, 0, 0) 60%);
+  top: -50%;
+  left: -25%;
+  animation: drift1 18s infinite ease-in-out alternate;
 }
 
 .aurora-2 {
-  width: 100vw;
-  height: 100vh;
-  background-color: #1e3a8a;
-  bottom: -40%;
+  width: 120vw;
+  height: 120vh;
+  background: radial-gradient(circle, rgba(30, 58, 138, 0.5) 0%, rgba(0, 0, 0, 0) 60%);
+  bottom: -30%;
   right: -20%;
-  animation: drift2 45s infinite ease-in-out alternate;
+  animation: drift2 22s infinite ease-in-out alternate;
 }
 
 .aurora-3 {
-  width: 80vw;
-  height: 80vh;
-  background-color: #0f766e;
-  top: 30%;
-  left: 40%;
-  opacity: 0.4;
-  animation: drift3 50s infinite ease-in-out alternate;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle, rgba(8, 145, 178, 0.35) 0%, rgba(0, 0, 0, 0) 60%);
+  top: 10%;
+  left: 30%;
+  animation: drift3 25s infinite ease-in-out alternate;
 }
 
 @keyframes drift1 {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(10vw, 15vh) scale(1.05); }
+  100% { transform: translate(8vw, 12vh) scale(1.1); }
 }
 @keyframes drift2 {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-10vw, -15vh) scale(1.1); }
+  100% { transform: translate(-8vw, -10vh) scale(1.05); }
 }
 @keyframes drift3 {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-15vw, 10vh) scale(0.95); }
+  100% { transform: translate(-12vw, 8vh) scale(0.95); }
 }
 
-/* Accessibility: when the OS requests reduced transparency, kill the
- * aurora and noise so the glass falls back to solid and the background
- * becomes a clean dark canvas. */
+/* ─── Environmental Glass Card ────────────────────────────────────────────
+ *
+ * Outer container cards use this so they absorb the aurora's hue instead
+ * of reading as opaque black stickers clashing with the environment.
+ *
+ * Restricted to *outer* containers only — never apply to tables/rows or
+ * row-iterated primitives; dozens of stacked backdrop-filters tank frame
+ * rate on low-end GPUs. Interior zinc-900 cards remain Solid Industrial
+ * for dense data scannability. */
+.env-glass-card {
+  background-color: rgba(9, 9, 11, 0.45); /* zinc-950 at 45% */
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3);
+}
+
+/* Accessibility: reduced-transparency drops aurora + all backdrop blurs.
+ * Users who've requested this explicitly need a predictable high-contrast
+ * surface, not a mood-lit environment. */
 @media (prefers-reduced-transparency: reduce) {
-  .ambient-container,
-  .noise-overlay {
+  .ambient-container {
     display: none;
   }
   body {
     background-color: var(--color-canvas);
+  }
+  .env-glass-card {
+    background-color: var(--color-elevated);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 
