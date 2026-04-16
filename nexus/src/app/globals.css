@@ -78,25 +78,110 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Baseline: canvas background + ambient radial gradients for the glass
- * layer to blur against. Without these tinted blobs the backdrop-filter on
- * .liquid-glass collapses to a flat tint (that's what killed the first
- * glass attempt). Keep the opacities low — 7% brand, 4% cool — so the
- * workspace interiors stay essentially zinc-950 to the eye.
- * Body gets font-feature-settings for ss-forms/calt to make Geist feel tuned. */
+/* Body is transparent so the aurora mesh (z-index: -2) and noise overlay
+ * (z-index: -1) show through. The old radial-gradient approach is gone —
+ * the aurora nodes now supply all the ambient light for the glass to
+ * refract. --color-canvas stays defined for components that need a
+ * fallback fill (modals, etc). */
 body {
-  background-color: var(--color-canvas);
-  background-image:
-    radial-gradient(at 0% 0%, rgba(249, 115, 22, 0.07) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%);
-  /* Anchor the light source so the radial blobs don't stretch as tables
-   * scroll. The glass refraction must remain spatially predictable. */
-  background-attachment: fixed;
+  background-color: transparent;
   color: var(--color-fg);
   min-height: 100vh;
   font-feature-settings: "ss01", "cv05", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* ─── High-Fidelity Aurora Mesh ────────────────────────────────────────────
+ *
+ * Three colour nodes blurred to 150px and scaled past the viewport
+ * completely destroy their spherical origin. mix-blend-mode: screen on
+ * each node additively combines the light values, preventing the muddied
+ * overlaps that normal compositing would produce.
+ *
+ * The .noise-overlay injects an SVG fractalNoise texture at mix-blend-mode:
+ * overlay — this eliminates CSS gradient banding and gives the Liquid Glass
+ * a matte, physically-textured surface to refract against. */
+
+.ambient-container {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: #020617; /* slate-950 base — deepest possible dark */
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.aurora-node {
+  position: absolute;
+  filter: blur(150px);
+  will-change: transform;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+}
+
+.aurora-1 {
+  width: 120vw;
+  height: 120vh;
+  background-color: #2e1065;
+  top: -30%;
+  left: -20%;
+  animation: drift1 40s infinite ease-in-out alternate;
+}
+
+.aurora-2 {
+  width: 100vw;
+  height: 100vh;
+  background-color: #1e3a8a;
+  bottom: -40%;
+  right: -20%;
+  animation: drift2 45s infinite ease-in-out alternate;
+}
+
+.aurora-3 {
+  width: 80vw;
+  height: 80vh;
+  background-color: #0f766e;
+  top: 30%;
+  left: 40%;
+  opacity: 0.4;
+  animation: drift3 50s infinite ease-in-out alternate;
+}
+
+@keyframes drift1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(10vw, 15vh) scale(1.05); }
+}
+@keyframes drift2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-10vw, -15vh) scale(1.1); }
+}
+@keyframes drift3 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-15vw, 10vh) scale(0.95); }
+}
+
+/* Accessibility: when the OS requests reduced transparency, kill the
+ * aurora and noise so the glass falls back to solid and the background
+ * becomes a clean dark canvas. */
+@media (prefers-reduced-transparency: reduce) {
+  .ambient-container,
+  .noise-overlay {
+    display: none;
+  }
+  body {
+    background-color: var(--color-canvas);
+  }
 }
 
 /* Liquid Glass utility — Apple HIG material tuning.
