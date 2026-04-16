@@ -11,9 +11,15 @@ import {
   X,
   ExternalLink,
   BookOpen,
+  Loader2,
+  Server,
+  ChevronDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { readCsrfCookie } from '@/lib/proxmox-client';
+import { useClusterResources } from '@/hooks/use-cluster';
 import type {
   CommunityScript,
   ScriptCategory,
@@ -230,20 +236,34 @@ function ScriptDetailDialog({
     staleTime: 60 * 60 * 1000,
   });
 
+  // Cluster nodes for the target-node dropdown.
+  const { data: resources } = useClusterResources();
+  const nodes = useMemo(
+    () => (resources ?? []).filter((r) => r.type === 'node' && r.status === 'online'),
+    [resources],
+  );
+  const [selectedNode, setSelectedNode] = useState('');
+
+  // Auto-select first online node once the list arrives.
+  if (nodes.length > 0 && !selectedNode) {
+    setSelectedNode(nodes[0].node ?? nodes[0].id);
+  }
+
   // Form state keyed by option.name. Initialised once per manifest arrival.
   const [fields, setFields] = useState<Record<string, FieldState>>({});
   const [initialised, setInitialised] = useState<string | null>(null);
 
-  // Initialise form state when the manifest first arrives. Guarded by slug
-  // so closing+reopening a different script doesn't reuse stale state.
+  // Execution state.
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [execError, setExecError] = useState<string | null>(null);
+  const [execSuccess, setExecSuccess] = useState<{ upid: string } | null>(null);
+
+  // Initialise form state when the manifest first arrives.
   if (manifest && initialised !== manifest.slug) {
     const next: Record<string, FieldState> = {};
     for (const opt of manifest.options ?? []) {
       next[opt.name] = { value: defaultForOption(opt), touched: false };
     }
-    // setState during render is safe here because it's a one-shot init
-    // guarded by `initialised`. Moving this to useEffect would cause a
-    // no-fields flash on first paint.
     setFields(next);
     setInitialised(manifest.slug);
   }
@@ -262,6 +282,41 @@ function ScriptDetailDialog({
 
   function updateField(name: string, value: FieldValue) {
     setFields((prev) => ({ ...prev, [name]: { value, touched: true } }));
+  }
+
+  async function handleRun() {
+    if (!manifest || !selectedNode || hasErrors) return;
+
+    setIsExecuting(true);
+    setExecError(null);
+
+    try {
+      const csrf = readCsrfCookie();
+      const res = await fetch('/api/scripts/run', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
+        },
+        body: JSON.stringify({
+          node: selectedNode,
+          scriptUrl: manifest.scriptUrl,
+          scriptName: manifest.name,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+
+      const data = (await res.json()) as { upid?: string };
+      setExecSuccess({ upid: data.upid ?? '' });
+    } catch (err) {
+      setExecError(err instanceof Error ? err.message : 'Execution failed');
+    } finally {
+      setIsExecuting(false);
+    }
   }
 
   return (
@@ -301,11 +356,28 @@ function ScriptDetailDialog({
             </div>
           )}
 
-          {error && (
-            <DialogError err={error} />
+          {error && <DialogError err={error} />}
+
+          {/* Success state */}
+          {execSuccess && (
+            <div className="text-center py-4 space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+              <p className="text-sm font-medium text-emerald-400">Script started!</p>
+              {execSuccess.upid && (
+                <p className="text-xs text-zinc-500 font-mono break-all">UPID: {execSuccess.upid}</p>
+              )}
+              <p className="text-xs text-zinc-500">Check the Tasks panel for progress.</p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm rounded-lg transition
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              >
+                Close
+              </button>
+            </div>
           )}
 
-          {manifest && (
+          {manifest && !execSuccess && (
             <>
               {manifest.description && (
                 <p className="text-sm text-zinc-300 leading-relaxed">{manifest.description}</p>
@@ -340,6 +412,33 @@ function ScriptDetailDialog({
                     Docs
                   </a>
                 )}
+              </div>
+
+              {/* Target node selector */}
+              <div>
+                <label htmlFor="target-node" className="block text-xs font-medium text-zinc-300 mb-1.5">
+                  Target Node
+                  <span className="ml-1 text-orange-400" aria-hidden>*</span>
+                </label>
+                <div className="relative">
+                  <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <select
+                    id="target-node"
+                    value={selectedNode}
+                    onChange={(e) => setSelectedNode(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800/60 rounded-lg pl-9 pr-8 py-1.5
+                               text-sm text-zinc-100 appearance-none
+                               focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    {nodes.length === 0 && <option value="">No nodes online</option>}
+                    {nodes.map((n) => (
+                      <option key={n.id} value={n.node ?? n.id}>
+                        {n.node ?? n.id}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                </div>
               </div>
 
               {/* Resource hints */}
@@ -409,34 +508,53 @@ function ScriptDetailDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-zinc-800/60 bg-zinc-950">
-          <p className="text-[11px] text-zinc-600">
-            Run execution is wired in a later phase.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm rounded-lg transition
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-            >
-              Cancel
-            </button>
-            <button
-              // Intentionally disabled: the execution wiring lives behind
-              // the next phase. Validation still runs so the user sees the
-              // form is correct.
-              disabled={hasErrors || !manifest}
-              title={hasErrors ? 'Fix validation errors first' : 'Run execution wires in the next phase'}
-              className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/40
-                         disabled:cursor-not-allowed text-white text-sm rounded-lg transition
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500
-                         flex items-center gap-1.5"
-            >
-              <Play className="w-3.5 h-3.5" />
-              Run
-            </button>
+        {!execSuccess && (
+          <div className="px-5 py-3 border-t border-zinc-800/60 bg-zinc-950 space-y-3">
+            {/* Execution error alert */}
+            {execError && (
+              <div className="flex items-start gap-2 p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-sm">
+                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                <p className="text-red-400">{execError}</p>
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={onClose}
+                disabled={isExecuting}
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50
+                           text-zinc-200 text-sm rounded-lg transition
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRun}
+                disabled={hasErrors || !manifest || isExecuting || !selectedNode}
+                title={
+                  hasErrors ? 'Fix validation errors first'
+                    : !selectedNode ? 'Select a target node'
+                    : undefined
+                }
+                className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/40
+                           disabled:cursor-not-allowed text-white text-sm rounded-lg transition
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500
+                           flex items-center gap-1.5"
+              >
+                {isExecuting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Executing…
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5" />
+                    Run
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
