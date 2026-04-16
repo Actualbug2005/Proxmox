@@ -18,7 +18,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // backdrop-filter. A solid wrapper bg would flatten the glass.
     <>
       <Sidebar username={session.username} />
-      <main className="min-h-screen pl-[280px]">
+      {/* Gutters match the sidebar capsule's inset (top-4/left-4/bottom-4).
+       *   pl-[272px]  = 16px gap + 240px capsule + 16px breathing
+       *   pr-4 py-4   = symmetric breathing on the other three sides
+       * The content scrolls beneath the floating glass per Apple HIG. */}
+      <main className="min-h-screen w-full pl-[272px] pr-4 py-4">
         {children}
       </main>
       <CommandPalette />

@@ -99,7 +99,10 @@ export function Sidebar({ username }: SidebarProps) {
 
   return (
     <aside
-      className="fixed top-4 left-4 bottom-4 z-40 flex w-60 flex-col overflow-hidden
+      // No overflow-hidden on the outer capsule: the rounded-[24px] corners
+      // would otherwise clip the inner nav's scrollbar track. Each interior
+      // section handles its own edge paint via the translucent dividers.
+      className="fixed top-4 left-4 bottom-4 z-40 flex w-60 flex-col
                  liquid-glass rounded-[24px]"
     >
       {/* Logo */}
@@ -120,15 +123,18 @@ export function Sidebar({ username }: SidebarProps) {
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
           className="flex w-full cursor-pointer items-center gap-2 rounded-lg
                      border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-zinc-400
-                     transition hover:border-white/20 hover:bg-white/[0.06] hover:text-zinc-200"
+                     transition hover:border-white/20 hover:bg-white/[0.06] hover:text-zinc-200
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
         >
           <span className="flex-1 text-left">Search…</span>
           <kbd className="tabular font-mono text-zinc-500">⌘K</kbd>
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
+      {/* Nav — pt-2 gives breathing room under the divider so the first
+       * section label doesn't kiss the border, and mr-1 keeps the
+       * scrollbar thumb from scraping the translucent capsule edge. */}
+      <nav className="flex-1 space-y-4 overflow-y-auto px-2 pt-2 pb-3 mr-1">
         {sections.map((section) => (
           <div key={section.label}>
             <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
@@ -145,6 +151,7 @@ export function Sidebar({ username }: SidebarProps) {
                       // rounded-xl for the inner pills gives a clean concentric
                       // ratio against the 24px capsule (roughly 1:2).
                       'group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
                       active
                         ? 'bg-white/10 font-medium text-zinc-50 ring-1 ring-inset ring-white/10'
                         : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100',
@@ -178,7 +185,9 @@ export function Sidebar({ username }: SidebarProps) {
           <button
             onClick={handleLogout}
             title="Sign out"
-            className="text-zinc-500 transition hover:text-red-400"
+            aria-label="Sign out"
+            className="rounded-md p-1 text-zinc-500 transition hover:text-red-400
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
           >
             <LogOut className="h-4 w-4" />
           </button>
