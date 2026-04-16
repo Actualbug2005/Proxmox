@@ -55,8 +55,6 @@ nodes:
       - parsed: source_ip
         expression: "JsonExtract(evt.Parsed.nexus_json, 'ip')"
 
-# Only pass this event to scenarios if the JSON actually parsed and the
-# component/event tags match. Reduces noise from unrelated stderr.
-success:
-  - "evt.Meta.component == 'nexus'"
-  - "evt.Meta.event == 'login'"
+# Scenarios downstream filter on `evt.Meta.log_type == 'nexus_login'` so
+# unrelated stderr lines that happen to match the top-level filter but
+# aren't nexus login JSON simply won't correlate into any scenario.
