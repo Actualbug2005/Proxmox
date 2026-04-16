@@ -6,7 +6,7 @@
  * Injects PVEAuthCookie and CSRFPreventionToken from the session JWT.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
+import { getSession, getSessionId, refreshPVESessionIfStale } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
 import { pveFetch } from '@/lib/pve-fetch';
 
@@ -28,10 +28,16 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   if (MUTATING.has(req.method) && !validateCsrf(req, sessionId)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
   }
-  const session = await getSession();
-  if (!session) {
+  const rawSession = await getSession();
+  if (!rawSession) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Proactively refresh the PVE ticket if it's past 90 min (PVE tickets
+  // live ~2h; this keeps us well inside the window). On refresh failure
+  // the returned session is the unchanged stale one — the downstream call
+  // will 401 and trigger the normal re-login branch below.
+  const session = await refreshPVESessionIfStale(sessionId, rawSession);
 
   const { path } = await params;
   const pathStr = path.join('/');

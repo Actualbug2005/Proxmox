@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
       csrfToken: ticket.CSRFPreventionToken,
       username: ticket.username,
       proxmoxHost,
+      // Stamped now so the proxy can proactively refresh before PVE's
+      // ~2h ticket expiry — see refreshPVESession in lib/auth.ts.
+      ticketIssuedAt: Date.now(),
     });
 
     return NextResponse.json({

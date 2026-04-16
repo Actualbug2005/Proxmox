@@ -51,6 +51,79 @@ export async function acquirePVETicket(
   return json.data;
 }
 
+// ─── PVE Ticket Refresh ─────────────────────────────────────────────────────
+
+/**
+ * Age in ms at which `refreshPVESessionIfStale` triggers a re-auth. PVE
+ * tickets are valid for ~2h; refreshing at 90m gives a 30m safety margin
+ * before pveproxy starts 401ing.
+ */
+export const PVE_TICKET_REFRESH_AFTER_MS = 90 * 60 * 1000;
+
+/**
+ * Re-authenticate with PVE using the existing ticket as the password. PVE
+ * accepts this as a renewal and returns a fresh ticket + CSRF token — no
+ * user credentials required. See pveproxy source:
+ *   https://pve.proxmox.com/wiki/Proxmox_VE_API#Authentication (ticket renewal)
+ */
+async function renewPVETicket(
+  session: PVEAuthSession,
+): Promise<PVETicketResponse> {
+  const res = await pveFetch(
+    `https://${session.proxmoxHost}:8006/api2/json/access/ticket`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        username: session.username,
+        password: session.ticket,
+      }).toString(),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`PVE ticket renewal failed: ${res.status} ${res.statusText}`);
+  }
+  const json = (await res.json()) as { data?: PVETicketResponse };
+  if (!json.data?.ticket) throw new Error('Ticket renewal returned no ticket');
+  return json.data;
+}
+
+/**
+ * Proactively refresh the PVE ticket if it's older than PVE_TICKET_REFRESH_AFTER_MS.
+ * Called from the proxy BEFORE forwarding any request — so every authenticated
+ * call past the 90-minute mark rides a fresh ticket.
+ *
+ * On success, mutates the stored session with the new ticket + CSRF token + stamp.
+ * On failure, logs and returns the stale session unchanged (caller will see a
+ * 401 from PVE on the next request and handle re-login via the proxy's existing
+ * 401 → clear-cookies branch).
+ *
+ * Returns the possibly-refreshed session so the caller can use the new ticket
+ * in the current request without a second store read.
+ */
+export async function refreshPVESessionIfStale(
+  sessionId: string,
+  session: PVEAuthSession,
+): Promise<PVEAuthSession> {
+  const age = Date.now() - session.ticketIssuedAt;
+  if (age < PVE_TICKET_REFRESH_AFTER_MS) return session;
+
+  try {
+    const fresh = await renewPVETicket(session);
+    const updated: PVEAuthSession = {
+      ...session,
+      ticket: fresh.ticket,
+      csrfToken: fresh.CSRFPreventionToken,
+      ticketIssuedAt: Date.now(),
+    };
+    await putSession(sessionId, updated);
+    return updated;
+  } catch (err) {
+    console.error('[refreshPVESessionIfStale] renewal failed:', err);
+    return session;
+  }
+}
+
 // ─── Session id ─────────────────────────────────────────────────────────────
 
 function newSessionId(): string {

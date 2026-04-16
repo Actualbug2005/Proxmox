@@ -52,6 +52,9 @@ export interface PVEAuthSession {
   csrfToken: string;
   username: string;
   proxmoxHost: string;
+  /** Unix ms when the PVE ticket was issued (or last refreshed). Used by the
+   *  proxy to trigger a proactive refresh before PVE's ~2h expiry lands. */
+  ticketIssuedAt: number;
 }
 
 // ─── Cluster ──────────────────────────────────────────────────────────────────
