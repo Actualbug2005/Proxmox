@@ -146,15 +146,24 @@ export async function startSession(
   const cookieStore = await cookies();
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
 
-  // secure:false — Nexus is typically reached over plain HTTP on a LAN
-  // (e.g. http://10.x.x.x). Chrome silently drops Secure cookies on HTTP,
-  // which would log the user out immediately. The S-3 ticket-isolation
-  // patch already keeps the PVE ticket server-side, so an attacker who
-  // sniffs the cookie gets only an opaque sessionId, not root-equivalent
-  // PVE credentials. Flip back to true once the deployment is on HTTPS.
+  // Secure flag policy:
+  //   production + default     → secure: true   (HTTPS behind ingress)
+  //   production + override    → secure: false  (explicit LAN-HTTP opt-in)
+  //   development              → secure: false  (localhost dev)
+  //
+  // NEXUS_SECURE_COOKIES=false is an escape hatch for operators who
+  // genuinely serve Nexus over HTTP on a trusted LAN. Default is safe:
+  // HTTPS-terminating ingress (Caddy/nginx/Traefik) proxies to this
+  // Node process via X-Forwarded-Proto=https, and Chrome honours Secure
+  // cookies on such connections correctly.
+  const secureCookie =
+    process.env.NEXUS_SECURE_COOKIES === 'false'
+      ? false
+      : process.env.NODE_ENV === 'production';
+
   cookieStore.set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    secure: false,
+    secure: secureCookie,
     sameSite: 'strict',
     maxAge,
     path: '/',
@@ -163,7 +172,7 @@ export async function startSession(
   // echo it in the X-Nexus-CSRF header (double-submit pattern).
   cookieStore.set(CSRF_COOKIE, csrfToken, {
     httpOnly: false,
-    secure: false,
+    secure: secureCookie,
     sameSite: 'strict',
     maxAge,
     path: '/',
