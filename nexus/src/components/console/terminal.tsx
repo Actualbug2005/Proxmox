@@ -9,6 +9,7 @@ import '@xterm/xterm/css/xterm.css';
 import { Loader2, AlertCircle, Maximize2, Minimize2, RefreshCw, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hintForError } from '@/lib/task-hints';
+import { readCsrfCookie } from '@/lib/proxmox-client';
 
 interface TerminalProps {
   node: string;
@@ -38,10 +39,16 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
     setError('');
 
     try {
-      // Get WS ticket from our proxy
+      // Get WS ticket from our proxy. POST is a mutating verb, so the server-
+      // side CSRF guard requires the X-Nexus-CSRF header to match the
+      // nexus_csrf cookie set at login. Without it the proxy answers 403.
+      const csrf = readCsrfCookie();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (csrf) headers['X-Nexus-CSRF'] = csrf;
+
       const res = await fetch('/api/proxmox-ws', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ node, vmid, type }),
       });
 
