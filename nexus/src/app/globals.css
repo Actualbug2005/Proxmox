@@ -1,13 +1,12 @@
 @import "tailwindcss";
 
 /*
- * Nexus "Liquid Glass + Industrial Core" design tokens
+ * Nexus "Studio Dark" design tokens
  *
- * Hybrid model: the workspace (cards, tables, rows) remains Solid Industrial
- * — every elevated surface is solid zinc-900 so data stays legible. The
- * chrome (sidebar, eventually top bars) uses a Liquid Glass layer that
- * blurs against the body's ambient radial gradients, giving the app a
- * premium outer shell while keeping dense tables anchored.
+ * Monochrome aesthetic in the Vercel/Linear lineage. A single ultra-subtle
+ * indigo radial glow anchors the canvas, every card is a translucent
+ * .studio-card (no backdrop-filter, just alpha), and the sidebar retains
+ * its distinct .liquid-glass chrome material for hierarchy.
  *
  * Tailwind v4 auto-generates utility classes from the namespaced CSS
  * variables inside @theme. This file IS the config — there is no
@@ -16,18 +15,13 @@
 
 @theme {
   /* ── Surfaces ────────────────────────────────────────────────────────
-   *  canvas    zinc-950  · app background; painted by body so the glass
-   *                        has a radial-gradient source to blur against.
+   *  canvas    zinc-950  · body background (reinforced by the indigo glow)
    *  glass     translucent zinc · sidebar/chrome (see .liquid-glass)
-   *  surface   zinc-900  · identical to elevated — use for any interior
-   *                        panel that must not participate in the glass.
-   *  elevated  zinc-900  · cards, tables, rows
+   *  surface   zinc-900  · fallback for components referencing it directly
+   *  elevated  zinc-900  · solid fill when reduced-transparency is active
    *  overlay   zinc-800  · popovers, modals, hover fills
    */
   --color-canvas: #09090b;
-  /* Glass material — highly translucent per Apple Liquid Glass HIG. The
-   * low alpha (45%) is intentional: the saturated-blur canvas behind
-   * should read clearly through the capsule. */
   --color-glass: rgba(20, 20, 25, 0.45);
   --color-surface: #18181b;
   --color-elevated: #18181b;
@@ -45,11 +39,6 @@
   --color-fg-muted: #a1a1aa;
   --color-fg-subtle: #71717a;
   --color-fg-faint: #52525b;
-
-  /* ── Accent (orange — existing brand) ── */
-  --color-accent: #f97316;
-  --color-accent-soft: rgba(249, 115, 22, 0.12);
-  --color-accent-ring: rgba(249, 115, 22, 0.30);
 
   /* ── Radius standard ── */
   --radius-lg: 0.5rem;           /* 8px · all containers */
@@ -78,13 +67,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Body is transparent so the aurora mesh (z-index: -2) and noise overlay
- * (z-index: -1) show through. The old radial-gradient approach is gone —
- * the aurora nodes now supply all the ambient light for the glass to
- * refract. --color-canvas stays defined for components that need a
- * fallback fill (modals, etc). */
+/* Studio Dark canvas: a single static indigo-700 radial glow (15% alpha)
+ * from the top-center, fixed so it doesn't stretch as tables scroll. The
+ * aurora + noise overlay are gone — no more animated GPU compositing. */
 body {
-  background-color: transparent;
+  background-color: #09090b;                                          /* zinc-950 */
+  background-image: radial-gradient(ellipse 80% 50% at 50% -20%,
+                                     rgba(55, 48, 163, 0.15), transparent);
+  background-attachment: fixed;
   color: var(--color-fg);
   min-height: 100vh;
   font-feature-settings: "ss01", "cv05", "cv11";
@@ -92,129 +82,36 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ─── High-Fidelity Fluid Aurora (radial gradients, no blur filter) ────────
+/* ─── Studio Card utility ─────────────────────────────────────────────────
  *
- * The previous iteration used `filter: blur(150px)` on solid colour discs.
- * Even with `will-change: transform` the GPU couldn't re-rasterise the
- * blur each frame at 1080p+, causing the drift animation to freeze on
- * integrated graphics. Replacing the blur with `radial-gradient` shifts
- * the soft-edge work onto the compositor's gradient fast-path, which is
- * hardware-accelerated and doesn't need to reblur on animation ticks.
+ * The unified material for every content-layer container — dashboard stats,
+ * tables' outer wrappers, dialog panels, card grids. Translucent fill +
+ * ultra-thin light-catch on the top edge gives a subtle floating-glass
+ * feel without any backdrop-filter blur (no GPU compositing overhead,
+ * safe to stack dozens per page).
  *
- * mix-blend-mode: screen on each node mathematically adds the light
- * values together — overlapping nodes compound brightness instead of
- * muddying into one flat colour.
+ * `border-radius: 0.5rem !important` is belt-and-braces: Tailwind v4 emits
+ * utilities into @layer utilities, and the unlayered author scope wins
+ * already, but any `rounded-xl` / `rounded-2xl` we miss during the sweep
+ * would otherwise beat this. !important locks the invariant.
  *
- * The previous SVG noise overlay is gone — fractalNoise was too harsh
- * against the new softer gradient field. */
-
-.ambient-container {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  overflow: hidden;
-  background-color: #020617; /* slate-950 — deepest base */
+ * The :where() nested-card guard drops the fill to transparent when one
+ * studio-card sits inside another — prevents compound-alpha darkening
+ * (0.4 × 0.4 = 0.16 effective alpha) without escalating specificity. */
+.studio-card {
+  background-color: rgba(24, 24, 27, 0.4);                            /* zinc-900 @ 40% */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem !important;
 }
 
-.aurora-node {
-  position: absolute;
-  border-radius: 50%;
-  mix-blend-mode: screen;
-  will-change: transform;
+:where(.studio-card) .studio-card {
+  background-color: transparent;
 }
 
-.aurora-1 {
-  width: 150vw;
-  height: 150vh;
-  background: radial-gradient(circle, rgba(76, 29, 149, 0.4) 0%, rgba(0, 0, 0, 0) 60%);
-  top: -50%;
-  left: -25%;
-  animation: drift1 18s infinite ease-in-out alternate;
-}
-
-.aurora-2 {
-  width: 120vw;
-  height: 120vh;
-  background: radial-gradient(circle, rgba(30, 58, 138, 0.5) 0%, rgba(0, 0, 0, 0) 60%);
-  bottom: -30%;
-  right: -20%;
-  animation: drift2 22s infinite ease-in-out alternate;
-}
-
-.aurora-3 {
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(circle, rgba(8, 145, 178, 0.35) 0%, rgba(0, 0, 0, 0) 60%);
-  top: 10%;
-  left: 30%;
-  animation: drift3 25s infinite ease-in-out alternate;
-}
-
-@keyframes drift1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(8vw, 12vh) scale(1.1); }
-}
-@keyframes drift2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-8vw, -10vh) scale(1.05); }
-}
-@keyframes drift3 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-12vw, 8vh) scale(0.95); }
-}
-
-/* ─── Environmental Glass Card ────────────────────────────────────────────
- *
- * Outer container cards use this so they absorb the aurora's hue instead
- * of reading as opaque black stickers clashing with the environment.
- *
- * Restricted to *outer* containers only — never apply to tables/rows or
- * row-iterated primitives; dozens of stacked backdrop-filters tank frame
- * rate on low-end GPUs. Interior zinc-900 cards remain Solid Industrial
- * for dense data scannability. */
-.env-glass-card {
-  background-color: rgba(9, 9, 11, 0.45); /* zinc-950 at 45% */
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3);
-}
-
-/* Accessibility: reduced-transparency drops aurora + all backdrop blurs.
- * Users who've requested this explicitly need a predictable high-contrast
- * surface, not a mood-lit environment. */
-@media (prefers-reduced-transparency: reduce) {
-  .ambient-container {
-    display: none;
-  }
-  body {
-    background-color: var(--color-canvas);
-  }
-  .env-glass-card {
-    background-color: var(--color-elevated);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-/* Liquid Glass utility — Apple HIG material tuning.
- *
- *  backdrop-filter   40px blur + 200% saturation is the Apple spec for a
- *                    regular/thick glass layer: deep enough to obscure
- *                    body content but still carry colour through.
- *  box-shadow        The 1px inset-top translucent-white highlight is the
- *                    refractive edge of physical glass (light bending over
- *                    the top lip). The outer drop-shadow grounds the
- *                    capsule so it reads as elevated above the plane.
- *  border            1px translucent white all around catches environment
- *                    light and defines the capsule silhouette without
- *                    committing to an opaque frame.
- *
- * Apply only to chrome (sidebar, top bar). Never stack backdrop-filter on
- * workspace cards — it destroys perf and breaks the Industrial layer the
- * HIG explicitly reserves for content. */
+/* Liquid Glass utility — chrome-only (sidebar). Intentionally distinct
+ * from .studio-card to create a chrome-vs-content hierarchy: the sidebar
+ * is the OS shell floating above, studio-cards are the workspace. */
 .liquid-glass {
   background-color: var(--color-glass);
   backdrop-filter: blur(40px) saturate(200%);
@@ -225,13 +122,17 @@ body {
     0 20px 40px -20px rgba(0, 0, 0, 0.5);
 }
 
-/* Accessibility: when the OS requests reduced transparency, collapse the
- * glass material to a solid surface. Apple HIG mandates this fallback —
- * users with visual impairments should not have body content bleeding
- * through navigation chrome. Keep the refractive border/highlight since
- * they don't depend on translucency, but drop the blur entirely to save
- * the compositor work and avoid any residual bleed-through. */
+/* Accessibility: reduced-transparency collapses both materials to solid
+ * zinc-900. Users who opt out of transparency get predictable high-
+ * contrast surfaces. The indigo body glow stays (it's colour, not filter). */
 @media (prefers-reduced-transparency: reduce) {
+  .studio-card {
+    background-color: var(--color-elevated);
+    border-color: var(--color-border-subtle);
+  }
+  :where(.studio-card) .studio-card {
+    background-color: transparent;
+  }
   .liquid-glass {
     background-color: var(--color-elevated);
     backdrop-filter: none;
@@ -246,8 +147,7 @@ body {
 }
 
 /* Scrollbar — translucent white thumb so it reads as etched glass rather
- * than an opaque OS-native bar that would break the Liquid Glass illusion.
- * 8px gives a larger hit target than the prior 6px without feeling heavy. */
+ * than an opaque OS-native bar. 8px hit target. */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -265,15 +165,11 @@ body {
 
 /* ─── Modal choreography ──────────────────────────────────────────────────
  *
- * Native-feeling dialog entrance. The custom dialog in scripts/page.tsx
- * unmounts on close (no Radix data-[state=*] attributes to drive exit
- * animations off), so these are entrance-only. If exit animations become
- * necessary later, migrate the dialog to Radix UI or add an isClosing
- * flag to gate the unmount.
- *
- * Durations align with Apple HIG's 150–300ms micro-interaction band.
- * easing: ease-out — the motion decelerates into place, which reads as
- * "arriving" rather than "flying past". Respects prefers-reduced-motion. */
+ * Native-feeling dialog entrance (Phase H). Entrance-only — the custom
+ * dialog unmounts synchronously on close, so exit animations would need
+ * a Radix migration or an isClosing flag. 200ms ease-out sits in Apple
+ * HIG's 150–300ms micro-interaction band.
+ */
 @keyframes modal-overlay-in {
   from { opacity: 0; }
   to { opacity: 1; }

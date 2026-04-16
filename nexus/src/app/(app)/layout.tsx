@@ -30,17 +30,12 @@ export default async function AppShellLayout({
 
   return (
     <>
-      {/* 1. Fluid Aurora Mesh Background (z-index: -2) */}
-      <div className="ambient-container" aria-hidden="true">
-        <div className="aurora-node aurora-1" />
-        <div className="aurora-node aurora-2" />
-        <div className="aurora-node aurora-3" />
-      </div>
-
-      {/* 2. The Floating Glass Sidebar */}
+      {/* Studio Dark: the indigo body glow is the entire background layer.
+       * No fixed-position DOM nodes needed — the glow is painted by `body`
+       * and fixed via background-attachment, so it stays spatially stable
+       * as tables scroll. */}
       <Sidebar username={session.username} />
 
-      {/* 3. The Universal Workspace Canvas */}
       <main className="pl-[272px] pr-4 py-4 min-h-screen w-full transition-all duration-300">
         {children}
       </main>
