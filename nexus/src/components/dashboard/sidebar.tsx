@@ -153,11 +153,14 @@ export function Sidebar({ username }: SidebarProps) {
                       'group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
                       active
-                        // Lowered luminance: the prior bg-white/10 + ring-white/10
-                        // compounded with the translucent glass material and
-                        // blew out the contrast. 4% fill + 5% ring keeps the
-                        // "etched" look without blinding the user.
-                        ? 'bg-white/[0.04] font-medium text-zinc-100 ring-1 ring-inset ring-white/[0.05]'
+                        // mix-blend-plus-lighter: compositing the fill over
+                        // the translucent glass additively produces an
+                        // 'etched highlight' rather than a glow. Raw opacity
+                        // stays low (10% zinc fill + 5% ring) so luminance
+                        // is bounded; the blend mode supplies the crispness.
+                        // shadow-inner + text-zinc-200 complete the inset
+                        // reading.
+                        ? 'bg-zinc-500/10 ring-1 ring-inset ring-white/5 text-zinc-200 mix-blend-plus-lighter shadow-inner font-medium'
                         : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100',
                     )}
                   >

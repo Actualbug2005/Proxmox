@@ -73,7 +73,10 @@ export default function ConsolePage() {
   const activeConsole = tabs.find((t) => t.id === activeTab);
 
   return (
-    <div className="flex h-screen">
+    // Locked z-axis: the page owns its own fixed viewport slice so xterm's
+    // internal scrollback never spills past the floating sidebar. The 32px
+    // subtraction matches the master shell's py-4 (16px top + 16px bottom).
+    <div className="flex h-[calc(100vh-32px)] overflow-hidden">
       {/* Sidebar: resource picker */}
       <div className="w-56 shrink-0 bg-zinc-900 border-r border-zinc-800/60 flex flex-col">
         <div className="px-4 py-4 border-b border-zinc-800/60">
