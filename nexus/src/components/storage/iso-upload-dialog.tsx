@@ -29,7 +29,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
   const [checksum, setChecksum] = useState('');
   const [checksumAlg, setChecksumAlg] = useState<'sha256' | 'sha512' | 'md5' | 'sha1' | 'sha224' | 'sha384'>('sha256');
 
-  const inputCls = 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
 
   const uploadM = useMutation({
     mutationFn: (params: IsoUploadParams) => api.storage.upload(params, setProgress),
@@ -78,25 +78,25 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-white">Upload to {storage}</h3>
-            <p className="text-xs text-gray-500 mt-0.5">ISO images or LXC templates</p>
+            <p className="text-xs text-zinc-500 mt-0.5">ISO images or LXC templates</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white p-1" aria-label="Close">
+          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="flex gap-1 bg-gray-800 p-1 rounded-lg w-fit mb-4">
+        <div className="flex gap-1 bg-zinc-800 p-1 rounded-lg w-fit mb-4">
           {(['upload', 'url'] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition',
-                mode === m ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300',
+                mode === m ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300',
               )}
             >
               {m === 'upload' ? <FileUp className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -107,7 +107,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Content type</label>
+            <label className="text-xs text-zinc-500 block mb-1">Content type</label>
             <select value={content} onChange={(e) => setContent(e.target.value as 'iso' | 'vztmpl')} className={inputCls}>
               <option value="iso">ISO image</option>
               <option value="vztmpl">LXC template (vztmpl)</option>
@@ -117,22 +117,22 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
           {mode === 'upload' ? (
             <>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">File</label>
+                <label className="text-xs text-zinc-500 block mb-1">File</label>
                 <input
                   ref={fileRef}
                   type="file"
                   accept={content === 'iso' ? '.iso,.img' : '.tar.gz,.tar.xz,.tar.zst,.tgz'}
                   onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
-                  className={cn(inputCls, 'file:mr-3 file:px-2 file:py-0.5 file:rounded-md file:border-0 file:bg-gray-700 file:text-gray-200 file:text-xs cursor-pointer')}
+                  className={cn(inputCls, 'file:mr-3 file:px-2 file:py-0.5 file:rounded-md file:border-0 file:bg-zinc-800 file:text-zinc-200 file:text-xs cursor-pointer')}
                 />
                 {file && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-zinc-500 mt-1">
                     {file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB
                   </p>
                 )}
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Destination filename</label>
+                <label className="text-xs text-zinc-500 block mb-1">Destination filename</label>
                 <input
                   value={filename}
                   onChange={(e) => setFilename(e.target.value)}
@@ -142,11 +142,11 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
               </div>
               {progress > 0 && progress < 100 && (
                 <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <div className="flex justify-between text-xs text-zinc-500 mb-1">
                     <span>Uploading…</span>
                     <span>{progress}%</span>
                   </div>
-                  <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div className="h-full bg-orange-500 transition-all" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
@@ -155,7 +155,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
           ) : (
             <>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">URL</label>
+                <label className="text-xs text-zinc-500 block mb-1">URL</label>
                 <input
                   type="url"
                   value={url}
@@ -165,7 +165,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Destination filename</label>
+                <label className="text-xs text-zinc-500 block mb-1">Destination filename</label>
                 <input
                   value={urlFilename}
                   onChange={(e) => setUrlFilename(e.target.value)}
@@ -175,7 +175,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
               </div>
               <div className="grid grid-cols-[1fr_120px] gap-2">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Checksum (optional)</label>
+                  <label className="text-xs text-zinc-500 block mb-1">Checksum (optional)</label>
                   <input
                     value={checksum}
                     onChange={(e) => setChecksum(e.target.value)}
@@ -184,7 +184,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Algorithm</label>
+                  <label className="text-xs text-zinc-500 block mb-1">Algorithm</label>
                   <select value={checksumAlg} onChange={(e) => setChecksumAlg(e.target.value as typeof checksumAlg)} className={inputCls}>
                     <option value="sha256">sha256</option>
                     <option value="sha512">sha512</option>
@@ -195,13 +195,13 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
                   </select>
                 </div>
               </div>
-              <p className="text-xs text-gray-600">PVE downloads the file server-side — no browser upload, fast for large images.</p>
+              <p className="text-xs text-zinc-600">PVE downloads the file server-side — no browser upload, fast for large images.</p>
             </>
           )}
         </div>
 
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} disabled={isPending} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition disabled:opacity-40">
+          <button onClick={onClose} disabled={isPending} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40">
             Cancel
           </button>
           <button

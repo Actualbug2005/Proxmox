@@ -97,7 +97,7 @@ export function PhysicalDisksTable() {
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                 nodeFilter === n
                   ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                  : 'text-zinc-500 bg-zinc-900/50 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-white/[0.04]',
+                  : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
               )}
             >
               {n === 'all' ? 'All nodes' : n}
@@ -119,8 +119,8 @@ export function PhysicalDisksTable() {
       )}
 
       {!isLoading && !error && (
-        <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm">
-          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden backdrop-blur-sm">
+          <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-zinc-500" />
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">
               Physical Disks {sorted.length > 0 && <span className="tabular font-mono text-zinc-600">({sorted.length})</span>}
@@ -132,14 +132,14 @@ export function PhysicalDisksTable() {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Device</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Node</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Vendor / Model</th>
-                  <th className="text-right px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Size</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Type</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Used By</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-micro font-semibold uppercase tracking-[0.1em]">Health</th>
+                <tr className="border-b border-zinc-800/60">
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Device</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Node</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Vendor / Model</th>
+                  <th className="text-right px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Size</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Type</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Used By</th>
+                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Health</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,7 +149,7 @@ export function PhysicalDisksTable() {
                     <tr
                       key={`${d.node}:${d.devpath}`}
                       onClick={() => setSelected(d)}
-                      className="border-b border-white/[0.03] hover:bg-white/[0.03] cursor-pointer transition"
+                      className="border-b border-white/[0.03] hover:bg-zinc-800/40 cursor-pointer transition"
                     >
                       <td className="px-3 py-2 tabular font-mono text-data text-zinc-200">{d.devpath}</td>
                       <td className="px-3 py-2 text-data text-zinc-400">{d.node}</td>

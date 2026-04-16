@@ -85,12 +85,12 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs shadow-lg">
-      <p className="text-gray-400 mb-2">{label}</p>
+    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-3 text-xs shadow-lg">
+      <p className="text-zinc-400 mb-2">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-gray-400">{p.name}:</span>
+          <span className="text-zinc-400">{p.name}:</span>
           <span className="text-white font-mono">
             {p.name === 'CPU' ? `${(p.value * 100).toFixed(1)}%` : formatBytes(p.value)}
           </span>
@@ -120,11 +120,11 @@ export function RRDChart({
   }));
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-white">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <p className="text-xs text-zinc-500">{subtitle}</p>
         </div>
         <div className="flex gap-1">
           {(['hour', 'day', 'week'] as Timeframe[]).map((tf) => (
@@ -134,7 +134,7 @@ export function RRDChart({
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                 timeframe === tf
                   ? 'bg-orange-500/20 text-orange-400'
-                  : 'text-gray-500 hover:text-gray-300'
+                  : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               {tf === 'hour' ? '1h' : tf === 'day' ? '24h' : '7d'}
@@ -155,7 +155,7 @@ export function RRDChart({
             const formatter = s.formatter ?? (isCpu ? (v: number) => `${(v * 100).toFixed(0)}%` : (v: number) => formatBytes(v));
             return (
               <div key={s.label}>
-                <p className="text-xs text-gray-500 mb-2">{s.label}</p>
+                <p className="text-xs text-zinc-500 mb-2">{s.label}</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <defs>

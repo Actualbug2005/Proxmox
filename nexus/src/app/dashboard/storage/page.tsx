@@ -40,7 +40,7 @@ function StorageRow({
   return (
     <Link
       href={`/dashboard/storage/${storage.node}/${storage.storage}`}
-      className="flex items-center gap-3 px-3 py-2 hover:bg-white/[0.03] transition rounded-lg"
+      className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-800/40 transition rounded-lg"
     >
       <div className={cn(
         'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset',
@@ -198,7 +198,7 @@ export default function StoragePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/[0.06]">
+      <div className="flex gap-1 border-b border-zinc-800/60">
         {(
           [
             ['pools', 'Storage Pools', Database],
@@ -273,9 +273,9 @@ export default function StoragePage() {
           </div>
 
           {totalCapacity > 0 && (
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 backdrop-blur-sm">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4 backdrop-blur-sm">
               <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                <span className="uppercase tracking-[0.1em] font-semibold text-micro">Total cluster storage</span>
+                <span className="uppercase tracking-[0.1em] font-semibold text-[11px]">Total cluster storage</span>
                 <span className="tabular font-mono text-data text-zinc-300">{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
               </div>
               <ProgressBar value={memPercent(totalUsed, totalCapacity)} />
@@ -293,12 +293,12 @@ export default function StoragePage() {
           )}
 
           {!isLoading && (
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl overflow-hidden backdrop-blur-sm">
-              <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden backdrop-blur-sm">
+              <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
                 <Database className="w-4 h-4 text-zinc-500" />
                 <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">Storage Pools</span>
               </div>
-              <div className="divide-y divide-white/[0.04] p-2">
+              <div className="divide-y divide-zinc-800/60 p-2">
                 {unique.length === 0 ? (
                   <p className="text-sm text-zinc-600 py-8 text-center">No storage found</p>
                 ) : (
@@ -346,7 +346,7 @@ export default function StoragePage() {
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                     nasNode === n
                       ? 'bg-orange-500/15 text-orange-300 ring-1 ring-inset ring-orange-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                      : 'text-zinc-500 bg-zinc-900/50 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-white/[0.04]',
+                      : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
                   )}
                 >
                   {n}

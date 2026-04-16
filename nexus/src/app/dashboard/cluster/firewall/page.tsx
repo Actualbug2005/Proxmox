@@ -24,7 +24,7 @@ export default function ClusterFirewallPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-white">Firewall</h1>
-        <p className="text-sm text-gray-500">Datacenter-scope firewall rules and options</p>
+        <p className="text-sm text-zinc-500">Datacenter-scope firewall rules and options</p>
       </div>
 
       <TabBar tabs={tabs} value={tab} onChange={setTab} />

@@ -45,28 +45,28 @@ export function RolesTab() {
         ) : !roles || roles.length === 0 ? (
           <EmptyState icon={ShieldCheck} title="No roles" />
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Role</th>
-                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Type</th>
-                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Privileges</th>
-                  <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium"></th>
+                <tr className="border-b border-zinc-800/60">
+                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Role</th>
+                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Type</th>
+                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Privileges</th>
+                  <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
                 {roles.map((r) => (
-                  <tr key={r.roleid} className="border-b border-gray-800/40 hover:bg-gray-800/20">
-                    <td className="px-4 py-2 font-mono text-gray-200">{r.roleid}</td>
-                    <td className="px-4 py-2">
+                  <tr key={r.roleid} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                    <td className="px-4 py-3 font-mono text-zinc-200">{r.roleid}</td>
+                    <td className="px-4 py-3">
                       {(r.special ?? false) ? <Badge variant="outline" className="text-xs">built-in</Badge> : <Badge variant="success" className="text-xs">custom</Badge>}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-400 font-mono break-words max-w-2xl">{r.privs ?? '—'}</td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-xs text-zinc-400 font-mono break-words max-w-2xl">{r.privs ?? '—'}</td>
+                    <td className="px-4 py-3 text-right">
                       <div className="flex gap-0.5 justify-end">
-                        <button onClick={() => setEdit(r)} disabled={(r.special ?? false)} className="p-1 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Edit'}><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget(r)} disabled={(r.special ?? false)} className="p-1 text-red-400 hover:text-red-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
+                        <button onClick={() => setEdit(r)} disabled={(r.special ?? false)} className="p-1 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Edit'}><Pencil className="w-3 h-3" /></button>
+                        <button onClick={() => setDeleteTarget(r)} disabled={(r.special ?? false)} className="p-1 text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </td>
                   </tr>
@@ -92,28 +92,28 @@ function RoleEditor({ initial, onClose, onSaved }: { initial: PVERolePublic | nu
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const inputCls = 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit role' : 'New role'}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Role ID</label>
+            <label className="text-xs text-zinc-500 block mb-1">Role ID</label>
             <input value={roleid} onChange={(e) => setRoleid(e.target.value)} disabled={isEdit} className={inputCls + (isEdit ? ' opacity-60' : '')} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Privileges (comma-separated)</label>
+            <label className="text-xs text-zinc-500 block mb-1">Privileges (comma-separated)</label>
             <textarea value={privs} onChange={(e) => setPrivs(e.target.value)} rows={5} placeholder="VM.PowerMgmt,VM.Console,VM.Audit" className={inputCls + ' font-mono resize-y'} />
-            <p className="text-xs text-gray-600 mt-1">Common: VM.Audit, VM.PowerMgmt, VM.Console, VM.Monitor, Sys.Audit, Datastore.Audit</p>
+            <p className="text-xs text-zinc-600 mt-1">Common: VM.Audit, VM.PowerMgmt, VM.Console, VM.Monitor, Sys.Audit, Datastore.Audit</p>
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
           <button onClick={() => saveM.mutate({ roleid, ...(privs ? { privs } : {}) })} disabled={!roleid || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition disabled:opacity-40">
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? 'Save' : 'Create'}

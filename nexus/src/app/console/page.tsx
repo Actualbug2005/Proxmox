@@ -75,17 +75,17 @@ export default function ConsolePage() {
   return (
     <div className="flex h-screen">
       {/* Sidebar: resource picker */}
-      <div className="w-56 shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
-        <div className="px-4 py-4 border-b border-gray-800">
+      <div className="w-56 shrink-0 bg-zinc-900 border-r border-zinc-800/60 flex flex-col">
+        <div className="px-4 py-4 border-b border-zinc-800/60">
           <h2 className="text-sm font-semibold text-white">Console</h2>
-          <p className="text-xs text-gray-500">Select a target</p>
+          <p className="text-xs text-zinc-500">Select a target</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2 px-2 space-y-3">
           {/* Nodes */}
           {nodes.length > 0 && (
             <div>
-              <p className="text-xs text-gray-600 uppercase tracking-wide px-2 mb-1">Nodes</p>
+              <p className="text-xs text-zinc-600 uppercase tracking-widest px-2 mb-1">Nodes</p>
               {nodes.map((n) => (
                 <button
                   key={n.id}
@@ -94,7 +94,7 @@ export default function ConsolePage() {
                     'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                     tabs.find((t) => t.id === n.id)
                       ? 'bg-orange-500/10 text-orange-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                   )}
                 >
                   <Server className="w-3.5 h-3.5 shrink-0" />
@@ -107,7 +107,7 @@ export default function ConsolePage() {
           {/* VMs */}
           {vms.filter((v) => v.status === 'running').length > 0 && (
             <div>
-              <p className="text-xs text-gray-600 uppercase tracking-wide px-2 mb-1">VMs</p>
+              <p className="text-xs text-zinc-600 uppercase tracking-widest px-2 mb-1">VMs</p>
               {vms
                 .filter((v) => v.status === 'running')
                 .map((v) => (
@@ -118,13 +118,13 @@ export default function ConsolePage() {
                       'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                       tabs.find((t) => t.id === v.id)
                         ? 'bg-orange-500/10 text-orange-400'
-                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                     )}
                   >
                     <Monitor className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">
                       {v.name ?? v.vmid}
-                      <span className="text-gray-600 text-xs ml-1">({v.vmid})</span>
+                      <span className="text-zinc-600 text-xs ml-1">({v.vmid})</span>
                     </span>
                   </button>
                 ))}
@@ -134,7 +134,7 @@ export default function ConsolePage() {
           {/* Containers */}
           {cts.filter((c) => c.status === 'running').length > 0 && (
             <div>
-              <p className="text-xs text-gray-600 uppercase tracking-wide px-2 mb-1">
+              <p className="text-xs text-zinc-600 uppercase tracking-widest px-2 mb-1">
                 Containers
               </p>
               {cts
@@ -147,13 +147,13 @@ export default function ConsolePage() {
                       'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm text-left transition',
                       tabs.find((t) => t.id === c.id)
                         ? 'bg-orange-500/10 text-orange-400'
-                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
+                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
                     )}
                   >
                     <Box className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">
                       {c.name ?? c.vmid}
-                      <span className="text-gray-600 text-xs ml-1">({c.vmid})</span>
+                      <span className="text-zinc-600 text-xs ml-1">({c.vmid})</span>
                     </span>
                   </button>
                 ))}
@@ -166,15 +166,15 @@ export default function ConsolePage() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Tabs */}
         {tabs.length > 0 && (
-          <div className="flex items-center gap-1 px-3 py-2 bg-gray-900 border-b border-gray-800 overflow-x-auto shrink-0">
+          <div className="flex items-center gap-1 px-3 py-2 bg-zinc-900 border-b border-zinc-800/60 overflow-x-auto shrink-0">
             {tabs.map((tab) => (
               <div
                 key={tab.id}
                 className={cn(
                   'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer shrink-0 transition',
                   tab.id === activeTab
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50',
+                    ? 'bg-zinc-800 text-white'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50',
                 )}
                 onClick={() => setActiveTab(tab.id)}
               >
@@ -212,11 +212,11 @@ export default function ConsolePage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 bg-gray-900 border border-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Plus className="w-5 h-5 text-gray-600" />
+              <div className="w-12 h-12 bg-zinc-900 border border-zinc-800/60 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-5 h-5 text-zinc-600" />
               </div>
-              <p className="text-sm text-gray-500">Select a node, VM, or container</p>
-              <p className="text-xs text-gray-600 mt-1">from the panel on the left</p>
+              <p className="text-sm text-zinc-500">Select a node, VM, or container</p>
+              <p className="text-xs text-zinc-600 mt-1">from the panel on the left</p>
             </div>
           </div>
         )}

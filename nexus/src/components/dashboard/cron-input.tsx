@@ -64,11 +64,11 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
   };
 
   const inputCls =
-    'px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+    'px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex gap-1 bg-gray-800 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-zinc-800 p-1 rounded-lg w-fit">
         {(['builder', 'raw'] as const).map((m) => (
           <button
             key={m}
@@ -76,7 +76,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
             onClick={() => setMode(m)}
             className={cn(
               'px-3 py-1 text-xs font-medium rounded-md transition',
-              mode === m ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300',
+              mode === m ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300',
             )}
           >
             {m === 'builder' ? 'Builder' : 'Raw'}
@@ -87,7 +87,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
       {mode === 'builder' ? (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Minute</label>
+            <label className="text-xs text-zinc-500 block mb-1">Minute</label>
             <select value={minute} onChange={(e) => update({ minute: e.target.value })} className={cn(inputCls, 'w-full')}>
               {MINUTE_PRESETS.map((v) => (
                 <option key={v} value={v}>
@@ -97,7 +97,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Hour</label>
+            <label className="text-xs text-zinc-500 block mb-1">Hour</label>
             <select value={hour} onChange={(e) => update({ hour: e.target.value })} className={cn(inputCls, 'w-full')}>
               {HOUR_PRESETS.map((v) => (
                 <option key={v} value={v}>
@@ -107,28 +107,28 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Day of month</label>
+            <label className="text-xs text-zinc-500 block mb-1">Day of month</label>
             <input value={dom} onChange={(e) => update({ dom: e.target.value })} placeholder="*" className={cn(inputCls, 'w-full')} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Month</label>
+            <label className="text-xs text-zinc-500 block mb-1">Month</label>
             <input value={month} onChange={(e) => update({ month: e.target.value })} placeholder="*" className={cn(inputCls, 'w-full')} />
           </div>
           <div className="col-span-2">
-            <label className="text-xs text-gray-500 block mb-1">Day of week</label>
+            <label className="text-xs text-zinc-500 block mb-1">Day of week</label>
             <select value={dow} onChange={(e) => update({ dow: e.target.value })} className={cn(inputCls, 'w-full')}>
               {DOW_PRESETS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label} ({p.value})</option>
               ))}
             </select>
           </div>
-          <p className="col-span-2 text-xs text-gray-500 font-mono">
-            → <span className="text-gray-300">{value || '0 2 * * *'}</span>
+          <p className="col-span-2 text-xs text-zinc-500 font-mono">
+            → <span className="text-zinc-300">{value || '0 2 * * *'}</span>
           </p>
         </div>
       ) : (
         <div>
-          <label className="text-xs text-gray-500 block mb-1">Raw schedule expression</label>
+          <label className="text-xs text-zinc-500 block mb-1">Raw schedule expression</label>
           <input
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
@@ -136,7 +136,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
             placeholder="e.g. 0 2 * * mon..fri"
             className={cn(inputCls, 'w-full font-mono')}
           />
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-zinc-600 mt-1">
             PVE-extended cron: `*/N` shortcuts, ranges (`1-5`), lists (`mon,wed,fri`), and `mon..fri` keywords.
           </p>
         </div>

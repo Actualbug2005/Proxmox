@@ -188,18 +188,18 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
   return (
     <div
       className={cn(
-        'flex flex-col bg-gray-950 border border-gray-800 rounded-xl overflow-hidden',
+        'flex flex-col bg-gray-950 border border-zinc-800/60 rounded-lg overflow-hidden',
         fullscreen && 'fixed inset-0 z-50 rounded-none border-0',
         className,
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
-          <span className="text-xs text-gray-500 ml-2">
+          <span className="text-xs text-zinc-500 ml-2">
             {type === 'node' ? `${node} — Shell` : `${node}/${type}/${vmid} — Console`}
           </span>
         </div>
@@ -213,7 +213,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
                   ? 'text-blue-400 bg-blue-500/10'
                   : status === 'error'
                     ? 'text-red-400 bg-red-500/10'
-                    : 'text-gray-500 bg-gray-800',
+                    : 'text-zinc-500 bg-zinc-800',
             )}
           >
             {status}
@@ -231,7 +231,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
           )}
           <button
             onClick={() => setFullscreen((f) => !f)}
-            className="p-1 text-gray-500 hover:text-gray-300 transition"
+            className="p-1 text-zinc-500 hover:text-zinc-300 transition"
           >
             {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
@@ -243,7 +243,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         {status === 'idle' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-sm text-gray-500 mb-3">Terminal not connected</p>
+              <p className="text-sm text-zinc-500 mb-3">Terminal not connected</p>
               <button
                 onClick={connect}
                 className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition"
@@ -256,7 +256,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
         {status === 'connecting' && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex items-center gap-2 text-gray-400">
+            <div className="flex items-center gap-2 text-zinc-400">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Connecting…</span>
             </div>

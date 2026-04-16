@@ -18,7 +18,7 @@ interface TabBarProps<Id extends string> {
 
 export function TabBar<Id extends string>({ tabs, value, onChange, className }: TabBarProps<Id>) {
   return (
-    <div className={cn('flex gap-1 border-b border-gray-800', className)}>
+    <div className={cn('flex gap-1 border-b border-zinc-800/60', className)}>
       {tabs.map((t) => {
         const active = t.id === value;
         return (
@@ -31,13 +31,13 @@ export function TabBar<Id extends string>({ tabs, value, onChange, className }: 
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap',
               active
                 ? 'border-orange-500 text-orange-400'
-                : 'border-transparent text-gray-500 hover:text-gray-300',
+                : 'border-transparent text-zinc-500 hover:text-zinc-300',
               t.disabled && 'opacity-40 cursor-not-allowed',
             )}
           >
             {t.label}
             {typeof t.count === 'number' && (
-              <span className={cn('ml-2 text-xs tabular-nums', active ? 'text-orange-300' : 'text-gray-600')}>
+              <span className={cn('ml-2 text-xs tabular-nums', active ? 'text-orange-300' : 'text-zinc-600')}>
                 {t.count}
               </span>
             )}

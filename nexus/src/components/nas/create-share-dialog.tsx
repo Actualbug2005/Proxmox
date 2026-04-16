@@ -66,25 +66,25 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
   });
 
   const inputCls =
-    'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50 font-mono';
+    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50 font-mono';
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-lg"
+        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60">
           <div>
             <h2 className="text-sm font-semibold text-white">Create NAS share</h2>
-            <p className="text-xs text-gray-500">on {node}</p>
+            <p className="text-xs text-zinc-500">on {node}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-gray-300 transition"
+            className="p-1 text-zinc-500 hover:text-zinc-300 transition"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -94,7 +94,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
         <div className="p-5 space-y-4">
           {/* Name */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Share name</label>
+            <label className="text-xs text-zinc-500 block mb-1">Share name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -112,7 +112,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
 
           {/* Path */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Export path</label>
+            <label className="text-xs text-zinc-500 block mb-1">Export path</label>
             <input
               value={path}
               onChange={(e) => setPath(e.target.value)}
@@ -129,7 +129,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
 
           {/* Protocols */}
           <div>
-            <label className="text-xs text-gray-500 block mb-2">Protocols</label>
+            <label className="text-xs text-zinc-500 block mb-2">Protocols</label>
             <div className="flex gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -138,7 +138,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
                   onChange={(e) => setSmb(e.target.checked)}
                   className="w-4 h-4 accent-orange-500"
                 />
-                <span className="text-sm text-gray-300">SMB</span>
+                <span className="text-sm text-zinc-300">SMB</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -147,7 +147,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
                   onChange={(e) => setNfs(e.target.checked)}
                   className="w-4 h-4 accent-orange-500"
                 />
-                <span className="text-sm text-gray-300">NFS</span>
+                <span className="text-sm text-zinc-300">NFS</span>
               </label>
             </div>
             {validation.errors.protocols && (
@@ -159,10 +159,10 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
           </div>
 
           {/* Read-only toggle */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-800">
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
             <div>
-              <p className="text-sm text-gray-300">Read-only</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-zinc-300">Read-only</p>
+              <p className="text-xs text-zinc-500">
                 Clients can list + read files but cannot modify them.
               </p>
             </div>
@@ -173,7 +173,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
               onClick={() => setReadOnly((v) => !v)}
               className={cn(
                 'relative w-10 h-6 rounded-full transition shrink-0',
-                readOnly ? 'bg-emerald-500' : 'bg-gray-700',
+                readOnly ? 'bg-emerald-500' : 'bg-zinc-800',
               )}
             >
               <span
@@ -186,10 +186,10 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
           </div>
         </div>
 
-        <div className="flex gap-3 justify-end px-5 py-4 border-t border-gray-800">
+        <div className="flex gap-3 justify-end px-5 py-4 border-t border-zinc-800/60">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition"
+            className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
           >
             Cancel
           </button>

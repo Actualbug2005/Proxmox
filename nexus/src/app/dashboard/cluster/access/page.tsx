@@ -23,7 +23,7 @@ export default function AccessPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-white">Users & ACL</h1>
-        <p className="text-sm text-gray-500">Users, groups, roles, realms, and access control entries</p>
+        <p className="text-sm text-zinc-500">Users, groups, roles, realms, and access control entries</p>
       </div>
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
       {tab === 'users' && <UsersTab />}

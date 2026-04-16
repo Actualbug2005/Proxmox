@@ -52,55 +52,55 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-white">Nexus</h1>
-            <p className="text-xs text-gray-500">Proxmox Management</p>
+            <p className="text-xs text-zinc-500">Proxmox Management</p>
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-8">
           <h2 className="text-lg font-semibold text-white mb-1">Sign in</h2>
-          <p className="text-sm text-gray-500 mb-6">Connect to your Proxmox cluster</p>
+          <p className="text-sm text-zinc-500 mb-6">Connect to your Proxmox cluster</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Host */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
                 Proxmox Host
               </label>
               <div className="relative">
-                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
                   placeholder="192.168.1.10 or hostname"
                   value={form.host}
                   onChange={(e) => setForm({ ...form, host: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
+                  className="w-full bg-zinc-800 border border-zinc-800/60 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
                 />
               </div>
-              <p className="text-xs text-gray-600 mt-1">Leave blank to use localhost</p>
+              <p className="text-xs text-zinc-600 mt-1">Leave blank to use localhost</p>
             </div>
 
             {/* Username */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
                   placeholder="root"
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
+                  className="w-full bg-zinc-800 border border-zinc-800/60 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
                 />
               </div>
             </div>
 
             {/* Realm */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Realm</label>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Realm</label>
               <div className="grid grid-cols-2 gap-2">
                 {(['pam', 'pve'] as const).map((r) => (
                   <button
@@ -111,7 +111,7 @@ export default function LoginPage() {
                       'py-2 rounded-lg text-sm font-medium border transition',
                       form.realm === r
                         ? 'bg-orange-500/10 border-orange-500 text-orange-400'
-                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600',
+                        : 'bg-zinc-800 border-zinc-800/60 text-zinc-400 hover:border-gray-600',
                     )}
                   >
                     {r === 'pam' ? 'PAM (Linux)' : 'PVE (Built-in)'}
@@ -122,16 +122,16 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
+                  className="w-full bg-zinc-800 border border-zinc-800/60 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition"
                 />
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-zinc-600 mt-6">
           Nexus — Proxmox VE Management Overlay
         </p>
       </div>

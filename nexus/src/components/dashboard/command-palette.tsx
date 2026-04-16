@@ -93,34 +93,34 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
+      className="fixed inset-0 bg-black/70 z-50 flex items-start justify-center pt-[15vh]"
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl mx-4 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-xl mx-4 bg-zinc-900 border border-zinc-800/60 rounded-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <Command
-          className="[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:text-gray-600 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2"
+          className="[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:text-zinc-600 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-widest [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2"
           shouldFilter={false}
         >
           {/* Search input */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-800">
-            <Search className="w-4 h-4 text-gray-500 shrink-0" />
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/60">
+            <Search className="w-4 h-4 text-zinc-500 shrink-0" />
             <Command.Input
               value={search}
               onValueChange={setSearch}
               placeholder="Search pages, VMs, containers…"
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+              className="flex-1 bg-transparent text-sm text-white placeholder-zinc-600 outline-none"
               autoFocus
             />
-            <kbd className="text-xs text-gray-600 border border-gray-700 rounded px-1.5 py-0.5">
+            <kbd className="text-xs text-zinc-600 border border-zinc-800/60 rounded px-1.5 py-0.5">
               ESC
             </kbd>
           </div>
 
           <Command.List className="max-h-96 overflow-y-auto py-2">
-            <Command.Empty className="py-8 text-center text-sm text-gray-600">
+            <Command.Empty className="py-8 text-center text-sm text-zinc-600">
               No results for &ldquo;{search}&rdquo;
             </Command.Empty>
 
@@ -165,10 +165,10 @@ export function CommandPalette() {
                   .map((vm) => (
                     <div key={vm.id} className="px-2">
                       <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg group">
-                        <Monitor className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="flex-1 text-sm text-gray-300">
+                        <Monitor className="w-3.5 h-3.5 text-zinc-500" />
+                        <span className="flex-1 text-sm text-zinc-300">
                           {vm.name ?? vm.vmid}
-                          <span className="text-gray-600 text-xs ml-1">({vm.vmid})</span>
+                          <span className="text-zinc-600 text-xs ml-1">({vm.vmid})</span>
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                           {vm.status !== 'running' && (
@@ -202,7 +202,7 @@ export function CommandPalette() {
                         <span
                           className={cn(
                             'text-xs shrink-0',
-                            vm.status === 'running' ? 'text-emerald-400' : 'text-gray-600',
+                            vm.status === 'running' ? 'text-emerald-400' : 'text-zinc-600',
                           )}
                         >
                           {vm.status}
@@ -227,10 +227,10 @@ export function CommandPalette() {
                   .map((ct) => (
                     <div key={ct.id} className="px-2">
                       <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg group">
-                        <Box className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="flex-1 text-sm text-gray-300">
+                        <Box className="w-3.5 h-3.5 text-zinc-500" />
+                        <span className="flex-1 text-sm text-zinc-300">
                           {ct.name ?? ct.vmid}
-                          <span className="text-gray-600 text-xs ml-1">({ct.vmid})</span>
+                          <span className="text-zinc-600 text-xs ml-1">({ct.vmid})</span>
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                           {ct.status !== 'running' && (
@@ -259,7 +259,7 @@ export function CommandPalette() {
                         <span
                           className={cn(
                             'text-xs shrink-0',
-                            ct.status === 'running' ? 'text-emerald-400' : 'text-gray-600',
+                            ct.status === 'running' ? 'text-emerald-400' : 'text-zinc-600',
                           )}
                         >
                           {ct.status}
@@ -282,15 +282,15 @@ export function CommandPalette() {
             </Command.Group>
           </Command.List>
 
-          <div className="px-4 py-2 border-t border-gray-800 flex items-center gap-4">
-            <span className="text-xs text-gray-600">
-              <kbd className="border border-gray-700 rounded px-1">↑↓</kbd> navigate
+          <div className="px-4 py-2 border-t border-zinc-800/60 flex items-center gap-4">
+            <span className="text-xs text-zinc-600">
+              <kbd className="border border-zinc-800/60 rounded px-1">↑↓</kbd> navigate
             </span>
-            <span className="text-xs text-gray-600">
-              <kbd className="border border-gray-700 rounded px-1">↵</kbd> select
+            <span className="text-xs text-zinc-600">
+              <kbd className="border border-zinc-800/60 rounded px-1">↵</kbd> select
             </span>
-            <span className="text-xs text-gray-600">
-              <kbd className="border border-gray-700 rounded px-1">ESC</kbd> close
+            <span className="text-xs text-zinc-600">
+              <kbd className="border border-zinc-800/60 rounded px-1">ESC</kbd> close
             </span>
           </div>
         </Command>
@@ -317,13 +317,13 @@ function CommandItem({
       onSelect={onSelect}
       className={cn(
         'flex items-center gap-3 px-4 py-2 cursor-pointer transition',
-        'data-[selected=true]:bg-gray-800',
-        danger ? 'text-red-400 data-[selected=true]:text-red-400' : 'text-gray-300',
+        'data-[selected=true]:bg-zinc-800',
+        danger ? 'text-red-400 data-[selected=true]:text-red-400' : 'text-zinc-300',
       )}
     >
-      <span className="text-gray-500">{icon}</span>
+      <span className="text-zinc-500">{icon}</span>
       <span className="flex-1 text-sm">{label}</span>
-      {hint && <span className="text-xs text-gray-600">{hint}</span>}
+      {hint && <span className="text-xs text-zinc-600">{hint}</span>}
     </Command.Item>
   );
 }
@@ -347,7 +347,7 @@ function ActionButton({
         'p-1 rounded transition text-xs',
         danger
           ? 'text-red-500 hover:bg-red-500/20'
-          : 'text-gray-500 hover:bg-gray-700 hover:text-gray-300',
+          : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300',
       )}
     >
       {icon}

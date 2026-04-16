@@ -54,7 +54,7 @@ const STEPS = ['General', 'Template', 'Resources', 'Network', 'Confirm'];
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
+      <label className="text-xs text-zinc-500 block mb-1.5">{label}</label>
       {children}
     </div>
   );
@@ -67,7 +67,7 @@ function Input({ value, onChange, type = 'text', placeholder, min, max }: {
   return (
     <input type={type} value={value} placeholder={placeholder} min={min} max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50" />
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50" />
   );
 }
 
@@ -76,7 +76,7 @@ function Select({ value, onChange, children }: {
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50">
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50">
       {children}
     </select>
   );
@@ -115,7 +115,7 @@ function StepGeneral({ state, set, nextid }: { state: WizardState; set: (p: Part
       {state.password && state.confirmPassword && state.password !== state.confirmPassword && (
         <p className="text-xs text-red-400">Passwords do not match</p>
       )}
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
         <input type="checkbox" checked={state.unprivileged} onChange={(e) => set({ unprivileged: e.target.checked })}
           className="rounded border-gray-600" />
         Unprivileged container (recommended)
@@ -159,14 +159,14 @@ function StepTemplate({ state, set }: { state: WizardState; set: (p: Partial<Wiz
         </Select>
       </Field>
       {!state.tmplStorage && (
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-zinc-600">
           Select a storage that contains CT templates. You can download templates from the Proxmox web interface.
         </p>
       )}
 
       {/* Disk config here since it's tied to template selection */}
-      <div className="pt-2 border-t border-gray-800">
-        <p className="text-xs font-medium text-gray-400 mb-3">Root Disk</p>
+      <div className="pt-2 border-t border-zinc-800/60">
+        <p className="text-xs font-medium text-zinc-400 mb-3">Root Disk</p>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Storage">
             <StorageSelect node={state.node} value={state.rootfsStorage} onChange={(v) => set({ rootfsStorage: v })} />
@@ -210,7 +210,7 @@ function StepResources({ state, set }: { state: WizardState; set: (p: Partial<Wi
       <Field label="Swap (MB)">
         <Input type="number" value={state.swap} onChange={(v) => set({ swap: Number(v) })} min={0} />
       </Field>
-      <p className="text-xs text-gray-600">
+      <p className="text-xs text-zinc-600">
         Memory: {(state.memory / 1024).toFixed(2)} GB · Swap: {(state.swap / 1024).toFixed(2)} GB
       </p>
     </div>
@@ -272,11 +272,11 @@ function StepConfirm({ state }: { state: WizardState }) {
   ];
   return (
     <div className="space-y-2">
-      <p className="text-sm text-gray-400 mb-4">Review your settings before creating the container.</p>
+      <p className="text-sm text-zinc-400 mb-4">Review your settings before creating the container.</p>
       {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between py-2 border-b border-gray-800/60 last:border-0">
-          <span className="text-xs text-gray-500">{label}</span>
-          <span className="text-sm text-gray-200 font-mono">{value}</span>
+        <div key={label} className="flex justify-between py-2 border-b border-zinc-800/60/60 last:border-0">
+          <span className="text-xs text-zinc-500">{label}</span>
+          <span className="text-sm text-zinc-200 font-mono">{value}</span>
         </div>
       ))}
     </div>
@@ -347,7 +347,7 @@ export default function CreateCTPage() {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push('/dashboard/cts')} className="text-gray-500 hover:text-gray-300 transition">
+        <button onClick={() => router.push('/dashboard/cts')} className="text-zinc-500 hover:text-zinc-300 transition">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
@@ -365,22 +365,22 @@ export default function CreateCTPage() {
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition',
                 i < step ? 'bg-orange-500 text-white' :
                 i === step ? 'bg-orange-500/20 border-2 border-orange-500 text-orange-400' :
-                'bg-gray-800 text-gray-600',
+                'bg-zinc-800 text-zinc-600',
               )}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-orange-400' : 'text-gray-600')}>
+              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-orange-400' : 'text-zinc-600')}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-orange-500/40' : 'bg-gray-800')} />
+              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-orange-500/40' : 'bg-zinc-800')} />
             )}
           </div>
         ))}
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-6">
         <h2 className="text-sm font-semibold text-white mb-5">{STEPS[step]}</h2>
         {stepComponents[step]}
       </div>
@@ -392,7 +392,7 @@ export default function CreateCTPage() {
       <div className="flex justify-between">
         <button
           onClick={() => step > 0 ? setStep((s) => s - 1) : router.push('/dashboard/cts')}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition"
         >
           <ChevronLeft className="w-4 h-4" />
           {step === 0 ? 'Cancel' : 'Back'}

@@ -42,7 +42,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
     saveM.mutate(rest);
   };
 
-  const inputCls = 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>;
@@ -52,10 +52,10 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-4">
         <h3 className="text-sm font-semibold text-white">General</h3>
 
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input
             type="checkbox"
             checked={draft.enable ?? false}
@@ -67,7 +67,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Default policy (inbound)</label>
+            <label className="text-xs text-zinc-500 block mb-1">Default policy (inbound)</label>
             <select value={draft.policy_in ?? 'DROP'} onChange={(e) => set('policy_in', e.target.value as FirewallOptionsPublic['policy_in'])} className={inputCls}>
               <option value="ACCEPT">ACCEPT</option>
               <option value="DROP">DROP</option>
@@ -75,7 +75,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Default policy (outbound)</label>
+            <label className="text-xs text-zinc-500 block mb-1">Default policy (outbound)</label>
             <select value={draft.policy_out ?? 'ACCEPT'} onChange={(e) => set('policy_out', e.target.value as FirewallOptionsPublic['policy_out'])} className={inputCls}>
               <option value="ACCEPT">ACCEPT</option>
               <option value="DROP">DROP</option>
@@ -86,52 +86,52 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Log level (inbound)</label>
+            <label className="text-xs text-zinc-500 block mb-1">Log level (inbound)</label>
             <input value={draft.log_level_in ?? ''} onChange={(e) => set('log_level_in', e.target.value)} placeholder="info" className={inputCls} />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Log level (outbound)</label>
+            <label className="text-xs text-zinc-500 block mb-1">Log level (outbound)</label>
             <input value={draft.log_level_out ?? ''} onChange={(e) => set('log_level_out', e.target.value)} placeholder="info" className={inputCls} />
           </div>
         </div>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
         <h3 className="text-sm font-semibold text-white">Protections</h3>
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input type="checkbox" checked={draft.nosmurfs ?? false} onChange={(e) => set('nosmurfs', e.target.checked)} className="rounded border-gray-600" />
           Drop smurf packets
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input type="checkbox" checked={draft.tcpflags ?? false} onChange={(e) => set('tcpflags', e.target.checked)} className="rounded border-gray-600" />
           Drop illegal TCP-flag combinations
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input type="checkbox" checked={draft.macfilter ?? false} onChange={(e) => set('macfilter', e.target.checked)} className="rounded border-gray-600" />
           MAC address filter
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input type="checkbox" checked={draft.ebtables ?? false} onChange={(e) => set('ebtables', e.target.checked)} className="rounded border-gray-600" />
           Use ebtables (bridge-level filtering)
         </label>
       </div>
 
       {showVMFields && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-3">
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
           <h3 className="text-sm font-semibold text-white">Guest-specific</h3>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={draft.dhcp ?? false} onChange={(e) => set('dhcp', e.target.checked)} className="rounded border-gray-600" />
             Allow DHCP
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={draft.ipfilter ?? false} onChange={(e) => set('ipfilter', e.target.checked)} className="rounded border-gray-600" />
             IP filter (restrict to assigned IP only)
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={draft.ndp ?? false} onChange={(e) => set('ndp', e.target.checked)} className="rounded border-gray-600" />
             Allow NDP (IPv6)
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={draft.radv ?? false} onChange={(e) => set('radv', e.target.checked)} className="rounded border-gray-600" />
             Allow router advertisements (IPv6)
           </label>

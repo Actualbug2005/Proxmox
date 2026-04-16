@@ -63,23 +63,23 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60">
           <div className="flex items-center gap-3 min-w-0">
             <HealthIcon health={health} />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white truncate">
                 {disk.devpath}
-                {disk.model && <span className="text-gray-500 font-normal ml-2">{disk.model}</span>}
+                {disk.model && <span className="text-zinc-500 font-normal ml-2">{disk.model}</span>}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-zinc-500">
                 S.M.A.R.T. report · {node} · {disk.type}
               </p>
             </div>
@@ -88,7 +88,7 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
             <Badge variant={HEALTH_VARIANT[health]}>{health}</Badge>
             <button
               onClick={onClose}
-              className="p-1 text-gray-500 hover:text-gray-300 transition"
+              className="p-1 text-zinc-500 hover:text-zinc-300 transition"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -114,27 +114,27 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
           )}
 
           {!isLoading && !error && data?.type === 'text' && (
-            <pre className="m-5 p-4 bg-gray-950 border border-gray-800 rounded-lg text-xs text-gray-400 font-mono overflow-x-auto whitespace-pre-wrap">
+            <pre className="m-5 p-4 bg-gray-950 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 font-mono overflow-x-auto whitespace-pre-wrap">
               {data.text ?? '(no output)'}
             </pre>
           )}
 
           {!isLoading && !error && data && data.type !== 'text' && (
             <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-gray-900 border-b border-gray-800">
+              <thead className="sticky top-0 bg-zinc-900 border-b border-zinc-800/60">
                 <tr>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium w-12">ID</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Attribute</th>
-                  <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-16">Value</th>
-                  <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-16">Worst</th>
-                  <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-20">Threshold</th>
-                  <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Raw</th>
+                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium w-12">ID</th>
+                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Attribute</th>
+                  <th className="text-right px-4 py-2.5 text-zinc-500 font-medium w-16">Value</th>
+                  <th className="text-right px-4 py-2.5 text-zinc-500 font-medium w-16">Worst</th>
+                  <th className="text-right px-4 py-2.5 text-zinc-500 font-medium w-20">Threshold</th>
+                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Raw</th>
                 </tr>
               </thead>
               <tbody>
                 {attributes.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-gray-600">
+                    <td colSpan={6} className="text-center py-8 text-zinc-600">
                       No S.M.A.R.T. attributes returned.
                     </td>
                   </tr>
@@ -146,18 +146,18 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
                       key={`${a.id ?? a.name}-${i}`}
                       className={
                         failing
-                          ? 'border-b border-gray-800/60 bg-red-500/5'
-                          : 'border-b border-gray-800/40 hover:bg-gray-800/30'
+                          ? 'border-b border-zinc-800/60/60 bg-red-500/5'
+                          : 'border-b border-zinc-800/60/40 hover:bg-zinc-800/30'
                       }
                     >
-                      <td className="px-4 py-2 font-mono text-gray-500">{a.id ?? '—'}</td>
-                      <td className="px-4 py-2 text-gray-300">{a.name}</td>
-                      <td className="px-4 py-2 text-right font-mono text-gray-300">{a.value ?? '—'}</td>
-                      <td className="px-4 py-2 text-right font-mono text-gray-500">{a.worst ?? '—'}</td>
-                      <td className="px-4 py-2 text-right font-mono text-gray-500">
+                      <td className="px-4 py-2 font-mono text-zinc-500">{a.id ?? '—'}</td>
+                      <td className="px-4 py-2 text-zinc-300">{a.name}</td>
+                      <td className="px-4 py-2 text-right font-mono text-zinc-300">{a.value ?? '—'}</td>
+                      <td className="px-4 py-2 text-right font-mono text-zinc-500">{a.worst ?? '—'}</td>
+                      <td className="px-4 py-2 text-right font-mono text-zinc-500">
                         {a.threshold ?? '—'}
                       </td>
-                      <td className="px-4 py-2 font-mono text-gray-400 break-all">{a.raw ?? '—'}</td>
+                      <td className="px-4 py-2 font-mono text-zinc-400 break-all">{a.raw ?? '—'}</td>
                     </tr>
                   );
                 })}

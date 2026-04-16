@@ -69,19 +69,19 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
     });
   };
 
-  const inputCls = 'w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50';
+  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit HA group' : 'New HA group'}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Group name</label>
+            <label className="text-xs text-zinc-500 block mb-1">Group name</label>
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
@@ -92,13 +92,13 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 block mb-2">Member nodes (priority 0 = lowest)</label>
+            <label className="text-xs text-zinc-500 block mb-2">Member nodes (priority 0 = lowest)</label>
             <div className="space-y-2">
               {availableNodes.map((n) => {
                 const active = n.name in nodePriorities;
                 return (
                   <div key={n.name} className="flex items-center gap-2">
-                    <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer flex-1">
+                    <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer flex-1">
                       <input
                         type="checkbox"
                         checked={active}
@@ -113,7 +113,7 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
                         min={0}
                         value={nodePriorities[n.name]}
                         onChange={(e) => setPriority(n.name, Number(e.target.value) || 0)}
-                        className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+                        className="w-20 px-2 py-1 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
                       />
                     )}
                   </div>
@@ -122,23 +122,23 @@ export function HAGroupEditor({ initial, onClose, onSaved }: HAGroupEditorProps)
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} className="rounded border-gray-600" />
             Restricted — only run on listed nodes (never failover elsewhere)
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={nofailback} onChange={(e) => setNofailback(e.target.checked)} className="rounded border-gray-600" />
             No failback — don&apos;t return to higher-priority node once failed-over
           </label>
 
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Comment</label>
+            <label className="text-xs text-zinc-500 block mb-1">Comment</label>
             <input value={comment} onChange={(e) => setComment(e.target.value)} className={inputCls} />
           </div>
         </div>
 
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition disabled:opacity-40">Cancel</button>
+          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40">Cancel</button>
           <button
             onClick={submit}
             disabled={!groupName || Object.keys(nodePriorities).length === 0 || saveM.isPending}

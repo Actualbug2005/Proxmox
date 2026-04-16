@@ -59,36 +59,36 @@ function CloneDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Clone VM</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">New VM ID</label>
+            <label className="text-xs text-zinc-500 block mb-1">New VM ID</label>
             <input
               type="number"
               placeholder={String(nextid ?? '...')}
               value={newid}
               onChange={(e) => setNewid(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Name</label>
+            <label className="text-xs text-zinc-500 block mb-1">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={full} onChange={(e) => setFull(e.target.checked)}
               className="rounded border-gray-600" />
             Full clone (copy disks)
           </label>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition">
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
             Cancel
           </button>
           <button
@@ -123,15 +123,15 @@ function MigrateDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Migrate VM</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Target Node</label>
+            <label className="text-xs text-zinc-500 block mb-1">Target Node</label>
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
             >
               <option value="">Select node…</option>
               {nodes.map((n) => (
@@ -140,7 +140,7 @@ function MigrateDialog({
             </select>
           </div>
           {isRunning && (
-            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
               <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)}
                 className="rounded border-gray-600" />
               Online migration (live)
@@ -148,7 +148,7 @@ function MigrateDialog({
           )}
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 rounded-lg transition">
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
             Cancel
           </button>
           <button
@@ -268,20 +268,20 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
     <div className="p-6 space-y-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
-        <Link href="/dashboard/vms" className="flex items-center gap-1 text-gray-500 hover:text-gray-300 transition">
+        <Link href="/dashboard/vms" className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition">
           <ChevronLeft className="w-3.5 h-3.5" />
           Virtual Machines
         </Link>
-        <span className="text-gray-700">/</span>
-        <span className="text-gray-300">{vmName}</span>
+        <span className="text-zinc-700">/</span>
+        <span className="text-zinc-300">{vmName}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center',
-            isRunning ? 'bg-emerald-500/10' : 'bg-gray-800')}>
-            <Monitor className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-gray-500')} />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center',
+            isRunning ? 'bg-emerald-500/10' : 'bg-zinc-800')}>
+            <Monitor className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-zinc-500')} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -290,7 +290,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 {status?.status ?? 'unknown'}
               </Badge>
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-zinc-500 mt-0.5">
               VMID {vmid} · <span className="inline-flex items-center gap-1"><Server className="w-3 h-3" />{node}</span>
               {config?.ostype && <> · {config.ostype}</>}
             </p>
@@ -327,7 +327,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           )}
           <Link
             href={`/console?node=${node}&vmid=${vmid}&type=qemu`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition"
           >
             <Terminal className="w-4 h-4" />
             Console
@@ -336,19 +336,19 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
             href={`/console/vnc?node=${encodeURIComponent(node)}&vmid=${vmid}&type=qemu`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg transition"
             title="Open graphical console in a new tab"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Graphical Console
           </a>
           <button onClick={() => setShowClone(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
             <Copy className="w-4 h-4" />
             Clone
           </button>
           <button onClick={() => setShowMigrate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
             <MoveRight className="w-4 h-4" />
             Migrate
           </button>
@@ -361,7 +361,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-800">
+      <div className="flex gap-1 border-b border-zinc-800/60">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -370,7 +370,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               'px-4 py-2 text-sm font-medium border-b-2 transition -mb-px',
               tab === t.id
                 ? 'border-orange-500 text-orange-400'
-                : 'border-transparent text-gray-500 hover:text-gray-300',
+                : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
             {t.label}
@@ -388,45 +388,45 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* CPU */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Cpu className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-400">CPU</span>
+                  <Cpu className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-medium text-zinc-400">CPU</span>
                 </div>
                 <p className="text-2xl font-semibold text-white tabular-nums">{cpu.toFixed(1)}%</p>
                 <ProgressBar value={cpu} className="mt-2" />
-                <p className="text-xs text-gray-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} vCPUs</p>
+                <p className="text-xs text-zinc-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} vCPUs</p>
               </div>
               {/* Memory */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <MemoryStick className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-400">Memory</span>
+                  <MemoryStick className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-medium text-zinc-400">Memory</span>
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.mem ?? 0)}</p>
                 <ProgressBar value={mem} className="mt-2" />
-                <p className="text-xs text-gray-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
+                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
               </div>
               {/* Disk */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <HardDrive className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-400">Disk</span>
+                  <HardDrive className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-medium text-zinc-400">Disk</span>
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.disk ?? 0)}</p>
                 <ProgressBar value={disk} className="mt-2" />
-                <p className="text-xs text-gray-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
+                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
               </div>
               {/* Network */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Network className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs font-medium text-gray-400">Network I/O</span>
+                  <Network className="w-4 h-4 text-zinc-500" />
+                  <span className="text-xs font-medium text-zinc-400">Network I/O</span>
                 </div>
                 <p className="text-sm font-medium text-white">↑ {formatBytes(status.netout ?? 0)}</p>
                 <p className="text-sm font-medium text-white mt-1">↓ {formatBytes(status.netin ?? 0)}</p>
                 {status.uptime != null && (
-                  <p className="text-xs text-gray-600 mt-2">Up {formatUptime(status.uptime)}</p>
+                  <p className="text-xs text-zinc-600 mt-2">Up {formatUptime(status.uptime)}</p>
                 )}
               </div>
             </div>
@@ -434,16 +434,16 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
           {/* Recent tasks */}
           {tasks && tasks.length > 0 && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-800">
-                <h3 className="text-sm font-medium text-gray-300">Recent Tasks</h3>
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+              <div className="px-4 py-3 border-b border-zinc-800/60">
+                <h3 className="text-sm font-medium text-zinc-300">Recent Tasks</h3>
               </div>
               <table className="w-full">
-                <tbody className="divide-y divide-gray-800/60">
+                <tbody className="divide-y divide-zinc-800/60/60">
                   {tasks.map((t) => (
                     <tr key={t.upid} className="px-4">
-                      <td className="px-4 py-2.5 text-xs font-mono text-gray-400">{t.type}</td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500">
+                      <td className="px-4 py-2.5 text-xs font-mono text-zinc-400">{t.type}</td>
+                      <td className="px-4 py-2.5 text-xs text-zinc-500">
                         {new Date(t.starttime * 1000).toLocaleString()}
                       </td>
                       <td className="px-4 py-2.5">
@@ -470,18 +470,18 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           ) : config ? (
             <>
               {/* Editable fields */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-white">General</h3>
                   {!editConfig ? (
                     <button onClick={() => { setConfigDraft({ name: config.name, cores: config.cores, sockets: config.sockets, memory: config.memory, onboot: config.onboot, description: config.description }); setEditConfig(true); }}
-                      className="text-xs px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition">
+                      className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 rounded-lg transition">
                       Edit
                     </button>
                   ) : (
                     <div className="flex gap-2">
                       <button onClick={() => { setEditConfig(false); setConfigDraft({}); }}
-                        className="text-xs px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg transition">
+                        className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-400 rounded-lg transition">
                         Cancel
                       </button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
@@ -495,7 +495,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {(['name', 'cores', 'sockets', 'memory', 'onboot', 'description'] as const).map((field) => (
                     <div key={field}>
-                      <label className="text-xs text-gray-500 capitalize block mb-1">
+                      <label className="text-xs text-zinc-500 capitalize block mb-1">
                         {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory (MB)' : field}
                       </label>
                       {editConfig ? (
@@ -512,11 +512,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                               ...d,
                               [field]: ['cores','sockets','memory'].includes(field) ? Number(e.target.value) : e.target.value,
                             }))}
-                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+                            className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
                           />
                         )
                       ) : (
-                        <p className="text-sm text-gray-200">
+                        <p className="text-sm text-zinc-200">
                           {field === 'onboot'
                             ? (config.onboot ? 'Yes' : 'No')
                             : String(config[field as keyof typeof config] ?? '—')}
@@ -529,19 +529,19 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
               {/* Disks */}
               {diskSlots.length > 0 && (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Disks</h3>
                   <div className="space-y-2">
                     {diskSlots.map(({ key, value }) => {
                       const kv = parseKV(value);
                       const [location] = value.split(',');
                       return (
-                        <div key={key} className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
-                          <HardDrive className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                        <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                          <HardDrive className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-xs font-mono text-gray-400 mb-0.5">{key}</p>
-                            <p className="text-sm text-gray-200">{location}</p>
-                            {kv.size && <p className="text-xs text-gray-500">Size: {kv.size}</p>}
+                            <p className="text-xs font-mono text-zinc-400 mb-0.5">{key}</p>
+                            <p className="text-sm text-zinc-200">{location}</p>
+                            {kv.size && <p className="text-xs text-zinc-500">Size: {kv.size}</p>}
                           </div>
                         </div>
                       );
@@ -552,18 +552,18 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
               {/* Network */}
               {netSlots.length > 0 && (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Network</h3>
                   <div className="space-y-2">
                     {netSlots.map(({ key, value }) => {
                       const kv = parseKV(value);
                       return (
-                        <div key={key} className="flex items-start gap-3 p-3 bg-gray-800/50 rounded-lg">
-                          <Network className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                        <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
+                          <Network className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-xs font-mono text-gray-400 mb-0.5">{key}</p>
-                            <p className="text-sm text-gray-200">{kv.bridge ?? '—'}</p>
-                            <p className="text-xs text-gray-500 font-mono">{kv.virtio ?? kv.e1000 ?? kv.rtl8139 ?? ''}</p>
+                            <p className="text-xs font-mono text-zinc-400 mb-0.5">{key}</p>
+                            <p className="text-sm text-zinc-200">{kv.bridge ?? '—'}</p>
+                            <p className="text-xs text-zinc-500 font-mono">{kv.virtio ?? kv.e1000 ?? kv.rtl8139 ?? ''}</p>
                           </div>
                         </div>
                       );

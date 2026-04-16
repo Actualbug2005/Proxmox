@@ -89,10 +89,10 @@ export function NasSharesTable({ node }: Props) {
         </div>
       )}
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-          <Share2 className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-300">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
+          <Share2 className="w-4 h-4 text-zinc-500" />
+          <span className="text-sm font-medium text-zinc-300">
             Shares {sorted.length > 0 && `(${sorted.length})`}
           </span>
         </div>
@@ -102,27 +102,27 @@ export function NasSharesTable({ node }: Props) {
             <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
           </div>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-gray-600 py-10 text-center">
+          <p className="text-sm text-zinc-600 py-10 text-center">
             No shares on {node} yet.
           </p>
         ) : (
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Name</th>
-                <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Path</th>
-                <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Protocols</th>
-                <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Access</th>
-                <th className="text-left px-4 py-2.5 text-gray-500 font-medium">Status</th>
-                <th className="text-right px-4 py-2.5 text-gray-500 font-medium w-24">Actions</th>
+              <tr className="border-b border-zinc-800/60">
+                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Name</th>
+                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Path</th>
+                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Protocols</th>
+                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Access</th>
+                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Status</th>
+                <th className="text-right px-4 py-3 text-zinc-500 font-medium w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((s) => (
-                <tr key={s.id} className="border-b border-gray-800/40 hover:bg-gray-800/30">
-                  <td className="px-4 py-2.5 text-gray-200 font-medium">{s.name}</td>
-                  <td className="px-4 py-2.5 font-mono text-gray-400 break-all">{s.path}</td>
-                  <td className="px-4 py-2.5">
+                <tr key={s.id} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/30">
+                  <td className="px-4 py-3 text-zinc-200 font-medium">{s.name}</td>
+                  <td className="px-4 py-3 font-mono text-zinc-400 break-all">{s.path}</td>
+                  <td className="px-4 py-3">
                     <div className="flex gap-1 flex-wrap">
                       {s.protocols.map((p) => (
                         <Badge key={p} variant={PROTOCOL_VARIANT[p]}>
@@ -131,26 +131,26 @@ export function NasSharesTable({ node }: Props) {
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-3">
                     <span
                       className={cn(
                         'inline-flex items-center gap-1 text-xs',
-                        s.readOnly ? 'text-gray-400' : 'text-emerald-400',
+                        s.readOnly ? 'text-zinc-400' : 'text-emerald-400',
                       )}
                     >
                       {s.readOnly ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
                       {s.readOnly ? 'Read-only' : 'Read/Write'}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-3">
                     <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
                   </td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setActiveBrowse(s)}
                         aria-label={`Browse ${s.name}`}
-                        className="p-1.5 text-gray-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-md transition"
+                        className="p-1.5 text-zinc-500 hover:text-orange-400 hover:bg-orange-500/10 rounded-md transition"
                       >
                         <FolderOpen className="w-4 h-4" />
                       </button>
@@ -158,7 +158,7 @@ export function NasSharesTable({ node }: Props) {
                         onClick={() => setPendingDelete(s)}
                         disabled={deleteM.isPending}
                         aria-label={`Delete ${s.name}`}
-                        className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
+                        className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

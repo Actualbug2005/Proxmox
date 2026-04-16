@@ -64,7 +64,7 @@ const STEPS = ['General', 'OS', 'Hardware', 'Disk', 'Network', 'Confirm'];
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-gray-500 block mb-1.5">{label}</label>
+      <label className="text-xs text-zinc-500 block mb-1.5">{label}</label>
       {children}
     </div>
   );
@@ -79,7 +79,7 @@ function Input({ value, onChange, type = 'text', placeholder, min, max }: {
       type={type} value={value} placeholder={placeholder}
       min={min} max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500/50"
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500/50"
     />
   );
 }
@@ -89,7 +89,7 @@ function Select({ value, onChange, children }: {
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50">
+      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50">
       {children}
     </select>
   );
@@ -180,7 +180,7 @@ function StepHardware({ state, set }: { state: WizardState; set: (p: Partial<Wiz
       <Field label="Memory (MB)">
         <Input type="number" value={state.memory} onChange={(v) => set({ memory: Number(v) })} min={256} />
       </Field>
-      <p className="text-xs text-gray-600">
+      <p className="text-xs text-zinc-600">
         Total vCPUs: {state.sockets * state.cores} · Memory: {(state.memory / 1024).toFixed(1)} GB
       </p>
     </div>
@@ -240,7 +240,7 @@ function StepNetwork({ state, set }: { state: WizardState; set: (p: Partial<Wiza
           {NET_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
         </Select>
       </Field>
-      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
         <input type="checkbox" checked={state.firewall} onChange={(e) => set({ firewall: e.target.checked })}
           className="rounded border-gray-600" />
         Enable Firewall
@@ -263,11 +263,11 @@ function StepConfirm({ state }: { state: WizardState }) {
   ];
   return (
     <div className="space-y-2">
-      <p className="text-sm text-gray-400 mb-4">Review your settings before creating the VM.</p>
+      <p className="text-sm text-zinc-400 mb-4">Review your settings before creating the VM.</p>
       {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between py-2 border-b border-gray-800/60 last:border-0">
-          <span className="text-xs text-gray-500">{label}</span>
-          <span className="text-sm text-gray-200 font-mono">{value}</span>
+        <div key={label} className="flex justify-between py-2 border-b border-zinc-800/60/60 last:border-0">
+          <span className="text-xs text-zinc-500">{label}</span>
+          <span className="text-sm text-zinc-200 font-mono">{value}</span>
         </div>
       ))}
     </div>
@@ -333,7 +333,7 @@ export default function CreateVMPage() {
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push('/dashboard/vms')} className="text-gray-500 hover:text-gray-300 transition">
+        <button onClick={() => router.push('/dashboard/vms')} className="text-zinc-500 hover:text-zinc-300 transition">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
@@ -351,23 +351,23 @@ export default function CreateVMPage() {
                 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition',
                 i < step ? 'bg-orange-500 text-white' :
                 i === step ? 'bg-orange-500/20 border-2 border-orange-500 text-orange-400' :
-                'bg-gray-800 text-gray-600',
+                'bg-zinc-800 text-zinc-600',
               )}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-orange-400' : 'text-gray-600')}>
+              <span className={cn('text-xs mt-1 whitespace-nowrap', i === step ? 'text-orange-400' : 'text-zinc-600')}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-orange-500/40' : 'bg-gray-800')} />
+              <div className={cn('flex-1 h-px mx-2 mb-4', i < step ? 'bg-orange-500/40' : 'bg-zinc-800')} />
             )}
           </div>
         ))}
       </div>
 
       {/* Step content */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-6">
         <h2 className="text-sm font-semibold text-white mb-5">{STEPS[step]}</h2>
         {stepComponents[step]}
       </div>
@@ -381,7 +381,7 @@ export default function CreateVMPage() {
       <div className="flex justify-between">
         <button
           onClick={() => step > 0 ? setStep((s) => s - 1) : router.push('/dashboard/vms')}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition"
         >
           <ChevronLeft className="w-4 h-4" />
           {step === 0 ? 'Cancel' : 'Back'}

@@ -28,10 +28,10 @@ export function ClusterStatusPanel() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
         <div className="flex items-center gap-2 mb-3">
-          <HeartPulse className="w-4 h-4 text-gray-500" />
-          <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Cluster</span>
+          <HeartPulse className="w-4 h-4 text-zinc-500" />
+          <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Cluster</span>
         </div>
         <p className="text-lg font-medium text-white">{clusterEntry?.name ?? 'standalone'}</p>
         <div className="mt-2 flex items-center gap-2">
@@ -40,14 +40,14 @@ export function ClusterStatusPanel() {
           ) : (
             <Badge variant="danger" className="inline-flex items-center gap-1"><ShieldAlert className="w-3 h-3" /> not quorate</Badge>
           )}
-          {clusterEntry?.version ? <span className="text-xs text-gray-600">v{clusterEntry.version}</span> : null}
+          {clusterEntry?.version ? <span className="text-xs text-zinc-600">v{clusterEntry.version}</span> : null}
         </div>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 sm:col-span-2">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 sm:col-span-2">
         <div className="flex items-center gap-2 mb-3">
-          <Server className="w-4 h-4 text-gray-500" />
-          <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+          <Server className="w-4 h-4 text-zinc-500" />
+          <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">
             Nodes {online}/{nodeEntries.length} online
           </span>
         </div>
@@ -62,7 +62,7 @@ export function ClusterStatusPanel() {
             >
               <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-emerald-400' : 'bg-red-400')} />
               <span className="font-mono">{n.name}</span>
-              {n.ip && <span className="text-gray-600 font-mono">{n.ip}</span>}
+              {n.ip && <span className="text-zinc-600 font-mono">{n.ip}</span>}
               {(n.local ?? false) ? <span className="text-orange-400">(this node)</span> : null}
             </div>
           ))}

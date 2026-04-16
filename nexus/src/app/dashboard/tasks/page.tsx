@@ -34,7 +34,7 @@ function TaskStatusIcon({ task }: { task: PVETask }) {
   if (s === 'running' || s === '') return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
   if (s.startsWith('WARNINGS')) return <CheckCircle2 className="w-4 h-4 text-yellow-400" />;
   if (s) return <XCircle className="w-4 h-4 text-red-400" />;
-  return <Clock className="w-4 h-4 text-gray-600" />;
+  return <Clock className="w-4 h-4 text-zinc-600" />;
 }
 
 function formatDuration(start: number, end?: number): string {
@@ -78,7 +78,7 @@ export default function TasksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Tasks</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-zinc-500">
             {running > 0 ? `${running} running · ` : ''}
             {filtered.length} total · Updated {lastUpdated}
           </p>
@@ -86,14 +86,14 @@ export default function TasksPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setPaused((p) => !p)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 transition"
           >
             {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             {paused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-xs text-gray-400 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 border border-zinc-800/60 rounded-lg text-xs text-zinc-400 transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -111,7 +111,7 @@ export default function TasksPage() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 nodeFilter === n
                   ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'text-gray-500 bg-gray-900 border border-gray-800 hover:text-gray-300'
+                  : 'text-zinc-500 bg-zinc-900 border border-zinc-800/60 hover:text-zinc-300'
               }`}
             >
               {n === 'all' ? 'All nodes' : n}
@@ -127,20 +127,20 @@ export default function TasksPage() {
       )}
 
       {!isLoading && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-300">Task Log</span>
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm font-medium text-zinc-300">Task Log</span>
           </div>
 
           {filtered.length === 0 ? (
-            <p className="text-sm text-gray-600 py-10 text-center">No tasks found</p>
+            <p className="text-sm text-zinc-600 py-10 text-center">No tasks found</p>
           ) : (
-            <div className="divide-y divide-gray-800/50">
+            <div className="divide-y divide-zinc-800/60/50">
               {filtered.map((task) => (
                 <div
                   key={task.upid}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-gray-800/40 transition"
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-800/40 transition"
                 >
                   <TaskStatusIcon task={task} />
 
@@ -148,13 +148,13 @@ export default function TasksPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm text-white font-medium">{task.type}</span>
                       {task.id && (
-                        <span className="text-xs text-gray-500 font-mono">{task.id}</span>
+                        <span className="text-xs text-zinc-500 font-mono">{task.id}</span>
                       )}
                       <Badge variant={statusVariant(task)}>
                         {task.exitstatus ?? task.status ?? (task.endtime ? 'unknown' : 'running')}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    <p className="text-xs text-zinc-500 mt-0.5 truncate">
                       {task.node} · {task.user}
                     </p>
                     {(() => {
@@ -170,7 +170,7 @@ export default function TasksPage() {
                   </div>
 
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-zinc-400">
                       {new Date(task.starttime * 1000).toLocaleString([], {
                         month: 'short',
                         day: 'numeric',
@@ -178,7 +178,7 @@ export default function TasksPage() {
                         minute: '2-digit',
                       })}
                     </p>
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p className="text-xs text-zinc-600 mt-0.5">
                       {formatDuration(task.starttime, task.endtime)}
                     </p>
                   </div>

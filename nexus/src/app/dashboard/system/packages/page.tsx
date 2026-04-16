@@ -81,7 +81,7 @@ export default function PackagesPage() {
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-48 text-gray-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-zinc-500 text-sm">
         Select a node to manage packages.
       </div>
     );
@@ -92,12 +92,12 @@ export default function PackagesPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Packages</h1>
-          <p className="text-sm text-gray-500">Manage apt packages on {node}</p>
+          <p className="text-sm text-zinc-500">Manage apt packages on {node}</p>
         </div>
         <button
           onClick={() => refreshM.mutate()}
           disabled={refreshM.isPending}
-          className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition disabled:opacity-40"
         >
           {refreshM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Refresh Cache
@@ -110,7 +110,7 @@ export default function PackagesPage() {
         </div>
       )}
 
-      <div className="flex gap-1 border-b border-gray-800 mt-2">
+      <div className="flex gap-1 border-b border-zinc-800/60 mt-2">
         {(['pve', 'system'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -119,7 +119,7 @@ export default function PackagesPage() {
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === t
                 ? 'border-orange-500 text-orange-400'
-                : 'border-transparent text-gray-500 hover:text-gray-300',
+                : 'border-transparent text-zinc-500 hover:text-zinc-300',
             )}
           >
             {t === 'pve' ? 'PVE Packages' : 'System Packages'}
@@ -130,7 +130,7 @@ export default function PackagesPage() {
       {tab === 'pve' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-zinc-400">
               {(() => {
                 const count = (pvePackages ?? []).filter((p) => newVersionByPkg.has(p.Package)).length;
                 return count > 0
@@ -153,23 +153,23 @@ export default function PackagesPage() {
               <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
             </div>
           ) : (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Available</th>
+                  <tr className="border-b border-zinc-800/60">
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Package</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Current</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Available</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(pvePackages ?? []).map((pkg) => {
                     const newVersion = newVersionByPkg.get(pkg.Package);
                     return (
-                      <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                        <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
-                        <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.Version}</td>
-                        <td className="px-4 py-2.5">
+                      <tr key={pkg.Package} className="border-b border-zinc-800/60/50 hover:bg-zinc-800/30">
+                        <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
+                        <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.Version}</td>
+                        <td className="px-4 py-3">
                           {newVersion ? (
                             <Badge variant="warning" className="font-mono text-xs">{newVersion}</Badge>
                           ) : (
@@ -193,7 +193,7 @@ export default function PackagesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search packages…"
-              className="flex-1 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-orange-500/50"
+              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-orange-500/50"
             />
             <div className="flex gap-2">
               <button
@@ -219,26 +219,26 @@ export default function PackagesPage() {
               <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
             </div>
           ) : filteredSystem.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-500 gap-2">
+            <div className="flex flex-col items-center justify-center h-32 text-zinc-500 gap-2">
               <Package className="w-6 h-6" />
               <p className="text-sm">{search ? 'No matching packages' : 'All system packages up to date'}</p>
             </div>
           ) : (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="px-4 py-2.5 w-8" />
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Available</th>
-                    <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Section</th>
+                  <tr className="border-b border-zinc-800/60">
+                    <th className="px-4 py-3 w-8" />
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Package</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Current</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Available</th>
+                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Section</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredSystem.map((pkg) => (
-                    <tr key={pkg.Package} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-4 py-2.5">
+                    <tr key={pkg.Package} className="border-b border-zinc-800/60/50 hover:bg-zinc-800/30">
+                      <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selected.has(pkg.Package)}
@@ -246,10 +246,10 @@ export default function PackagesPage() {
                           className="rounded border-gray-600"
                         />
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-gray-200">{pkg.Package}</td>
-                      <td className="px-4 py-2.5 font-mono text-gray-500 text-xs">{pkg.OldVersion}</td>
-                      <td className="px-4 py-2.5 font-mono text-orange-400 text-xs">{pkg.Version}</td>
-                      <td className="px-4 py-2.5 text-gray-500 text-xs">{pkg.Section ?? '—'}</td>
+                      <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
+                      <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.OldVersion}</td>
+                      <td className="px-4 py-3 font-mono text-orange-400 text-xs">{pkg.Version}</td>
+                      <td className="px-4 py-3 text-zinc-500 text-xs">{pkg.Section ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

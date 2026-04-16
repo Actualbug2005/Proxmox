@@ -91,48 +91,48 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
           description="Without rules, the default policy (set in Options) applies to all traffic."
         />
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium w-16">#</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Type</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Action</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Source</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Dest</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Proto</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Port</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Macro</th>
-                <th className="text-left px-3 py-2.5 text-xs text-gray-500 font-medium">Comment</th>
-                <th className="text-right px-3 py-2.5 text-xs text-gray-500 font-medium"></th>
+              <tr className="border-b border-zinc-800/60">
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium w-16">#</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Type</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Action</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Source</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Dest</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Proto</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Port</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Macro</th>
+                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Comment</th>
+                <th className="text-right px-3 py-3 text-xs text-zinc-500 font-medium"></th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((r, idx) => (
-                <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-gray-800/40' : 'border-b border-gray-800/40 hover:bg-gray-800/20'}>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-500">{r.pos}</td>
-                  <td className="px-3 py-2">
+                <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-zinc-800/60/40' : 'border-b border-zinc-800/60/40 hover:bg-zinc-800/20'}>
+                  <td className="px-3 py-3 font-mono text-xs text-zinc-500">{r.pos}</td>
+                  <td className="px-3 py-3">
                     <Badge variant={r.type === 'in' ? 'success' : r.type === 'out' ? 'warning' : 'outline'} className="text-xs">
                       {r.type}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-3">
                     <Badge variant={r.action === 'ACCEPT' ? 'success' : r.action === 'DROP' || r.action === 'REJECT' ? 'danger' : 'outline'} className="text-xs">
                       {r.action}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-400">{r.source ?? '—'}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-400">{r.dest ?? '—'}</td>
-                  <td className="px-3 py-2 text-xs text-gray-400">{r.proto ?? '—'}</td>
-                  <td className="px-3 py-2 text-xs text-gray-400">{r.dport ?? '—'}</td>
-                  <td className="px-3 py-2 text-xs text-gray-400">{r.macro ?? '—'}</td>
-                  <td className="px-3 py-2 text-xs text-gray-500 truncate max-w-[12rem]" title={r.comment}>{r.comment ?? ''}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-3 font-mono text-xs text-zinc-400">{r.source ?? '—'}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-zinc-400">{r.dest ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-zinc-400">{r.proto ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-zinc-400">{r.dport ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-zinc-400">{r.macro ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-zinc-500 truncate max-w-[12rem]" title={r.comment}>{r.comment ?? ''}</td>
+                  <td className="px-3 py-3 text-right">
                     <div className="flex gap-0.5 justify-end">
                       <button
                         onClick={() => moveM.mutate({ r, delta: -1 })}
                         disabled={idx === 0 || moveM.isPending}
-                        className="p-1 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30"
+                        className="p-1 text-zinc-500 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30"
                         title="Move up"
                       >
                         <ArrowUp className="w-3 h-3" />
@@ -140,21 +140,21 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
                       <button
                         onClick={() => moveM.mutate({ r, delta: 1 })}
                         disabled={idx === sorted.length - 1 || moveM.isPending}
-                        className="p-1 text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-30"
+                        className="p-1 text-zinc-500 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30"
                         title="Move down"
                       >
                         <ArrowDown className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => setEditRule(r)}
-                        className="p-1 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                        className="p-1 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
                         title="Edit"
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(r)}
-                        className="p-1 text-red-400 hover:text-red-300 bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+                        className="p-1 text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
                         title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />

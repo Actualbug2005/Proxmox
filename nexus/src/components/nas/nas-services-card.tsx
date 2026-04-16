@@ -32,7 +32,7 @@ function ServiceIndicator({
   const running = service?.status === 'running';
   const label = LABELS[protocol];
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-gray-950/40 border border-gray-800 rounded-lg">
+    <div className="flex items-center gap-3 px-4 py-2 bg-gray-950/40 border border-zinc-800/60 rounded-lg">
       <span
         className={cn(
           'w-2.5 h-2.5 rounded-full shrink-0',
@@ -46,7 +46,7 @@ function ServiceIndicator({
       />
       <div className="min-w-0">
         <p className="text-xs font-medium text-white">{label.title}</p>
-        <p className="text-[11px] text-gray-500 font-mono truncate">
+        <p className="text-[11px] text-zinc-500 font-mono truncate">
           {label.unit} · {loading ? '…' : (service?.status ?? 'unknown')}
         </p>
       </div>
@@ -71,11 +71,11 @@ export function NasServicesCard({ node }: Props) {
   }, [data]);
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Server className="w-4 h-4 text-gray-500" />
+        <Server className="w-4 h-4 text-zinc-500" />
         <h3 className="text-sm font-semibold text-white">NAS Services</h3>
-        <span className="text-xs text-gray-500">· {node}</span>
+        <span className="text-xs text-zinc-500">· {node}</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <ServiceIndicator protocol="smb" service={byProtocol.smb} loading={isLoading} />

@@ -86,39 +86,39 @@ export function StorageContentTable({
         />
       )}
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-800">
-              <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Name</th>
-              <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Type</th>
-              <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Format</th>
-              <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">VMID</th>
-              <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium">Size</th>
-              <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Created</th>
-              <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium"></th>
+            <tr className="border-b border-zinc-800/60">
+              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Name</th>
+              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Type</th>
+              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Format</th>
+              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">VMID</th>
+              <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium">Size</th>
+              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Created</th>
+              <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.volid} className="border-b border-gray-800/40 hover:bg-gray-800/20">
-                <td className="px-4 py-2 font-mono text-gray-200 text-xs break-all max-w-xs" title={item.volid}>
+              <tr key={item.volid} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                <td className="px-4 py-3 font-mono text-zinc-200 text-xs break-all max-w-xs" title={item.volid}>
                   {volidName(item.volid)}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   <Badge variant="outline" className="text-xs">{item.content}</Badge>
                 </td>
-                <td className="px-4 py-2 text-xs text-gray-500">{item.format ?? '—'}</td>
-                <td className="px-4 py-2 text-xs text-gray-500 font-mono">{item.vmid ?? '—'}</td>
-                <td className="px-4 py-2 text-xs text-gray-400 text-right tabular-nums">
+                <td className="px-4 py-3 text-xs text-zinc-500">{item.format ?? '—'}</td>
+                <td className="px-4 py-3 text-xs text-zinc-500 font-mono">{item.vmid ?? '—'}</td>
+                <td className="px-4 py-3 text-xs text-zinc-400 text-right tabular-nums">
                   {item.size ? formatBytes(item.size) : '—'}
                 </td>
-                <td className="px-4 py-2 text-xs text-gray-500">{formatTime(item.ctime)}</td>
-                <td className="px-4 py-2 text-right">
+                <td className="px-4 py-3 text-xs text-zinc-500">{formatTime(item.ctime)}</td>
+                <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => setDeleteTarget(item.volid)}
                     disabled={deleteM.isPending}
-                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition disabled:opacity-40"
+                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
                     title="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
