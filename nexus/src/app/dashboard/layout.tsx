@@ -8,7 +8,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session) redirect('/login');
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
+    // No bg here on purpose: the body's radial gradients feed the sidebar's
+    // .liquid-glass blur. Painting a solid color here would flatten the glass.
+    <div className="flex min-h-screen">
       <Sidebar username={session.username} />
       <main className="flex-1 overflow-auto">
         {children}

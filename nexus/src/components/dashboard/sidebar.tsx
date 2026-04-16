@@ -99,8 +99,8 @@ export function Sidebar({ username }: SidebarProps) {
 
   return (
     <aside
-      className="sticky top-0 flex h-screen w-56 shrink-0 flex-col
-                 border-r border-zinc-800/60 bg-zinc-900"
+      className="sticky top-0 z-40 flex h-screen w-56 shrink-0 flex-col
+                 liquid-glass border-r border-zinc-800/40"
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-zinc-800/60 px-4 py-5">

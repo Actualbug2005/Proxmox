@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 /*
- * Nexus "Solid Industrial" design tokens
+ * Nexus "Liquid Glass + Industrial Core" design tokens
  *
- * The remediation phase retires the Midnight/Glass palette: canvas stays
- * zinc-950 but every elevated surface (cards, tables, sidebar) is solid
- * zinc-900. Borders standardise on zinc-800 at 60% opacity so they read as
- * structural dividers without becoming visual noise.
+ * Hybrid model: the workspace (cards, tables, rows) remains Solid Industrial
+ * — every elevated surface is solid zinc-900 so data stays legible. The
+ * chrome (sidebar, eventually top bars) uses a Liquid Glass layer that
+ * blurs against the body's ambient radial gradients, giving the app a
+ * premium outer shell while keeping dense tables anchored.
  *
  * Tailwind v4 auto-generates utility classes from the namespaced CSS
  * variables inside @theme. This file IS the config — there is no
@@ -15,17 +16,20 @@
 
 @theme {
   /* ── Surfaces ────────────────────────────────────────────────────────
-   *  canvas    zinc-950  · app background (root only)
-   *  surface   zinc-900  · sidebar, sunken panels — identical to elevated
+   *  canvas    zinc-950  · app background; painted by body so the glass
+   *                        has a radial-gradient source to blur against.
+   *  glass     translucent zinc · sidebar/chrome (see .liquid-glass)
+   *  surface   zinc-900  · identical to elevated — use for any interior
+   *                        panel that must not participate in the glass.
    *  elevated  zinc-900  · cards, tables, rows
    *  overlay   zinc-800  · popovers, modals, hover fills
-   *
-   *  surface == elevated on purpose; depth comes from borders not shade.
    */
   --color-canvas: #09090b;
+  --color-glass: rgba(12, 12, 15, 0.75);
   --color-surface: #18181b;
   --color-elevated: #18181b;
   --color-overlay: #27272a;
+  --color-border-muted: rgba(255, 255, 255, 0.08);
 
   /* ── Borders (zinc-800 @ 60%) ────────────────────────────────────── */
   --color-border-subtle: rgba(39, 39, 42, 0.6);
@@ -71,14 +75,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Baseline: canvas background + default foreground.
+/* Baseline: canvas background + ambient radial gradients for the glass
+ * layer to blur against. Without these tinted blobs the backdrop-filter on
+ * .liquid-glass collapses to a flat tint (that's what killed the first
+ * glass attempt). Keep the opacities low — 7% brand, 4% cool — so the
+ * workspace interiors stay essentially zinc-950 to the eye.
  * Body gets font-feature-settings for ss-forms/calt to make Geist feel tuned. */
 body {
-  background: var(--color-canvas);
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(249, 115, 22, 0.07) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%);
   color: var(--color-fg);
+  min-height: 100vh;
   font-feature-settings: "ss01", "cv05", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Liquid Glass utility — centralised so the browser composites the blur
+ * once per layer. Use on chrome (sidebar, top bar) not on workspace
+ * surfaces; applying backdrop-filter to many stacked cards destroys the
+ * frame rate on low-end GPUs. */
+.liquid-glass {
+  background-color: var(--color-glass);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
 /* Tabular+mono utility — used on every numeric cell. */
