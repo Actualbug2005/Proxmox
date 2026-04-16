@@ -24,9 +24,14 @@ import { requireNodeSysModify } from '@/lib/permissions';
 // verification off for every outbound fetch in the Node runtime.
 
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
+// Only the raw-content CDN is trusted. github.com was removed because its
+// /raw/ paths 302 to raw.githubusercontent.com AND repo owners can
+// configure arbitrary redirects — combined with curl's default redirect-
+// following behaviour, that gave an attacker controlling any mirror in a
+// redirect chain root RCE on every PVE node. See the hardened curl
+// invocation in pipeScriptToRemoteBash for belt-and-braces.
 const TRUSTED_ORIGINS = new Set([
   'https://raw.githubusercontent.com',
-  'https://github.com',
 ]);
 // Paths must belong to the community-scripts/ProxmoxVE repo and contain only
 // the shell-safe character set — letters, digits, dot, dash, underscore, slash.
@@ -80,8 +85,21 @@ function pipeScriptToRemoteBash(
     // The URL is passed to bash via stdin — it never touches an argv slot or
     // a shell string literal. `$SCRIPT_URL` below is a bash variable, not an
     // interpolation site.
+    //
+    // curl flags hardened per audit C3:
+    //   --proto '=https'         reject any non-HTTPS URL outright
+    //   --proto-redir '=https'   reject any redirect that would leave HTTPS
+    //                            (blocks http://, ftp://, file://, gopher://
+    //                             redirect-downgrades)
+    //   --max-redirs 3           cap redirect chain so an attacker-controlled
+    //                            mirror can't chain through metadata services
+    //                            or loop the request into a timing oracle
+    //   -f -s -S -L              fail on HTTP errors, silent progress, show
+    //                            errors, follow ≤3 redirects
     child.stdin.end(
-      `set -euo pipefail\nSCRIPT_URL=${JSON.stringify(scriptUrl)}\ncurl -fsSL -- "$SCRIPT_URL" | bash\n`,
+      `set -euo pipefail\n` +
+      `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
+      `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 -- "$SCRIPT_URL" | bash\n`,
     );
   });
 }
