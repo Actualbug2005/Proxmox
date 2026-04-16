@@ -67,27 +67,32 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
       }
 
       const term = new XTerm({
+        // allowTransparency lets the env-glass-card pane behind the
+        // terminal show through — without it xterm paints an opaque
+        // fallback background regardless of `theme.background`.
+        allowTransparency: true,
         theme: {
-          background: '#030712',
-          foreground: '#e5e7eb',
-          cursor: '#f97316',
-          cursorAccent: '#030712',
-          black: '#1f2937',
-          red: '#ef4444',
-          green: '#10b981',
-          yellow: '#f59e0b',
-          blue: '#3b82f6',
-          magenta: '#8b5cf6',
-          cyan: '#06b6d4',
-          white: '#e5e7eb',
-          brightBlack: '#374151',
-          brightRed: '#f87171',
-          brightGreen: '#34d399',
-          brightYellow: '#fbbf24',
-          brightBlue: '#60a5fa',
-          brightMagenta: '#a78bfa',
-          brightCyan: '#22d3ee',
-          brightWhite: '#f9fafb',
+          background: 'transparent',
+          foreground: '#fafafa',                  // zinc-50
+          cursor: '#f97316',                       // orange-500
+          cursorAccent: '#09090b',                 // zinc-950 (text-on-cursor)
+          selectionBackground: 'rgba(249, 115, 22, 0.3)',
+          black: '#18181b',                        // zinc-900
+          red: '#ef4444',                          // red-500
+          green: '#10b981',                        // emerald-500
+          yellow: '#f59e0b',                       // amber-500
+          blue: '#3b82f6',                         // blue-500
+          magenta: '#8b5cf6',                      // violet-500
+          cyan: '#06b6d4',                         // cyan-500
+          white: '#fafafa',                        // zinc-50
+          brightBlack: '#27272a',                  // zinc-800
+          brightRed: '#f87171',                    // red-400
+          brightGreen: '#34d399',                  // emerald-400
+          brightYellow: '#fbbf24',                 // amber-400
+          brightBlue: '#60a5fa',                   // blue-400
+          brightMagenta: '#a78bfa',                // violet-400
+          brightCyan: '#22d3ee',                   // cyan-400
+          brightWhite: '#fafafa',                  // zinc-50
         },
         fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace',
         fontSize: 13,
@@ -95,7 +100,6 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         cursorBlink: true,
         cursorStyle: 'bar',
         scrollback: 5000,
-        allowTransparency: false,
       });
 
       const fitAddon = new FitAddon();
@@ -195,7 +199,11 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
   return (
     <div
       className={cn(
-        'flex flex-col bg-gray-950 border border-zinc-800/60 rounded-lg overflow-hidden',
+        // No bg on the outer wrapper: the glass pane behind it provides
+        // the chrome, and allowTransparency on the xterm canvas lets that
+        // pane show through the terminal viewport. An opaque bg here
+        // would defeat the transparency.
+        'flex flex-col border border-zinc-800/60 rounded-lg overflow-hidden',
         fullscreen && 'fixed inset-0 z-50 rounded-none border-0',
         className,
       )}

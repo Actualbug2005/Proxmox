@@ -321,12 +321,13 @@ function ScriptDetailDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 p-4
+                 animate-modal-overlay"
       onClick={onClose}
     >
       <div
         className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-lg max-h-[85vh]
-                   overflow-hidden flex flex-col"
+                   overflow-hidden flex flex-col animate-modal-content"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

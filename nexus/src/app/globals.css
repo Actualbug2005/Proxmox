@@ -245,20 +245,66 @@ body {
   font-feature-settings: "tnum", "cv11";
 }
 
-/* Scrollbar — derived from border tokens so it picks up theme changes. */
+/* Scrollbar — translucent white thumb so it reads as etched glass rather
+ * than an opaque OS-native bar that would break the Liquid Glass illusion.
+ * 8px gives a larger hit target than the prior 6px without feeling heavy. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Modal choreography ──────────────────────────────────────────────────
+ *
+ * Native-feeling dialog entrance. The custom dialog in scripts/page.tsx
+ * unmounts on close (no Radix data-[state=*] attributes to drive exit
+ * animations off), so these are entrance-only. If exit animations become
+ * necessary later, migrate the dialog to Radix UI or add an isClosing
+ * flag to gate the unmount.
+ *
+ * Durations align with Apple HIG's 150–300ms micro-interaction band.
+ * easing: ease-out — the motion decelerates into place, which reads as
+ * "arriving" rather than "flying past". Respects prefers-reduced-motion. */
+@keyframes modal-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-modal-overlay {
+  animation: modal-overlay-in 200ms ease-out;
+}
+
+.animate-modal-content {
+  animation: modal-content-in 200ms ease-out;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-overlay,
+  .animate-modal-content {
+    animation: none;
+  }
 }
 
 /* xterm.js container */
