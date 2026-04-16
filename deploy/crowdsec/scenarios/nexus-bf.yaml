@@ -1,0 +1,73 @@
+# CrowdSec scenarios for Nexus brute-force + abuse detection.
+#
+# Depends on: deploy/crowdsec/parsers/s01-parse/nexus-login.yaml
+#
+# Three distinct scenarios here, each tuned for a different attack pattern:
+#
+#   1. nexus/login-bf         — classic brute force (N fails fast)
+#   2. nexus/login-slowbf     — slow brute force (N fails over hours)
+#   3. nexus/credential-stuffing — one IP hitting many usernames
+#
+# Together with the app-level 10-per-5-min rate limit and Phase-2
+# ingress deny lists, this catches the full attack spectrum.
+#
+# Deploy:
+#   /etc/crowdsec/scenarios/nexus-bf.yaml
+#   systemctl reload crowdsec
+#   cscli scenarios list | grep nexus
+
+# ── 1. Fast brute force ─────────────────────────────────────────────────────
+type: leaky
+name: nexus/login-bf
+description: "Detect brute-force login attempts against Nexus"
+filter: |
+  evt.Meta.log_type == 'nexus_login' && evt.Meta.outcome in ['fail', 'ratelimited']
+groupby: evt.Meta.source_ip
+capacity: 5             # 5 fails...
+leakspeed: 30s          # ...leaking one every 30s (so 5 in ~2.5 min trips)
+blackhole: 5m           # don't re-fire for the same IP for 5 min
+labels:
+  service: nexus
+  type: bruteforce
+  remediation: true
+reprocess: true
+
+---
+
+# ── 2. Slow / low-and-slow brute force ──────────────────────────────────────
+# Targets attackers who space failures out to evade the fast scenario.
+# Capacity 10 with a 10-min leakspeed = ~100 min window for 10 fails.
+type: leaky
+name: nexus/login-slowbf
+description: "Detect slow brute-force (low-and-slow) against Nexus login"
+filter: |
+  evt.Meta.log_type == 'nexus_login' && evt.Meta.outcome == 'fail'
+groupby: evt.Meta.source_ip
+capacity: 10
+leakspeed: 10m
+blackhole: 1h
+labels:
+  service: nexus
+  type: bruteforce
+  remediation: true
+
+---
+
+# ── 3. Credential stuffing (one IP, many usernames) ─────────────────────────
+# If a single IP tries 3+ *distinct* usernames and fails, that's not a
+# legitimate forgetful admin — it's credential stuffing from a leaked list.
+type: trigger
+name: nexus/credential-stuffing
+description: "Detect credential stuffing: one IP, many usernames"
+filter: |
+  evt.Meta.log_type == 'nexus_login' && evt.Meta.outcome == 'fail'
+groupby: evt.Meta.source_ip
+distinct: evt.Meta.username
+# Trigger scenarios fire as soon as `distinct` exceeds `capacity`.
+capacity: 3
+leakspeed: 30m          # distinct-username counter decays over 30 min
+blackhole: 12h          # long ban — credential stuffers come back
+labels:
+  service: nexus
+  type: credential-stuffing
+  remediation: true

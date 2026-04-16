@@ -1,0 +1,37 @@
+# CrowdSec log acquisition config for Nexus.
+#
+# Tell crowdsec WHERE to read Nexus's structured login events from. Three
+# options — pick the one matching your systemd/docker layout:
+
+# ── Option A: journald (systemd service) ──────────────────────────────────
+# Matches a deployment where Nexus runs as systemctl start nexus.service.
+# CrowdSec reads stderr via journal; the nexus-login parser extracts the
+# JSON payload.
+source: journalctl
+journalctl_filter:
+  - _SYSTEMD_UNIT=nexus.service
+labels:
+  type: nexus
+
+---
+
+# ── Option B: Docker stderr (compose deployment) ──────────────────────────
+# For the deploy/traefik/docker-compose.yml path.
+# Uncomment and replace the container name if you're using this layout.
+# source: docker
+# container_name:
+#   - nexus_nexus_1   # docker compose v1
+#   - nexus-nexus-1   # docker compose v2 — check `docker ps`
+# labels:
+#   type: nexus
+
+---
+
+# ── Option C: flat log file (install.sh bare-metal) ───────────────────────
+# If install.sh is configured to redirect stderr to /var/log/nexus/app.log,
+# or you use logrotate with that path.
+# source: file
+# filenames:
+#   - /var/log/nexus/app.log
+# labels:
+#   type: nexus

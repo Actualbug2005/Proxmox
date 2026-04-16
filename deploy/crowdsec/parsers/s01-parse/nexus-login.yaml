@@ -1,0 +1,62 @@
+# CrowdSec parser for Nexus login events.
+#
+# Phase-2 /api/auth/login emits a structured JSON line on stderr for every
+# attempt. This parser extracts the fields CrowdSec needs to correlate into
+# scenarios (brute force, credential stuffing, etc.).
+#
+# Expected log line shape (from src/app/api/auth/login/route.ts):
+#   {"ts":"2025-04-16T22:14:02.123Z","component":"nexus","event":"login",
+#    "outcome":"fail","ip":"203.0.113.42","username":"alice",
+#    "realm":"pam","reason":"PVE auth failed: 401 Unauthorized"}
+#
+# Deploy:
+#   /etc/crowdsec/parsers/s01-parse/nexus-login.yaml
+#   systemctl reload crowdsec
+#
+# Verify:
+#   cscli parsers list | grep nexus-login
+#   journalctl -u nexus -f | cscli parsers test ...
+
+filter: "evt.Parsed.program == 'nexus' || evt.Line.Raw contains '\"component\":\"nexus\"'"
+onsuccess: next_stage
+
+name: nexus/login
+
+description: "Parse Nexus login event JSON lines from stderr"
+
+# Stage this parser runs in — s01-parse reads the raw line and extracts
+# structured fields; later stages (s02-enrich, s00-raw) aren't relevant here.
+stage: s01-parse
+
+nodes:
+  - grok:
+      # The log line is pure JSON; extract it with a single capture group.
+      pattern: '%{GREEDYDATA:nexus_json}'
+      apply_on: message
+    statics:
+      # Unmarshal the JSON into evt.Meta for scenario matching.
+      - meta: log_type
+        value: nexus_login
+      - meta: component
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'component')"
+      - meta: event
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'event')"
+      - meta: outcome
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'outcome')"
+      - meta: username
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'username')"
+      - meta: realm
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'realm')"
+      - meta: http_status
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'http_status')"
+      # Source IP drives every downstream scenario + bouncer decision.
+      - meta: source_ip
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'ip')"
+      - parsed: source_ip
+        expression: "JsonExtract(evt.Parsed.nexus_json, 'ip')"
+
+# Only pass this event to scenarios if the JSON actually parsed and the
+# component/event tags match. Reduces noise from unrelated stderr.
+success:
+  - "evt.Meta.component == 'nexus'"
+  - "evt.Meta.event == 'login'"

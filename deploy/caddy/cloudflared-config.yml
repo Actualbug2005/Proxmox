@@ -1,0 +1,51 @@
+# Cloudflare Tunnel config for Nexus.
+#
+# Pairs with deploy/caddy/Caddyfile. With this topology the PVE host's
+# public firewall exposes ZERO inbound ports — all external traffic enters
+# via the Cloudflare edge (which authenticates via Access policies) and
+# tunnels into the LXC to Caddy on :443.
+#
+# Setup (run ONCE, on the PVE host with cloudflared installed):
+#   cloudflared tunnel login
+#   cloudflared tunnel create nexus-homelab
+#   # Copy the tunnel UUID into this file below.
+#   cp cloudflared-config.yml /etc/cloudflared/config.yml
+#   systemctl enable --now cloudflared
+#
+# Cloudflare Access (ZTNA) configuration — set up in the Cloudflare
+# dashboard, NOT here:
+#   1. Create an Access Application pointing at nexus.example.com
+#   2. Add an Access Policy requiring one of:
+#      - Email ending in @your-domain.com
+#      - Google Workspace group membership
+#      - Hardware key (YubiKey) via WebAuthn
+#      - All of the above (Nexus is root-equivalent; be strict)
+#   3. Enable MFA in the policy.
+#   4. Set session duration to 8h (matches Nexus session TTL).
+#
+# The Cloudflare edge will run every request through Access BEFORE it
+# reaches cloudflared → Caddy → Nexus. Failed Access auth never touches
+# Nexus, which means Nexus's rate-limit budget and audit log stay clean.
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+# Optional: route DNS updates automatically when the tunnel starts.
+# Replace with your actual Cloudflare zone.
+# route:
+#   - dns: nexus.example.com
+
+ingress:
+  - hostname: nexus.example.com
+    service: https://localhost:443
+    originRequest:
+      # Caddy presents its internal cert; skip verification on this hop
+      # since it's a localhost loop on the PVE host itself.
+      noTLSVerify: true
+      httpHostHeader: nexus.example.com
+      connectTimeout: 10s
+      tlsTimeout: 10s
+      keepAliveConnections: 10
+
+  # Default catch-all — 404 anything that didn't match above.
+  - service: http_status:404

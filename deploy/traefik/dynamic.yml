@@ -1,0 +1,66 @@
+# Traefik dynamic config — security headers, rate limits, and the Authelia
+# forward-auth middleware.
+#
+# Mount at /config/dynamic.yml via Traefik's --providers.file.filename flag,
+# or adjust your compose to bind it in.
+
+http:
+  middlewares:
+
+    # ── Security headers (referenced by @file in the compose) ─────────────
+    nexus-security-headers:
+      headers:
+        # Transport.
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+
+        # Basics.
+        contentTypeNosniff: true
+        frameDeny: false  # we use frame-ancestors in CSP instead
+        customFrameOptionsValue: SAMEORIGIN
+        referrerPolicy: no-referrer
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
+        # CSP — matches deploy/caddy/Caddyfile and deploy/nginx/nexus.conf.
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline' 'unsafe-eval';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: blob:;
+          font-src 'self' data:;
+          connect-src 'self' wss: ws:;
+          frame-src 'self' https://*.proxmox.com:8006;
+          frame-ancestors 'self';
+          base-uri 'self';
+          form-action 'self';
+          object-src 'none'
+
+        # Strip fingerprinting headers.
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+
+    # ── Rate limit (defense-in-depth vs Nexus's app-level) ────────────────
+    # CrowdSec handles L3/L4 dropping; this is a coarse edge rate limit
+    # that prevents a single misbehaving client from burning Nexus's token
+    # budget in a single burst.
+    nexus-ratelimit:
+      rateLimit:
+        average: 30       # requests per second sustained
+        burst: 60         # allow short bursts
+        period: 1s
+        sourceCriterion:
+          ipStrategy:
+            depth: 1      # trust X-Forwarded-For[0] from our ingress chain
+
+    # ── Authelia forward-auth gate ────────────────────────────────────────
+    authelia:
+      forwardAuth:
+        address: http://authelia:9091/api/verify?rd=https://auth.example.com/
+        trustForwardHeader: true
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Groups
+          - Remote-Name
+          - Remote-Email

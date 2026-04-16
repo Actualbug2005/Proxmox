@@ -1,0 +1,136 @@
+# Traefik + Authelia stack for Nexus.
+#
+# This compose file runs both the reverse proxy and the forward-auth daemon
+# alongside Nexus itself. Traefik terminates TLS, applies the hardening
+# middlewares, and hands every request to Authelia for MFA before forwarding
+# to Nexus.
+#
+# Deploy:
+#   cd deploy/traefik && docker compose up -d
+#   # First run needs these directories pre-created:
+#   mkdir -p ./acme ./authelia/config ./authelia/secrets
+#   # Populate Authelia config at ./authelia/configuration.yml (see
+#   # deploy/traefik/authelia-configuration.yml for a template).
+#
+# Prereqs:
+#   - A wildcard DNS record pointing at the Docker host's public IP.
+#   - A Cloudflare / Route53 / whatever DNS-01 API token in ./acme/
+#     credentials if using DNS-01 challenges.
+
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      # Providers.
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=nexus_edge
+
+      # Entrypoints.
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+
+      # Lets Encrypt via DNS-01 (Cloudflare shown; adjust for your provider).
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.email=you@example.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json
+
+      # Logs.
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.format=json
+      - --accesslog.filepath=/var/log/traefik/access.jsonl
+
+      # Disable the dashboard (API off). Re-enable behind Authelia only.
+      - --api.dashboard=false
+      - --api.insecure=false
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme:/acme
+      - ./logs:/var/log/traefik
+    environment:
+      # See https://doc.traefik.io/traefik/https/acme/#providers for other DNS providers.
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cloudflare_token
+    secrets:
+      - cloudflare_token
+    networks:
+      - nexus_edge
+
+  authelia:
+    image: authelia/authelia:4.38
+    restart: unless-stopped
+    volumes:
+      - ./authelia/config:/config
+      - ./authelia/secrets:/secrets:ro
+    environment:
+      # Secret paths — see authelia-configuration.yml for what each is.
+      - AUTHELIA_JWT_SECRET_FILE=/secrets/jwt_secret
+      - AUTHELIA_SESSION_SECRET_FILE=/secrets/session_secret
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/secrets/storage_key
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.authelia.rule=Host(`auth.example.com`)
+      - traefik.http.routers.authelia.entrypoints=websecure
+      - traefik.http.routers.authelia.tls=true
+      - traefik.http.routers.authelia.middlewares=nexus-security-headers@file
+      - traefik.http.services.authelia.loadbalancer.server.port=9091
+    networks:
+      - nexus_edge
+
+  nexus:
+    # Reference the Nexus Next.js production container. Build path assumes
+    # this compose lives alongside the nexus/ repo; adjust context: for
+    # your layout.
+    build: ../../nexus
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - PROXMOX_HOST=localhost
+      # NEXUS_SECURE_COOKIES unset → defaults to true because NODE_ENV=production
+    labels:
+      - traefik.enable=true
+
+      # Main router.
+      - traefik.http.routers.nexus.rule=Host(`nexus.example.com`)
+      - traefik.http.routers.nexus.entrypoints=websecure
+      - traefik.http.routers.nexus.tls=true
+      - traefik.http.routers.nexus.tls.certresolver=letsencrypt
+
+      # Middleware chain:
+      #   1. Authelia forward-auth (MFA gate)
+      #   2. Rate limit (defense-in-depth vs Nexus app-level)
+      #   3. Security headers (CSP/HSTS/etc.)
+      - traefik.http.routers.nexus.middlewares=authelia@file,nexus-ratelimit@file,nexus-security-headers@file
+
+      - traefik.http.services.nexus.loadbalancer.server.port=3000
+    networks:
+      - nexus_edge
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save '' --appendonly no  # ephemeral session + rate-limit store
+    networks:
+      - nexus_edge
+
+networks:
+  nexus_edge:
+    name: nexus_edge
+
+secrets:
+  cloudflare_token:
+    file: ./acme/cloudflare_token.txt

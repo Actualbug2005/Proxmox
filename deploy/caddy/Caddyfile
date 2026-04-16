@@ -1,0 +1,93 @@
+# ─── Nexus Caddy config ─────────────────────────────────────────────────────
+#
+# Terminates TLS for Nexus and injects every hardening header the Phase 2
+# audit requires. Pair with `cloudflared tunnel` so the only public endpoint
+# is the Cloudflare edge (closes all inbound ports on the PVE host).
+#
+# Deploy:
+#   /etc/caddy/Caddyfile       this file
+#   /etc/caddy/snippets/       (imports below)
+#   systemctl reload caddy
+#
+# Env vars (set in /etc/default/caddy or systemd Environment=):
+#   NEXUS_DOMAIN     e.g. nexus.homelab.example
+#   NEXUS_UPSTREAM   localhost:3000
+#
+# Change the domain below and add your own tls block if not using Caddy's
+# auto-LE. For Cloudflare Tunnel setups, the `tls internal` line is
+# appropriate because Cloudflare handles the public cert; Caddy serves
+# HTTPS locally to cloudflared.
+
+{
+	# Global options.
+	admin off
+	auto_https off  # cloudflared handles the public cert; we serve HTTPS
+	                # to the tunnel only. Remove if serving public directly.
+	log {
+		output file /var/log/caddy/access.jsonl
+		format json
+		level INFO
+	}
+}
+
+# ─── Security header snippet ────────────────────────────────────────────────
+# Imported into the Nexus site block below. Edit ONCE here, applies to every
+# response including error pages.
+(nexus_security_headers) {
+	header {
+		# Content Security Policy — enforced from day one. If you see
+		# CSP violations in the console, read the error carefully
+		# before loosening these directives.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss: ws:; frame-src 'self' https://*.proxmox.com:8006; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+
+		# HSTS — 1 year, include subdomains, opt into browser preload
+		# lists. ONLY safe once you're certain every hostname under the
+		# apex serves HTTPS.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+		# MIME sniffing off.
+		X-Content-Type-Options "nosniff"
+
+		# Clickjacking belt — frame-ancestors in CSP is the modern
+		# control, X-Frame-Options is the legacy fallback.
+		X-Frame-Options "SAMEORIGIN"
+
+		# Referrer policy — don't leak the Nexus URL to any link clicks.
+		Referrer-Policy "no-referrer"
+
+		# Camera/mic/geolocation not needed. Lock them down.
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+
+		# Remove Caddy's server banner.
+		-Server
+		# Remove Next.js X-Powered-By if it leaks through.
+		-X-Powered-By
+	}
+}
+
+# ─── Main site ──────────────────────────────────────────────────────────────
+# Replace nexus.example.lan with your actual domain. If serving via
+# Cloudflare Tunnel, this is the hostname cloudflared proxies to.
+
+nexus.example.lan {
+	# Sets all Phase-2 security headers (see snippet above).
+	import nexus_security_headers
+
+	# Main reverse proxy to the Nexus Node process.
+	# `X-Forwarded-Proto https` is critical: Nexus's cookie logic reads
+	# NODE_ENV=production OR this header to decide secure:true.
+	reverse_proxy localhost:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+		# Bound upstream headers so a compromised Nexus process can't
+		# echo arbitrary Set-Cookie that bypasses these security headers.
+		header_down -Server
+		header_down -X-Powered-By
+	}
+
+	# Let's Encrypt cert. If behind Cloudflare Tunnel, replace with
+	# `tls internal` to use Caddy's built-in self-signed cert (the tunnel
+	# handles the public cert).
+	# tls internal
+}

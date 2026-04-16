@@ -1,0 +1,62 @@
+// Tailscale ACL for Nexus homelab ZTNA.
+//
+// Commit this file to your tailnet's ACL (https://login.tailscale.com/admin/acls).
+// The "group:nexus-admins" group is what can reach the Nexus node; every
+// other device on your tailnet is blocked by the default-deny at the bottom.
+//
+// Threat model: reaching the Nexus HTTPS port at all requires:
+//   1. Device enrolled in the tailnet.
+//   2. Device tagged `nexus-user` OR user in `group:nexus-admins`.
+//   3. Current Tailscale session (MFA-backed via your identity provider).
+// This is ZTNA in the literal sense — no network → no handshake → no HTTP
+// request reaches nginx. The Phase 2 app-level login rate-limit is defense
+// in depth if the tailnet is ever compromised.
+
+{
+  // Groups — adjust to your actual user identities.
+  "groups": {
+    "group:nexus-admins": [
+      "you@your-idp.com",
+      // Add trusted family members / co-admins here.
+    ],
+  },
+
+  // Tag owners — which users/groups can apply a tag to a device.
+  "tagOwners": {
+    "tag:nexus-host":  ["group:nexus-admins"],
+    "tag:nexus-user":  ["group:nexus-admins"],
+  },
+
+  // ACL rules — first match wins.
+  "acls": [
+    // Admins can SSH into the Nexus host.
+    {
+      "action": "accept",
+      "src":    ["group:nexus-admins"],
+      "dst":    ["tag:nexus-host:22"],
+    },
+    // Admins + tagged user devices can hit Nexus HTTPS.
+    {
+      "action": "accept",
+      "src":    ["group:nexus-admins", "tag:nexus-user"],
+      "dst":    ["tag:nexus-host:443"],
+    },
+    // Everything else: default deny (no rule matches → drop).
+  ],
+
+  // Enforce device posture — rejoin required after OS updates, etc.
+  "sshHostKeys": {
+    "unlockPolicy": "prompt",
+  },
+
+  // Session expiry: force re-auth every 24h for nexus-admins.
+  "ssh": [
+    {
+      "action":    "check",
+      "src":       ["group:nexus-admins"],
+      "dst":       ["tag:nexus-host"],
+      "users":     ["root", "autogroup:nonroot"],
+      "checkPeriod": "24h",
+    },
+  ],
+}
