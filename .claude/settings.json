@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__plugin_serena_serena__read_memory",
+      "mcp__plugin_serena_serena__edit_memory"
+    ]
+  },
   "enabledPlugins": {
     "technologies@waypoint-marketplace": true
   }

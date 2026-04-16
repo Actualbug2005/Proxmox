@@ -18,7 +18,7 @@ A fast, high-contrast web UI for [Proxmox VE](https://www.proxmox.com/) that run
 - **Keyboard-first** — global `⌘K` command palette for jump-to-any-resource.
 - **Live telemetry** — RRD charts for node / VM / CT, TanStack Query polling with stale-while-revalidate.
 - **Embedded terminal** — `xterm.js` wired to the PVE VNC websocket proxy; no separate app.
-- **Community Scripts tab** — one-click runs of the [tteck/community-scripts.org](https://community-scripts.org/) library with node + target-storage selection.
+- **Community Scripts marketplace** — categorised index fetched from [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE), with per-script manifest detail, dynamic option forms, CSRF-protected SSH execution, and structured 502/504 error handling.
 - **Cluster-aware** — pulls from `/cluster/resources`; single pane for multi-node deployments.
 - **Type-safe wire layer** — every Proxmox `0|1` boolean passes through a nominally branded codec; the UI works in native `boolean` only. Raw `0`/`1` literals are compile-errors outside the codec.
 
@@ -138,19 +138,38 @@ journalctl -u nexus -f        # live logs
 
 To update: re-run the install script. It's idempotent — fast-forwards to `origin/main`, rebuilds, restarts the service.
 
+## Design system
+
+**Hybrid "Liquid Glass + Solid Industrial"** — the chrome (sidebar) uses Apple-style Liquid Glass (backdrop-filter blur against an aurora mesh), while the workspace (cards, tables, rows) stays opaque zinc-900 for data readability. Key properties:
+
+- **Aurora mesh background** — three oversized colour nodes (violet, midnight blue, teal) blurred to 150px with `mix-blend-mode: screen`, plus an SVG fractalNoise overlay at `mix-blend-mode: overlay` for matte texture and anti-banding.
+- **Floating sidebar capsule** — `fixed top-4 left-4 bottom-4`, `rounded-[24px]`, concentric inner pills at `rounded-xl`.
+- **Accessibility** — `@media (prefers-reduced-transparency: reduce)` collapses the glass to solid zinc-900 and hides the aurora. Focus rings (`focus-visible:ring-2 ring-orange-500`) on every interactive element.
+- **Workspace surfaces** — `bg-zinc-900`, `border-zinc-800/60`, `rounded-lg` (8px). No backdrop-blur in the content layer.
+- **Typography** — Geist Sans/Mono, 11px section labels, 12px meta, 14px body, tabular-nums on all numeric columns.
+
 ## Layout
 
 ```
 nexus/
 ├── src/
-│   ├── app/                      # Next.js App Router pages
-│   │   ├── api/proxmox/[...path]/  # Dynamic proxy → PVE
-│   │   ├── dashboard/            # Main UI — VMs, CTs, storage, HA, access, etc.
-│   │   ├── console/              # noVNC + xterm.js embed
-│   │   └── login/
+│   ├── app/
+│   │   ├── (app)/                    # Route group — shared auth shell + sidebar
+│   │   │   ├── layout.tsx            # Master shell: session gate, aurora mesh,
+│   │   │   │                         #   noise overlay, Sidebar, CommandPalette
+│   │   │   ├── dashboard/            # Main UI — VMs, CTs, storage, HA, access, etc.
+│   │   │   ├── console/              # xterm.js embed (locked viewport)
+│   │   │   └── scripts/              # Community Scripts marketplace
+│   │   ├── api/
+│   │   │   ├── proxmox/[...path]/    # Dynamic proxy → PVE
+│   │   │   ├── scripts/              # GET index, GET [slug] manifest
+│   │   │   └── scripts/run/          # POST execution (SSH pipeline)
+│   │   ├── login/
+│   │   └── globals.css               # Design tokens + aurora mesh + Liquid Glass
 │   ├── components/               # Domain UI (firewall-options-tab, backup-job-editor, …)
 │   ├── lib/
 │   │   ├── proxmox-client.ts     # The wire codec + typed API surface
+│   │   ├── community-scripts.ts  # Upstream fetcher + ScriptManifest/Category/Option types
 │   │   ├── auth.ts               # PVE ticket acquisition + session
 │   │   ├── csrf.ts               # HMAC double-submit
 │   │   ├── session-store.ts      # Memory / Redis backends
