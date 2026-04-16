@@ -18,6 +18,9 @@ import { hostname } from 'node:os';
 import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
 import { requireNodeSysModify } from '@/lib/permissions';
+import { EXEC_LIMITS } from '@/lib/exec-policy';
+import { RATE_LIMITS, acquireSlot, takeToken } from '@/lib/rate-limit';
+import { writeAuditEntry } from '@/lib/exec-audit';
 
 // PVE's self-signed cert is handled inside pveFetch (used by permissions.ts).
 // No process-global NODE_TLS_REJECT_UNAUTHORIZED mutation — it leaked TLS
@@ -146,14 +149,64 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Rate limit BEFORE slot acquisition — 429 on token refusal is cheap.
+  const token = await takeToken(
+    sessionId,
+    'scripts.run',
+    RATE_LIMITS.scriptsRun.limit,
+    RATE_LIMITS.scriptsRun.windowMs,
+  );
+  if (!token.allowed) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfterMs: token.retryAfterMs },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((token.retryAfterMs ?? 0) / 1000)) } },
+    );
+  }
+
+  const slot = await acquireSlot(
+    sessionId,
+    'scripts.run',
+    RATE_LIMITS.scriptsRun.maxConcurrent,
+    EXEC_LIMITS.maxTimeoutMs + 60_000,
+  );
+  if (!slot) {
+    return NextResponse.json(
+      { error: `Concurrency limit reached (max ${RATE_LIMITS.scriptsRun.maxConcurrent} in flight per session)` },
+      { status: 429 },
+    );
+  }
+
+  const started = Date.now();
+  let exitCode: number | null = null;
   try {
     const address = await resolveNodeAddress(node);
     const { upid } = await pipeScriptToRemoteBash(node, address, parsed.toString());
+    exitCode = 0;
     return NextResponse.json({ upid, node, scriptName: scriptName ?? null });
   } catch (err) {
+    exitCode = 1;
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
       { status: 502 },
     );
+  } finally {
+    // Release concurrency slot first so an audit-write hang doesn't deadlock
+    // the user's budget. Audit writes are best-effort — log but never bubble
+    // up to the caller.
+    await slot.release();
+    try {
+      await writeAuditEntry({
+        user: session.username,
+        node,
+        endpoint: 'scripts.run',
+        // Log the script URL as the "command" — that's what identifies what
+        // actually ran on the target node (the URL is the input to curl|bash).
+        command: parsed.toString(),
+        exitCode,
+        durationMs: Date.now() - started,
+      });
+    } catch (auditErr) {
+      console.error('[api/scripts/run] audit write failed:', auditErr);
+    }
   }
 }
