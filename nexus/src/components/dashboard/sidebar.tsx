@@ -153,7 +153,11 @@ export function Sidebar({ username }: SidebarProps) {
                       'group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-sm transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500',
                       active
-                        ? 'bg-white/10 font-medium text-zinc-50 ring-1 ring-inset ring-white/10'
+                        // Lowered luminance: the prior bg-white/10 + ring-white/10
+                        // compounded with the translucent glass material and
+                        // blew out the contrast. 4% fill + 5% ring keeps the
+                        // "etched" look without blinding the user.
+                        ? 'bg-white/[0.04] font-medium text-zinc-100 ring-1 ring-inset ring-white/[0.05]'
                         : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100',
                     )}
                   >

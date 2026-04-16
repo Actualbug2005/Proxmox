@@ -8,12 +8,14 @@ export default async function ScriptsLayout({ children }: { children: React.Reac
   if (!session) redirect('/login');
 
   return (
-    <div className="flex min-h-screen bg-gray-950">
+    // Z-axis geometry matches /dashboard: floating sidebar capsule over
+    // content plane. No wrapper bg — body radial gradients feed the glass.
+    <>
       <Sidebar username={session.username} />
-      <main className="flex-1 overflow-auto">
+      <main className="min-h-screen w-full pl-[272px] pr-4 py-4">
         {children}
       </main>
       <CommandPalette />
-    </div>
+    </>
   );
 }
