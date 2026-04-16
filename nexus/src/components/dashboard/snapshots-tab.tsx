@@ -45,7 +45,7 @@ function CreateSnapshotDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Create snapshot</h3>
         <div className="space-y-3">
           <div>
@@ -260,7 +260,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
             description="Snapshots capture the guest's state at a point in time. You can roll back to any snapshot later."
           />
         ) : (
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+          <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800/60">

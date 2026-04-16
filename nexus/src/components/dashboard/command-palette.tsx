@@ -97,7 +97,7 @@ export function CommandPalette() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl mx-4 bg-zinc-900 border border-zinc-800/60 rounded-lg shadow-2xl overflow-hidden"
+        className="w-full max-w-xl mx-4 studio-card shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <Command

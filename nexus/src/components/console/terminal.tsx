@@ -67,7 +67,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
       }
 
       const term = new XTerm({
-        // allowTransparency lets the env-glass-card pane behind the
+        // allowTransparency lets the studio-card pane behind the
         // terminal show through — without it xterm paints an opaque
         // fallback background regardless of `theme.background`.
         allowTransparency: true,

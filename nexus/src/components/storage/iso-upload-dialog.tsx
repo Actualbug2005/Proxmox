@@ -78,7 +78,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-white">Upload to {storage}</h3>

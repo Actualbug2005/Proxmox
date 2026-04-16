@@ -187,7 +187,7 @@ export default function HAPage() {
               description="Add a VM or CT to HA management to have it auto-restart and failover across nodes."
             />
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">
@@ -274,7 +274,7 @@ export default function HAPage() {
               description="HA groups define the preferred node priority list and failover policy for resources."
             />
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">
@@ -323,7 +323,7 @@ export default function HAPage() {
               description="The HA manager will emit entries once resources are added and the cluster has an LRM/CRM."
             />
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">

@@ -169,7 +169,7 @@ export default function LogsPage() {
             <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : (
             <>
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+              <div className="studio-card overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-zinc-800/60">

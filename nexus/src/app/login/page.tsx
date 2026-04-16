@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-8">
+        <div className="studio-card p-8">
           <h2 className="text-lg font-semibold text-white mb-1">Sign in</h2>
           <p className="text-sm text-zinc-500 mb-6">Connect to your Proxmox cluster</p>
 

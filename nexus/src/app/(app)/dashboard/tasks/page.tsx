@@ -127,7 +127,7 @@ export default function TasksPage() {
       )}
 
       {!isLoading && (
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+        <div className="studio-card overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
             <Activity className="w-4 h-4 text-zinc-500" />
             <span className="text-sm font-medium text-zinc-300">Task Log</span>

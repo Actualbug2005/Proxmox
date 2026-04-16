@@ -28,7 +28,7 @@ export function ClusterStatusPanel() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+      <div className="studio-card p-5">
         <div className="flex items-center gap-2 mb-3">
           <HeartPulse className="w-4 h-4 text-zinc-500" />
           <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Cluster</span>
@@ -44,7 +44,7 @@ export function ClusterStatusPanel() {
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 sm:col-span-2">
+      <div className="studio-card p-5 sm:col-span-2">
         <div className="flex items-center gap-2 mb-3">
           <Server className="w-4 h-4 text-zinc-500" />
           <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">

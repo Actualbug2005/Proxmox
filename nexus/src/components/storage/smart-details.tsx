@@ -67,7 +67,7 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-3xl max-h-[85vh] flex flex-col"
+        className="studio-card w-full max-w-3xl max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -79,7 +79,7 @@ export default function ConsolePage() {
     <div className="flex h-[calc(100vh-32px)] overflow-hidden">
       {/* Resource picker — macro-container glass so it reads as part of
        *  the chrome environment, not a detached opaque panel. */}
-      <div className="env-glass-card rounded-lg w-56 shrink-0 flex flex-col">
+      <div className="studio-card rounded-lg w-56 shrink-0 flex flex-col">
         <div className="px-4 py-4 border-b border-white/5">
           <h2 className="text-sm font-semibold text-white">Console</h2>
           <p className="text-xs text-zinc-500">Select a target</p>
@@ -216,7 +216,7 @@ export default function ConsolePage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-12 h-12 bg-zinc-900 border border-zinc-800/60 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 studio-card flex items-center justify-center mx-auto mb-4">
                 <Plus className="w-5 h-5 text-zinc-600" />
               </div>
               <p className="text-sm text-zinc-500">Select a node, VM, or container</p>

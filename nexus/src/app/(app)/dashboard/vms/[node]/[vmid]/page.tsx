@@ -59,7 +59,7 @@ function CloneDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Clone VM</h3>
         <div className="space-y-3">
           <div>
@@ -123,7 +123,7 @@ function MigrateDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Migrate VM</h3>
         <div className="space-y-3">
           <div>
@@ -388,7 +388,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* CPU */}
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Cpu className="w-4 h-4 text-zinc-500" />
                   <span className="text-xs font-medium text-zinc-400">CPU</span>
@@ -398,7 +398,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <p className="text-xs text-zinc-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} vCPUs</p>
               </div>
               {/* Memory */}
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <MemoryStick className="w-4 h-4 text-zinc-500" />
                   <span className="text-xs font-medium text-zinc-400">Memory</span>
@@ -408,7 +408,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
               </div>
               {/* Disk */}
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <HardDrive className="w-4 h-4 text-zinc-500" />
                   <span className="text-xs font-medium text-zinc-400">Disk</span>
@@ -418,7 +418,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
               </div>
               {/* Network */}
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Network className="w-4 h-4 text-zinc-500" />
                   <span className="text-xs font-medium text-zinc-400">Network I/O</span>
@@ -434,7 +434,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
           {/* Recent tasks */}
           {tasks && tasks.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <div className="px-4 py-3 border-b border-zinc-800/60">
                 <h3 className="text-sm font-medium text-zinc-300">Recent Tasks</h3>
               </div>
@@ -470,7 +470,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           ) : config ? (
             <>
               {/* Editable fields */}
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+              <div className="studio-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-white">General</h3>
                   {!editConfig ? (
@@ -529,7 +529,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
               {/* Disks */}
               {diskSlots.length > 0 && (
-                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+                <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Disks</h3>
                   <div className="space-y-2">
                     {diskSlots.map(({ key, value }) => {
@@ -552,7 +552,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
               {/* Network */}
               {netSlots.length > 0 && (
-                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+                <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Network</h3>
                   <div className="space-y-2">
                     {netSlots.map(({ key, value }) => {

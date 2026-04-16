@@ -68,7 +68,7 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-white">Restore backup</h3>

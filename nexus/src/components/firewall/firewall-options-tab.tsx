@@ -52,7 +52,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-4">
+      <div className="studio-card p-5 space-y-4">
         <h3 className="text-sm font-semibold text-white">General</h3>
 
         <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
@@ -96,7 +96,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
         </div>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+      <div className="studio-card p-5 space-y-3">
         <h3 className="text-sm font-semibold text-white">Protections</h3>
         <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
           <input type="checkbox" checked={draft.nosmurfs ?? false} onChange={(e) => set('nosmurfs', e.target.checked)} className="rounded border-gray-600" />
@@ -117,7 +117,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
       </div>
 
       {showVMFields && (
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+        <div className="studio-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-white">Guest-specific</h3>
           <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
             <input type="checkbox" checked={draft.dhcp ?? false} onChange={(e) => set('dhcp', e.target.checked)} className="rounded border-gray-600" />

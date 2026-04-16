@@ -18,7 +18,7 @@ export function TaskList() {
   const recent = tasks?.slice(0, 8) ?? [];
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+    <div className="studio-card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-white">Recent Tasks</h3>
         {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-500" />}

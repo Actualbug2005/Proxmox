@@ -122,7 +122,7 @@ function humanizeError(err: unknown): { title: string; message: string; icon: 't
 
 function ScriptCardSkeleton() {
   return (
-    <div className="env-glass-card rounded-lg p-4">
+    <div className="studio-card rounded-lg p-4">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0 space-y-2">
           <div className="h-4 w-32 rounded bg-zinc-800/50 animate-pulse" />
@@ -154,7 +154,7 @@ function ScriptCard({
   return (
     <button
       onClick={() => onOpen(script)}
-      className="group text-left w-full env-glass-card rounded-lg p-4
+      className="group text-left w-full studio-card rounded-lg p-4
                  transition hover:border-white/[0.14]
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
     >
@@ -326,7 +326,7 @@ function ScriptDetailDialog({
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-lg max-h-[85vh]
+        className="studio-card w-full max-w-lg max-h-[85vh]
                    overflow-hidden flex flex-col animate-modal-content"
         onClick={(e) => e.stopPropagation()}
       >
@@ -742,7 +742,7 @@ export default function ScriptsPage() {
           placeholder="Search scripts by name, slug, or description…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg
+          className="w-full pl-9 pr-4 py-2 studio-card
                      text-sm text-zinc-100 placeholder-zinc-600
                      focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
         />
@@ -770,7 +770,7 @@ export default function ScriptsPage() {
 
       {/* Empty state (after load, no matches) */}
       {!isLoading && !error && visible.length === 0 && (
-        <div className="env-glass-card rounded-lg p-8 text-center">
+        <div className="studio-card rounded-lg p-8 text-center">
           <Code2 className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
           <p className="text-sm text-zinc-400">No scripts match the current filters.</p>
         </div>

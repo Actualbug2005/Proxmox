@@ -202,7 +202,7 @@ export default function BackupsPage() {
             description="Create a one-off backup from a VM/CT detail page's Backups tab, or schedule recurring backups in the Jobs tab."
           />
         ) : (
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+          <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800/60">
@@ -288,7 +288,7 @@ export default function BackupsPage() {
               description="Create a job to run backups on a schedule across nodes, pools, or specific VMIDs."
             />
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">

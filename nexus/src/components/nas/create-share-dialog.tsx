@@ -74,7 +74,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-lg"
+        className="studio-card w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60">

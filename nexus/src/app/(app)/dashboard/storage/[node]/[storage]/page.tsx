@@ -104,7 +104,7 @@ export default function StorageDetailPage({
       )}
 
       {tabs.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-8 text-center text-sm text-zinc-500">
+        <div className="studio-card p-8 text-center text-sm text-zinc-500">
           This storage is not configured for any browsable content types.
         </div>
       ) : (

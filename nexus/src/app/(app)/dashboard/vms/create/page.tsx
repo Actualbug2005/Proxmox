@@ -367,7 +367,7 @@ export default function CreateVMPage() {
       </div>
 
       {/* Step content */}
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-6">
+      <div className="studio-card p-6">
         <h2 className="text-sm font-semibold text-white mb-5">{STEPS[step]}</h2>
         {stepComponents[step]}
       </div>

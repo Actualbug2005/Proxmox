@@ -240,7 +240,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 border border-zinc-800/60 rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col"
+        className="studio-card w-full max-w-lg max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

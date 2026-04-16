@@ -151,7 +151,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
   });
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-4">
+    <div className="studio-card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-zinc-400" />
@@ -392,7 +392,7 @@ export default function CertificatesPage() {
           {isLoading ? (
             <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
           ) : activeCert ? (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+            <div className="studio-card p-5 space-y-3">
               <div className="flex items-center gap-3">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 <h3 className="text-sm font-semibold text-white">Active Certificate</h3>
@@ -426,7 +426,7 @@ export default function CertificatesPage() {
             </div>
           )}
 
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+          <div className="studio-card p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Upload Custom Certificate</h3>
             <div>
               <label className="text-xs text-zinc-500 block mb-1">Certificate (PEM)</label>
@@ -462,7 +462,7 @@ export default function CertificatesPage() {
 
       {tab === 'acme' && (
         <div className="space-y-5">
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+          <div className="studio-card p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">ACME Account</h3>
             {acmeAccounts && acmeAccounts.length > 0 ? (
               <div className="space-y-2">
@@ -492,7 +492,7 @@ export default function CertificatesPage() {
             )}
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5 space-y-3">
+          <div className="studio-card p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Order Certificate</h3>
             <div>
               <label className="text-xs text-zinc-500 block mb-1">Domain (must resolve to this node&apos;s IP)</label>

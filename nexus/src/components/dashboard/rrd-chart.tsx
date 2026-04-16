@@ -85,7 +85,7 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-3 text-xs shadow-lg">
+    <div className="studio-card p-3 text-xs shadow-lg">
       <p className="text-zinc-400 mb-2">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
@@ -120,7 +120,7 @@ export function RRDChart({
   }));
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+    <div className="studio-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-white">{title}</h3>

@@ -24,7 +24,7 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className }: NodeCard
   return (
     <div
       className={cn(
-        'env-glass-card rounded-lg p-5 transition hover:border-white/[0.14]',
+        'studio-card rounded-lg p-5 transition hover:border-white/[0.14]',
         className,
       )}
     >

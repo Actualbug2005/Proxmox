@@ -153,7 +153,7 @@ export default function PackagesPage() {
               <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
             </div>
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">
@@ -224,7 +224,7 @@ export default function PackagesPage() {
               <p className="text-sm">{search ? 'No matching packages' : 'All system packages up to date'}</p>
             </div>
           ) : (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800/60">

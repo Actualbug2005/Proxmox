@@ -115,7 +115,7 @@ export default function PoolsPage() {
             ))}
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+          <div className="studio-card p-5">
             {selectedPool ? (
               <PoolDetail
                 pool={selectedPool}
@@ -152,7 +152,7 @@ function PoolEditor({ initial, onClose, onSaved }: { initial: PVEPool | null; on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-sm shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit pool' : 'New pool'}</h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>

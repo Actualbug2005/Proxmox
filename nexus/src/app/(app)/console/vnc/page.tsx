@@ -39,7 +39,7 @@ export default function VncConsolePage() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-950 text-zinc-300">
-      <div className="max-w-md px-6 py-8 bg-zinc-900 border border-zinc-800/60 rounded-2xl text-center space-y-4">
+      <div className="max-w-md px-6 py-8 studio-card text-center space-y-4">
         {err ? (
           <>
             <AlertCircle className="w-8 h-8 text-red-400 mx-auto" />

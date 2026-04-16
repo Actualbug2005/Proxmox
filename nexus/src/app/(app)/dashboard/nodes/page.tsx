@@ -117,7 +117,7 @@ function NodeDetailPanel({ node }: { node: ClusterResourcePublic }) {
   });
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+    <div className="studio-card p-5">
       <h3 className="text-sm font-semibold text-zinc-100 mb-4">{name} — Details</h3>
 
       {isLoading && <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />}

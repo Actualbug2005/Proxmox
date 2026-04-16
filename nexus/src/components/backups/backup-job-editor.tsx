@@ -81,7 +81,7 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit backup job' : 'New backup job'}</h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white p-1" aria-label="Close"><X className="w-4 h-4" /></button>

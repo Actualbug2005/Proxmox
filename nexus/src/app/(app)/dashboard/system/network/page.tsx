@@ -344,7 +344,7 @@ export default function NetworkPage() {
           )}
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+        <div className="studio-card p-5">
           {showCreate ? (
             <>
               <h3 className="text-sm font-semibold text-white mb-4">New Interface</h3>

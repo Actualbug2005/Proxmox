@@ -51,7 +51,7 @@ function CloneDialog({ currentName, onConfirm, onCancel, isLoading }: {
   const { data: nextid } = useQuery({ queryKey: ['nextid'], queryFn: () => api.cluster.nextid() });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Clone Container</h3>
         <div className="space-y-3">
           <div>
@@ -87,7 +87,7 @@ function MigrateDialog({ currentNode, onConfirm, onCancel, isLoading }: {
   const [target, setTarget] = useState('');
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Migrate Container</h3>
         <div>
           <label className="text-xs text-zinc-500 block mb-1">Target Node</label>
@@ -296,25 +296,25 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3"><Cpu className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">CPU</span></div>
                 <p className="text-2xl font-semibold text-white tabular-nums">{cpu.toFixed(1)}%</p>
                 <ProgressBar value={cpu} className="mt-2" />
                 <p className="text-xs text-zinc-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} cores</p>
               </div>
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3"><MemoryStick className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Memory</span></div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.mem ?? 0)}</p>
                 <ProgressBar value={mem} className="mt-2" />
                 <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
               </div>
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3"><HardDrive className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Disk</span></div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.disk ?? 0)}</p>
                 <ProgressBar value={disk} className="mt-2" />
                 <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
               </div>
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+              <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3"><Network className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Network I/O</span></div>
                 <p className="text-sm font-medium text-white">↑ {formatBytes(status.netout ?? 0)}</p>
                 <p className="text-sm font-medium text-white mt-1">↓ {formatBytes(status.netin ?? 0)}</p>
@@ -324,7 +324,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
           ) : null}
 
           {tasks && tasks.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+            <div className="studio-card overflow-hidden">
               <div className="px-4 py-3 border-b border-zinc-800/60">
                 <h3 className="text-sm font-medium text-zinc-300">Recent Tasks</h3>
               </div>
@@ -352,7 +352,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
           ) : config ? (
             <>
-              <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+              <div className="studio-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-white">General</h3>
                   {!editConfig ? (
@@ -402,7 +402,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
               </div>
 
               {config.rootfs && (
-                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+                <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Root Filesystem</h3>
                   <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
                     <HardDrive className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
@@ -416,7 +416,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
               )}
 
               {netSlots.length > 0 && (
-                <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+                <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Network</h3>
                   <div className="space-y-2">
                     {netSlots.map(({ key, value }) => {

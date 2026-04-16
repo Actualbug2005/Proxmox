@@ -12,7 +12,7 @@ interface StatCardProps {
 
 export function StatCard({ label, value, sub, percent, icon, className }: StatCardProps) {
   return (
-    <div className={cn('bg-zinc-900 border border-zinc-800/60 rounded-lg p-4', className)}>
+    <div className={cn('studio-card p-4', className)}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</span>
         {icon && <span className="text-zinc-500">{icon}</span>}

@@ -65,7 +65,7 @@ export function UsersTab() {
         ) : !users || users.length === 0 ? (
           <EmptyState icon={UsersIcon} title="No users" description="Create a non-root user and assign ACL entries to delegate access." />
         ) : (
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+          <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800/60">
@@ -150,7 +150,7 @@ function UserEditor({ initial, realms, groups, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit user' : 'New user'}</h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
@@ -232,7 +232,7 @@ function PasswordDialog({ user, onClose }: { user: PVEUserPublic; onClose: () =>
   });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-sm shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Change password for {user.userid}</h3>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus placeholder="New password" className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50 mb-4" />
         <div className="flex gap-3 justify-end">

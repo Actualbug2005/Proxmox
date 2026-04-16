@@ -33,7 +33,7 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">
             {kind === 'migrate' ? 'Migrate' : 'Relocate'} {resource.sid}

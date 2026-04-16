@@ -91,7 +91,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
           description="Without rules, the default policy (set in Options) applies to all traffic."
         />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+        <div className="studio-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-800/60">

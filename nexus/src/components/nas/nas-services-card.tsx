@@ -71,7 +71,7 @@ export function NasServicesCard({ node }: Props) {
   }, [data]);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-4">
+    <div className="studio-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <Server className="w-4 h-4 text-zinc-500" />
         <h3 className="text-sm font-semibold text-white">NAS Services</h3>

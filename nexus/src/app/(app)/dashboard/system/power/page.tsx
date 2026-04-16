@@ -63,7 +63,7 @@ export default function PowerPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+        <div className="studio-card p-5">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-zinc-500" />
             <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Uptime</span>
@@ -74,7 +74,7 @@ export default function PowerPage() {
           <p className="text-xs text-zinc-600 mt-1">{status?.pveversion ?? ''}</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg p-5">
+        <div className="studio-card p-5">
           <div className="flex items-center gap-2 mb-3">
             <RotateCcw className="w-4 h-4 text-blue-400" />
             <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Reboot</span>

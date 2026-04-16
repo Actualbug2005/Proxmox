@@ -166,11 +166,11 @@ export default function CTsPage() {
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
+          className="w-full pl-9 pr-4 py-2 studio-card text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
         />
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+      <div className="studio-card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />

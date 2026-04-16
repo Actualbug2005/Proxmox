@@ -54,7 +54,7 @@ export function RealmsTab() {
         ) : !realms || realms.length === 0 ? (
           <EmptyState icon={Globe} title="No realms" />
         ) : (
-          <div className="bg-zinc-900 border border-zinc-800/60 rounded-lg overflow-hidden">
+          <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-800/60">
@@ -145,7 +145,7 @@ function RealmEditor({ initial, onClose, onSaved }: { initial: PVERealmPublic | 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
-      <div className="bg-zinc-900 border border-zinc-800/60 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit realm' : 'New realm'}</h3>
           <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
