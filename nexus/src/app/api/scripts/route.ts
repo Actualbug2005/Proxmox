@@ -21,9 +21,11 @@ import {
 } from '@/lib/community-scripts';
 import { getSession } from '@/lib/auth';
 
-interface GroupedEnvelope {
+// Exported so the UI can `import type` this instead of re-declaring the
+// envelope shape. The categorised envelope is the canonical v2 contract;
+// the flat CommunityScript[] default remains for any unversioned consumer.
+export interface GroupedEnvelope {
   categories: ScriptCategory[];
-  scripts: CommunityScript[];
   meta: {
     source: 'community-scripts/ProxmoxVE';
     fetchedAt: string;
@@ -79,7 +81,6 @@ export async function GET(req: NextRequest) {
   const categories = groupByCategory(scripts);
   const envelope: GroupedEnvelope = {
     categories,
-    scripts,
     meta: {
       source: 'community-scripts/ProxmoxVE',
       fetchedAt: new Date().toISOString(),
