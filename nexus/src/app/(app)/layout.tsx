@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { AppShell } from '@/components/dashboard/app-shell';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import { JobStatusBar } from '@/components/script-jobs/JobStatusBar';
+import { ChainProgressPanel } from '@/components/scripts/chain-progress-panel';
 
 /**
  * Master authenticated shell — applied to every route under (app).
@@ -42,6 +43,11 @@ export default async function AppShellLayout({
        * off a community script. Mounted at the layout level so long-running
        * scripts remain visible while the user navigates to other pages. */}
       <JobStatusBar />
+
+      {/* Chain progress panel — sibling of JobStatusBar, positioned on
+       * the left so a user running both single scripts and chains sees
+       * both at once. Null when no chain is in flight. */}
+      <ChainProgressPanel />
     </>
   );
 }
