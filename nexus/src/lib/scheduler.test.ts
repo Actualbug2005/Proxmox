@@ -10,7 +10,8 @@ process.env.NEXUS_DATA_DIR = mkdtempSync(join(tmpdir(), 'nexus-sched-test-'));
 
 const store = await import('./scheduled-jobs-store');
 const { __internals } = await import('./scheduler');
-const { runTick } = __internals;
+import type { SchedulerSource } from './scheduler';
+const { runTick, runTickGeneric } = __internals;
 
 async function resetStore() {
   const all = await store.list();
@@ -78,6 +79,39 @@ describe('scheduler tick', () => {
       return {};
     });
     assert.equal(seen.length, 0, 'should skip inside dedup window');
+  });
+
+  it('generic source — fires matching items and calls onFired with handler result', async () => {
+    interface FakeItem {
+      id: string;
+      schedule: string;
+      enabled: boolean;
+      lastFiredAt?: number;
+    }
+    const items: FakeItem[] = [
+      { id: 'a', schedule: '* * * * *', enabled: true },
+      { id: 'b', schedule: '* * * * *', enabled: false },
+    ];
+    const firedWith: Array<{ id: string; result: { jobId?: string } }> = [];
+
+    const source: SchedulerSource<FakeItem> = {
+      name: 'test-generic',
+      list: async () => items,
+      getId: (i) => i.id,
+      getSchedule: (i) => i.schedule,
+      isEnabled: (i) => i.enabled,
+      getLastFiredAt: (i) => i.lastFiredAt,
+      onFired: async (id, at, result) => {
+        firedWith.push({ id, result });
+        const idx = items.findIndex((x) => x.id === id);
+        if (idx !== -1) items[idx].lastFiredAt = at;
+      },
+    };
+
+    await runTickGeneric(source, async (item) => ({ jobId: `job-${item.id}` }));
+    assert.equal(firedWith.length, 1, 'only the enabled item should fire');
+    assert.equal(firedWith[0].id, 'a');
+    assert.equal(firedWith[0].result.jobId, 'job-a');
   });
 
   it('stamps lastFiredAt even when the fire handler throws', async () => {
