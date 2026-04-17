@@ -149,7 +149,7 @@ else
   json=$(latest_release_json) || { err "Could not reach GitHub API"; exit 1; }
 fi
 
-read -r tag tar_url sha_url < <(echo "$json" | parse_release)
+{ read -r tag; read -r tar_url; read -r sha_url; } < <(echo "$json" | parse_release)
 
 [[ -z "$tag"     ]] && { err "Could not parse release tag"; exit 1; }
 [[ -z "$tar_url" ]] && { err "Release has no tarball asset"; exit 1; }

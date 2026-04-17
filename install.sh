@@ -68,9 +68,14 @@ install_release() {
               "https://api.github.com/repos/${REPO}/releases/latest") \
     || die "Could not reach GitHub API. Check connectivity or rate-limit status."
 
-  # Parse with python3 to avoid jq dependency.
+  # Parse with python3 to avoid jq dependency. Each field is printed on its
+  # own line and read separately — a single `read` only consumes one line.
   local tag tar_url sha_url
-  read -r tag tar_url sha_url < <(
+  {
+    read -r tag
+    read -r tar_url
+    read -r sha_url
+  } < <(
     echo "$json" | python3 -c '
 import sys, json
 d = json.load(sys.stdin)
