@@ -401,6 +401,18 @@ export interface NodeRRDData {
   loadavg?: number;
 }
 
+/**
+ * Per-storage RRD sample from `/nodes/{node}/storage/{storage}/rrddata`.
+ * PVE consolidates over timeframe (hour/day/week/month, ~70 points each);
+ * we use the `used` series to project exhaustion.
+ */
+export interface StorageRRDData {
+  time: number;
+  used?: number;
+  total?: number;
+  avail?: number;
+}
+
 // ─── Community Scripts ────────────────────────────────────────────────────────
 
 /**

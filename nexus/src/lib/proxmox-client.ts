@@ -417,6 +417,7 @@ import type {
   PVETask,
   VNCProxyResponse,
   NodeRRDData,
+  StorageRRDData,
   VMConfig,
   VMConfigFull,
   VMConfigFullPublic,
@@ -707,6 +708,17 @@ export const api = {
       ),
     deleteContent: (node: string, storage: string, volid: string) =>
       proxmox.delete<null>(`nodes/${node}/storage/${encodeURIComponent(storage)}/content/${encodeURIComponent(volid)}`),
+    /** Historical used/total/avail bytes per storage pool. Used by the NOC
+     *  view's exhaustion projection — 'week' is a good default (70 samples
+     *  @ ~2.4h each; enough slope without months-old noise). */
+    rrd: (
+      node: string,
+      storage: string,
+      timeframe: 'hour' | 'day' | 'week' | 'month' = 'week',
+    ) =>
+      proxmox.get<StorageRRDData[]>(
+        `nodes/${node}/storage/${encodeURIComponent(storage)}/rrddata?timeframe=${timeframe}&cf=AVERAGE`,
+      ),
     /** Upload via dedicated /api/iso-upload route (bypasses the JSON proxy).
      *  Uses XMLHttpRequest under the hood so callers can receive upload progress events.
      *  Returns the PVE task UPID on success. */
