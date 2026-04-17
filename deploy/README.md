@@ -3,9 +3,9 @@
 ## Quick path (recommended)
 
 One command wraps the whole Phase-2 stack — CrowdSec parser + scenarios +
-firewall bouncer, self-signed TLS cert + Caddy reverse proxy with security
-headers, asymmetric-hybrid audit keypair, LAN allowlist auto-detected from
-`ip route`:
+firewall bouncer, Caddy reverse proxy with security headers (you pick
+Let's Encrypt via Cloudflare DNS or self-signed), asymmetric-hybrid audit
+keypair, LAN allowlist auto-detected from `ip route`:
 
 ```bash
 cd /opt/nexus/deploy    # or wherever you cloned the repo
