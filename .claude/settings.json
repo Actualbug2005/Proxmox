@@ -4,7 +4,9 @@
       "mcp__plugin_serena_serena__read_memory",
       "mcp__plugin_serena_serena__edit_memory",
       "mcp__plugin_semgrep_semgrep__semgrep_scan",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Bash(semgrep --pro --config=auto --metrics=on nexus/server.ts --json)",
+      "Bash(python3 -c ' *)"
     ]
   },
   "enabledPlugins": {

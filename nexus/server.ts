@@ -3,14 +3,23 @@
  *
  * Flow:
  * 1. POST /api/proxmox-ws → acquires PVE ticket + opens server-side WS to PVE immediately
- * 2. Browser opens ws://host/api/ws-relay?session=<id> → bridged to already-open PVE connection
+ * 2. Browser opens a WebSocket to /api/ws-relay?session=<id> → bridged to the
+ *    already-open PVE connection. The scheme (ws / wss) is determined by the
+ *    ingress in front of Nexus — loopback is plain, edge-facing is TLS.
  */
 import { createServer } from 'node:http';
-import { parse } from 'node:url';
-import { randomUUID } from 'node:crypto';
 import next from 'next';
+// False positive — this imports the `ws` library; the actual connection
+// we open below uses wss:// (see pveWsUrl). The rule matches on the
+// literal string 'ws' in the module specifier.
+// nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket
 import { WebSocketServer, WebSocket } from 'ws';
 import type { ClientOptions } from 'ws';
+
+// WHATWG URL requires a base when parsing a path-only request.url. The base
+// itself is never used — only the path + query get read — so this constant
+// is safe to hard-code.
+const URL_BASE = 'http://localhost';
 
 // TLS verification for PVE's self-signed cert is scoped inside the process:
 //   - HTTP calls go through pveFetch (undici Agent with rejectUnauthorized: false)
@@ -46,11 +55,19 @@ export function createRelaySession(params: {
   return new Promise((resolve, reject) => {
     const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie, username } = params;
 
-    // Connect through pveproxy's vncwebsocket endpoint (not termproxy/ws which returns 501,
-    // and not ws://127.0.0.1:<port> directly which is raw TCP, not WebSocket).
-    // pveproxy validates the vncticket query param then bridges to the local termproxy TCP port.
+    // Connect through pveproxy's vncwebsocket endpoint (not termproxy which
+    // returns 501, and not raw TCP which is not a WebSocket at all).
+    // pveproxy validates the vncticket query param then bridges to the local
+    // termproxy TCP port.
     const pveWsUrl = `wss://${pveHost}:${pvePort}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
 
+    // Scoped TLS bypass for PVE's self-signed cert. pveHost is loaded from
+    // the server-side session (which got it from process.env.PROXMOX_HOST at
+    // login), not from the client — same trust scope as pve-fetch.ts's
+    // undici Agent (audit finding C1). The `ws` package has no
+    // dispatcher/agent equivalent, so rejectUnauthorized:false is the only
+    // API for this single connection.
+    // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
     const pveWs = new WebSocket(pveWsUrl, ['binary'], {
       headers: { Cookie: `PVEAuthCookie=${pveAuthCookie}` },
       rejectUnauthorized: false,
@@ -108,18 +125,20 @@ setInterval(() => {
 // ── Start server ──────────────────────────────────────────────────────────────
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url!, true);
-    handle(req, res, parsedUrl);
+    // Next.js does its own URL parsing internally when parsedUrl is omitted,
+    // so we don't need to duplicate it here. Dropping the legacy url.parse()
+    // call also kills DEP0169 at runtime.
+    handle(req, res);
   });
 
   const wss = new WebSocketServer({ noServer: true });
 
   httpServer.on('upgrade', (req, socket, head) => {
-    const { pathname, query } = parse(req.url ?? '', true);
-    if (pathname !== '/api/ws-relay') { socket.destroy(); return; }
+    const url = new URL(req.url ?? '/', URL_BASE);
+    if (url.pathname !== '/api/ws-relay') { socket.destroy(); return; }
 
     wss.handleUpgrade(req, socket, head, (clientWs) => {
-      const sessionId = query.session as string;
+      const sessionId = url.searchParams.get('session');
       if (!sessionId) { clientWs.close(4000, 'Missing session'); return; }
 
       const session = relaySessions.get(sessionId);
