@@ -53,7 +53,7 @@ export function Checkbox({
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300',
         active
           ? 'bg-indigo-500 border-indigo-400 text-white'
-          : 'bg-zinc-900 border-zinc-700 hover:border-zinc-500',
+          : 'bg-[var(--color-surface)] border-[var(--color-border-strong)] hover:border-[var(--color-fg-subtle)]',
         disabled && 'opacity-40 cursor-not-allowed',
         className,
       )}

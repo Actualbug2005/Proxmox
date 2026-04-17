@@ -74,27 +74,27 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   const Icon = item.variant === 'success' ? CheckCircle2 : item.variant === 'error' ? AlertCircle : Info;
   const tone =
     item.variant === 'success'
-      ? 'border-emerald-500/30 text-emerald-300'
+      ? 'border-emerald-500/30 text-[var(--color-ok)]'
       : item.variant === 'error'
-        ? 'border-red-500/30 text-red-300'
-        : 'border-blue-500/30 text-blue-300';
+        ? 'border-red-500/30 text-[var(--color-err)]'
+        : 'border-blue-500/30 text-[var(--color-accent)]';
 
   return (
     <div
       className={cn(
-        'pointer-events-auto min-w-56 sm:min-w-72 max-w-sm bg-zinc-900 border rounded-lg shadow-2xl px-4 py-3 flex items-start gap-3',
+        'pointer-events-auto min-w-56 sm:min-w-72 max-w-sm bg-[var(--color-surface)] border rounded-lg shadow-2xl px-4 py-3 flex items-start gap-3',
         tone,
       )}
       role="status"
     >
       <Icon className="w-4 h-4 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white">{item.title}</p>
-        {item.message && <p className="text-xs text-zinc-400 mt-0.5 break-words">{item.message}</p>}
+        <p className="text-sm font-medium text-[var(--color-fg)]">{item.title}</p>
+        {item.message && <p className="text-xs text-[var(--color-fg-muted)] mt-0.5 break-words">{item.message}</p>}
       </div>
       <button
         onClick={onDismiss}
-        className="text-zinc-500 hover:text-zinc-200 transition shrink-0"
+        className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] transition shrink-0"
         aria-label="Dismiss"
       >
         <X className="w-3.5 h-3.5" />

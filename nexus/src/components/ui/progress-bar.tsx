@@ -26,7 +26,7 @@ export function ProgressBar({ value, className, colorClass }: ProgressBarProps) 
   const color = colorClass ?? colorFor(clamped);
 
   return (
-    <div className={cn('h-2 w-full overflow-hidden rounded-full bg-zinc-800', className)}>
+    <div className={cn('h-2 w-full overflow-hidden rounded-full bg-[var(--color-overlay)]', className)}>
       <div
         className={cn('h-full rounded-full transition-all duration-500', color)}
         style={{ width: `${clamped}%` }}

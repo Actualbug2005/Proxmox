@@ -35,7 +35,7 @@ export function Gauge({ value, className, label }: GaugeProps) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={cn('h-2 w-full overflow-hidden rounded-full bg-zinc-800', className)}
+      className={cn('h-2 w-full overflow-hidden rounded-full bg-[var(--color-overlay)]', className)}
     >
       <div
         className={cn('h-full rounded-full transition-all duration-500', colorFor(clamped))}
