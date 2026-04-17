@@ -705,6 +705,31 @@ export interface UpdateVMConfigParams {
   cpu?: string;
   bios?: string;
   machine?: string;
+  // ── Cloud-init params (applied post-clone by the builder wizard). All
+  //    optional. PVE accepts them as VM config fields even though they're
+  //    only meaningful when a cloud-init drive is attached to the VM.
+  /** Default user (e.g., "ubuntu"). */
+  ciuser?: string;
+  /** Plaintext or crypted password. PVE hashes server-side; do NOT pre-hash. */
+  cipassword?: string;
+  /** Multi-line OpenSSH keys, one per line. encodeUpdateVMConfig URL-encodes
+   *  newlines to %0A — callers pass literal newlines. */
+  sshkeys?: string;
+  /** Per-NIC config string, e.g. "ip=dhcp" or "ip=10.0.0.5/24,gw=10.0.0.1". */
+  ipconfig0?: string;
+  ipconfig1?: string;
+  ipconfig2?: string;
+  ipconfig3?: string;
+  /** Space-separated DNS search domain list. */
+  searchdomain?: string;
+  /** Space-separated DNS server list (IPv4 and/or IPv6). */
+  nameserver?: string;
+  /** Cloud-init backend variant — rarely needed; default (nocloud) is fine. */
+  citype?: 'nocloud' | 'configdrive2';
+  /** Reference to an advanced user-data file in a snippets: storage
+   *  (format: "user=<storage>:<path>"). Out of v1 UI scope but typed so
+   *  future editors can expose it without another type migration. */
+  cicustom?: string;
   [key: string]: unknown;
 }
 

@@ -210,8 +210,19 @@ const decodeCTConfig = (raw: CTConfig): CTConfigPublic =>
 
 const encodeUpdateVMConfig = (
   params: Partial<UpdateVMConfigParamsPublic>,
-): Record<string, unknown> =>
-  encodeBoolFields(params, UPDATE_VM_CONFIG_BOOL_KEYS) as Record<string, unknown>;
+): Record<string, unknown> => {
+  const out = encodeBoolFields(params, UPDATE_VM_CONFIG_BOOL_KEYS) as Record<
+    string,
+    unknown
+  >;
+  // PVE's cloud-init parser wants sshkeys as a URL-encoded newline-separated
+  // list. Callers pass literal newlines; we encode here so every call site
+  // stays string-in / string-out.
+  if (typeof out.sshkeys === 'string' && out.sshkeys.length > 0) {
+    out.sshkeys = encodeURIComponent(out.sshkeys);
+  }
+  return out;
+};
 
 const encodeUpdateCTConfig = (
   params: Partial<UpdateCTConfigParamsPublic>,
