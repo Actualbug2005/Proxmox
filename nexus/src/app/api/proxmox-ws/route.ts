@@ -102,17 +102,18 @@ export async function POST(req: NextRequest) {
       : `${base}/nodes/${node}/${validType}/${vmidNum}/${proxyEndpoint}`;
 
   // vncproxy requires websocket=1 to return a ticket usable with the
-  // vncwebsocket bridge; termproxy ignores the flag but setting it is
-  // harmless, so we send it unconditionally to keep the form encoding
-  // identical between the two branches.
+  // vncwebsocket bridge. termproxy does NOT accept that field — PVE 9
+  // validates bodies against a strict schema (additionalProperties:false)
+  // and rejects the request with "property is not defined in schema".
+  // Send the flag only on the VNC branch; termproxy POSTs with no body.
   const res = await pveFetch(proxyUrl, {
     method: 'POST',
     headers: {
       Cookie: `PVEAuthCookie=${session.ticket}`,
       CSRFPreventionToken: session.csrfToken,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      ...(mode === 'vnc' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
     },
-    body: 'websocket=1',
+    ...(mode === 'vnc' ? { body: 'websocket=1' } : {}),
   });
 
   if (!res.ok) {
