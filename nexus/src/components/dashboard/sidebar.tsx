@@ -23,6 +23,7 @@ import {
   Users,
   FolderTree,
   Archive,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -70,6 +71,7 @@ const sections: NavSection[] = [
       { href: '/dashboard/system/network', label: 'Network', icon: Network },
       { href: '/dashboard/system/certificates', label: 'Certificates', icon: ShieldCheck },
       { href: '/dashboard/system/logs', label: 'Logs', icon: ScrollText },
+      { href: '/dashboard/system/updates', label: 'Updates', icon: RefreshCw },
     ],
   },
 ];

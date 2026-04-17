@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
 # Nexus — Proxmox Management UI  |  Install Script
-# Run directly on the Proxmox host as root:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/<your-repo>/main/install.sh)
+#
+# Downloads the latest prebuilt release from GitHub and installs it with:
+#   /opt/nexus/releases/<tag>/     — immutable release artifacts
+#   /opt/nexus/current -> ...      — symlink flipped by updater
+#   /opt/nexus/.env.local          — persisted across upgrades
+#   /usr/local/bin/nexus-update    — in-place updater used by UI + CLI
+#
+# Run on the Proxmox host as root:
+#   bash <(curl -fsSL https://raw.githubusercontent.com/Actualbug2005/Proxmox/main/install.sh)
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -12,139 +19,170 @@ success() { echo -e "${GREEN}[nexus]${NC} $*"; }
 warn()    { echo -e "${YELLOW}[nexus]${NC} $*"; }
 die()     { echo -e "${RED}[nexus] ERROR:${NC} $*" >&2; exit 1; }
 
-# ── Require root ──────────────────────────────────────────────────────────────
 [[ $EUID -eq 0 ]] || die "Please run as root (sudo or directly as root)"
 
-INSTALL_DIR="/opt/nexus"
-SERVICE_NAME="nexus"
+# ── Config (env-overridable) ──────────────────────────────────────────────────
+REPO="${NEXUS_REPO:-Actualbug2005/Proxmox}"
+NEXUS_ROOT="${NEXUS_ROOT:-/opt/nexus}"
+RELEASES_DIR="${NEXUS_ROOT}/releases"
+CURRENT_LINK="${NEXUS_ROOT}/current"
+SERVICE_NAME="${NEXUS_SERVICE:-nexus}"
 PORT="${NEXUS_PORT:-3000}"
-REPO_URL="https://github.com/Actualbug2005/Proxmox.git"
-REPO_BRANCH="main"
-NODE_VERSION="22"   # LTS
-
-# Allow caller to override repo URL
-REPO_URL="${NEXUS_REPO_URL:-$REPO_URL}"
+NODE_VERSION="22"
+RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 
 # ── Node.js ───────────────────────────────────────────────────────────────────
 install_node() {
   if command -v node &>/dev/null; then
     local ver
     ver=$(node -e "process.stdout.write(process.versions.node.split('.')[0])")
-    if [[ "$ver" -ge 20 ]]; then
+    if [[ "$ver" -ge 22 ]]; then
       info "Node.js $ver already installed — skipping"
       return
     fi
-    warn "Node.js $ver is too old (need ≥20). Upgrading…"
+    warn "Node.js $ver is too old (need ≥22 for --experimental-strip-types). Upgrading…"
   fi
-
   info "Installing Node.js ${NODE_VERSION} LTS via NodeSource…"
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash -
   apt-get install -y nodejs
   success "Node.js $(node -v) installed"
 }
 
-# ── Git ───────────────────────────────────────────────────────────────────────
-install_git() {
-  if ! command -v git &>/dev/null; then
-    info "Installing git…"
-    apt-get install -y git
-  fi
+install_deps() {
+  info "Installing OS deps (curl, python3, jq fallbacks)…"
+  apt-get update -qq
+  apt-get install -y curl ca-certificates python3 tar
 }
 
-# ── Clone or update ───────────────────────────────────────────────────────────
-clone_or_update() {
-  if [[ -d "$INSTALL_DIR/.git" ]]; then
-    info "Updating existing installation at $INSTALL_DIR…"
-    git -C "$INSTALL_DIR" fetch --depth=1 origin "$REPO_BRANCH"
-    git -C "$INSTALL_DIR" reset --hard "origin/$REPO_BRANCH"
+# ── Fetch + install latest release ───────────────────────────────────────────
+# Keeps this script self-contained for the fresh-install path. Subsequent
+# updates go through /usr/local/bin/nexus-update (same logic, versioned).
+install_release() {
+  mkdir -p "$RELEASES_DIR"
+
+  info "Querying latest release from GitHub"
+  local json
+  json=$(curl -fsSL --proto '=https' --proto-redir '=https' \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/${REPO}/releases/latest") \
+    || die "Could not reach GitHub API. Check connectivity or rate-limit status."
+
+  # Parse with python3 to avoid jq dependency.
+  local tag tar_url sha_url
+  read -r tag tar_url sha_url < <(
+    echo "$json" | python3 -c '
+import sys, json
+d = json.load(sys.stdin)
+tag = d.get("tag_name", "")
+assets = {a["name"]: a["browser_download_url"] for a in d.get("assets", [])}
+tar = next((u for n, u in assets.items() if n.endswith(".tar.gz")), "")
+sha = next((u for n, u in assets.items() if n.endswith(".tar.gz.sha256")), "")
+print(tag); print(tar); print(sha)
+'
+  )
+  [[ -z "$tag"     ]] && die "Could not parse release tag"
+  [[ -z "$tar_url" ]] && die "Latest release has no tarball asset yet. Wait for CI to finish."
+
+  info "Installing release: $tag"
+  local staging
+  staging=$(mktemp -d "${RELEASES_DIR}/.staging.XXXXXX")
+  trap 'rm -rf "$staging"' RETURN
+
+  info "Downloading tarball"
+  curl -fsSL --proto '=https' --proto-redir '=https' \
+       -o "${staging}/release.tar.gz" "$tar_url"
+
+  if [[ -n "$sha_url" ]]; then
+    info "Verifying SHA256"
+    curl -fsSL --proto '=https' --proto-redir '=https' \
+         -o "${staging}/release.tar.gz.sha256" "$sha_url"
+    local expected actual
+    expected=$(awk '{print $1}' "${staging}/release.tar.gz.sha256")
+    actual=$(sha256sum "${staging}/release.tar.gz" | awk '{print $1}')
+    [[ "$expected" == "$actual" ]] || die "Checksum mismatch: expected $expected, got $actual"
+    success "Checksum OK"
   else
-    info "Cloning repo into $INSTALL_DIR…"
-    git clone --depth=1 --branch "$REPO_BRANCH" "$REPO_URL" "$INSTALL_DIR"
+    warn "Release published no checksum file — skipping verification"
   fi
+
+  local target="${RELEASES_DIR}/${tag}"
+  if [[ -d "$target" ]]; then
+    warn "Release dir exists, replacing: $target"
+    rm -rf "$target"
+  fi
+  mkdir -p "$target"
+  tar -xzf "${staging}/release.tar.gz" -C "$target"
+  ln -sfn "$target" "$CURRENT_LINK"
+  success "Release extracted, /opt/nexus/current → $tag"
 }
 
-# ── Build ─────────────────────────────────────────────────────────────────────
-build_app() {
-  local app_dir="$INSTALL_DIR/nexus"
-  [[ -d "$app_dir" ]] || die "nexus/ directory not found inside $INSTALL_DIR"
-
-  info "Installing npm dependencies (including devDependencies for build)…"
-  npm --prefix "$app_dir" install 2>&1 | tail -3
-
-  info "Building Next.js app…"
-  npm --prefix "$app_dir" run build 2>&1 | tail -15
-
-  info "Pruning devDependencies after build…"
-  npm --prefix "$app_dir" prune --omit=dev 2>&1 | tail -3
-
-  success "Build complete"
+# ── Installed updater helper ──────────────────────────────────────────────────
+install_updater() {
+  info "Installing nexus-update helper at /usr/local/bin/nexus-update"
+  curl -fsSL --proto '=https' --proto-redir '=https' \
+       -o /usr/local/bin/nexus-update \
+       "${RAW_BASE}/bin/nexus-update.sh"
+  chmod +x /usr/local/bin/nexus-update
+  success "nexus-update installed"
 }
 
-# ── .env.local ────────────────────────────────────────────────────────────────
+# ── .env.local (persists across upgrades) ─────────────────────────────────────
 write_env() {
-  local env_file="$INSTALL_DIR/nexus/.env.local"
+  local env_file="${NEXUS_ROOT}/.env.local"
 
   if [[ -f "$env_file" ]]; then
-    info ".env.local already exists — skipping (edit manually if needed)"
+    info ".env.local already exists at $env_file — preserving"
     return
   fi
 
-  # Generate a random JWT secret
   local jwt_secret
   jwt_secret=$(openssl rand -base64 36 | tr -d '\n')
 
   cat > "$env_file" <<EOF
-# Proxmox host — localhost because Nexus runs on the PVE host directly
+# ─── Nexus runtime config ───────────────────────────────────────────────────
+# Lives at /opt/nexus/.env.local and survives release upgrades — each release
+# dir symlinks or reads it from here rather than carrying its own copy.
+
+# Proxmox host — localhost because Nexus runs on the PVE host directly.
 PROXMOX_HOST=localhost
 
-# JWT session secret — auto-generated, do not share
+# JWT session secret — auto-generated, never share, never commit.
 JWT_SECRET=${jwt_secret}
 
-# Required for PVE self-signed certificates
-NODE_TLS_REJECT_UNAUTHORIZED=0
-
-# Port (must match systemd service below)
+# Port (must match systemd + firewall rule).
 PORT=${PORT}
 
-# ── Session store (optional) ──────────────────────────────────────────────────
-# Single-node default: sessions live in an in-memory Map (lost on restart).
-# For HA deployments or multiple Nexus instances behind a load balancer,
-# uncomment and set REDIS_URL — ioredis will be used with native TTL and
-# sessions will survive restarts + share across instances.
-#
-# REDIS_URL=redis://127.0.0.1:6379
-# REDIS_URL=redis://:password@redis.internal:6379/2
-EOF
+# Production mode: Secure cookies require NODE_ENV=production.
+NODE_ENV=production
 
-  success ".env.local written to $env_file"
+# Loopback-only bind: nothing on the LAN can bypass your reverse proxy
+# or tunnel. Set to 0.0.0.0 only for local dev.
+HOSTNAME=127.0.0.1
+
+# ── Session store (optional) ─────────────────────────────────────────────────
+# Single-node default: sessions live in an in-memory Map (lost on restart).
+# For HA / multi-instance, uncomment:
+# REDIS_URL=redis://127.0.0.1:6379
+EOF
+  # Also expose the env file at current/.env.local as a symlink so Next.js
+  # picks it up without any systemd wiring trickery.
+  ln -sfn "$env_file" "${CURRENT_LINK}/.env.local"
+  success ".env.local written ($env_file) and linked into current/"
 }
 
 # ── systemd service ───────────────────────────────────────────────────────────
 install_service() {
-  # Find the real node binary — nvm installs a shell script shim, not a real binary.
-  # We need the actual versioned binary path for systemd (which has no shell env).
   local node_bin
-
-  # 1. Check nvm's current version directory directly
-  if [[ -d "$HOME/.nvm/versions/node" ]]; then
-    node_bin=$(find "$HOME/.nvm/versions/node" -name "node" -type f 2>/dev/null | sort -V | tail -1)
-  fi
-
-  # 2. Fall back to which/command -v (works for nodesource / system installs)
-  if [[ -z "$node_bin" || ! -x "$node_bin" ]]; then
-    node_bin=$(command -v node 2>/dev/null || true)
-    # Resolve symlinks (nodesource puts a symlink at /usr/bin/node)
-    [[ -n "$node_bin" ]] && node_bin=$(readlink -f "$node_bin")
-  fi
-
-  [[ -z "$node_bin" || ! -x "$node_bin" ]] && die "Cannot locate node binary"
-
+  node_bin=$(command -v node)
+  [[ -n "$node_bin" && -x "$node_bin" ]] || die "Cannot locate node binary"
+  node_bin=$(readlink -f "$node_bin")
   local node_dir
   node_dir=$(dirname "$node_bin")
 
-  # Use node's built-in TypeScript strip-types (Node 22+) — no tsx needed
-  local exec_start="${node_bin} --experimental-strip-types ${INSTALL_DIR}/nexus/server.ts"
-
+  # `--experimental-strip-types` lets Node run server.ts directly without a
+  # TypeScript compile step. server.ts only uses declaration-style annotations
+  # (no TS-only runtime features) so strip-types is sufficient.
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=Nexus — Proxmox Management UI
@@ -153,13 +191,12 @@ Wants=pve-cluster.service
 
 [Service]
 Type=simple
-WorkingDirectory=${INSTALL_DIR}/nexus
-ExecStart=${exec_start}
-Restart=on-failure
-RestartSec=5
-Environment=NODE_ENV=production
+WorkingDirectory=${CURRENT_LINK}
+ExecStart=${node_bin} --experimental-strip-types ${CURRENT_LINK}/server.ts
+Restart=always
+RestartSec=2
 Environment=PATH=${node_dir}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-EnvironmentFile=${INSTALL_DIR}/nexus/.env.local
+EnvironmentFile=${NEXUS_ROOT}/.env.local
 User=root
 
 [Install]
@@ -169,70 +206,56 @@ EOF
   systemctl daemon-reload
   systemctl enable "$SERVICE_NAME"
   systemctl restart "$SERVICE_NAME"
-
   success "Systemd service '${SERVICE_NAME}' installed and started"
 }
 
-# ── Firewall ──────────────────────────────────────────────────────────────────
+# ── Firewall ─────────────────────────────────────────────────────────────────
 open_firewall() {
   if command -v pvesh &>/dev/null; then
-    # Check if a rule for this port already exists
     local existing
     existing=$(pvesh get "/nodes/$(hostname)/firewall/rules" 2>/dev/null | grep -c "${PORT}" || true)
     if [[ "$existing" -eq 0 ]]; then
       info "Opening port ${PORT} in PVE host firewall…"
       pvesh create "/nodes/$(hostname)/firewall/rules" \
-        --action ACCEPT --type in --proto tcp --dport "${PORT}" --enable 1 2>/dev/null && \
-        success "Firewall rule added for port ${PORT}" || \
-        warn "Could not add firewall rule — open port ${PORT} manually if needed"
+        --action ACCEPT --type in --proto tcp --dport "${PORT}" --enable 1 2>/dev/null \
+        && success "Firewall rule added for port ${PORT}" \
+        || warn "Could not add firewall rule — open port ${PORT} manually if needed"
     else
       info "Firewall rule for port ${PORT} already exists"
     fi
   fi
 }
 
-# ── Firewall hint ─────────────────────────────────────────────────────────────
-firewall_hint() {
-  if command -v pvesh &>/dev/null; then
-    # We're on a PVE host — check if port is open
-    if ! ss -tlnp | grep -q ":${PORT} "; then
-      warn "Port ${PORT} does not appear to be listening yet — service may still be starting"
-    fi
-  fi
-
+summary() {
+  local ver="unknown"
+  [[ -r "${CURRENT_LINK}/VERSION" ]] && ver=$(cat "${CURRENT_LINK}/VERSION")
   echo ""
   echo -e "  ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "  ${GREEN}  Nexus is running on http://$(hostname -I | awk '{print $1}'):${PORT}${NC}"
+  echo -e "  ${GREEN}  Nexus ${ver} running on http://$(hostname -I | awk '{print $1}'):${PORT}${NC}"
   echo -e "  ${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
-  echo -e "  Manage the service:"
-  echo -e "    ${CYAN}systemctl status ${SERVICE_NAME}${NC}"
-  echo -e "    ${CYAN}systemctl restart ${SERVICE_NAME}${NC}"
-  echo -e "    ${CYAN}journalctl -u ${SERVICE_NAME} -f${NC}"
-  echo ""
-  echo -e "  To update Nexus later, re-run this script."
+  echo -e "  Next steps:"
+  echo -e "    • Harden the install: ${CYAN}bash <(curl -fsSL ${RAW_BASE}/deploy/install-hardening.sh)${NC}"
+  echo -e "    • Check for updates:  ${CYAN}nexus-update --check${NC}"
+  echo -e "    • Install update:     ${CYAN}nexus-update${NC}  (or use the UI → System → Updates)"
+  echo -e "    • Logs:               ${CYAN}journalctl -u ${SERVICE_NAME} -f${NC}"
   echo ""
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 main() {
   echo ""
   echo -e "  ${CYAN}╔══════════════════════════════════════╗${NC}"
   echo -e "  ${CYAN}║   Nexus — Proxmox Management UI      ║${NC}"
   echo -e "  ${CYAN}╚══════════════════════════════════════╝${NC}"
   echo ""
-
-  info "Updating apt cache…"
-  apt-get update -qq
-
-  install_git
+  install_deps
   install_node
-  clone_or_update
+  install_release
+  install_updater
   write_env
-  build_app
   install_service
   open_firewall
-  firewall_hint
+  summary
 }
 
 main "$@"

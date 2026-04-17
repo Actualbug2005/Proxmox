@@ -1,0 +1,153 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Skip release builds for pure-docs pushes. Any code change re-triggers.
+      - 'nexus/**'
+      - 'install.sh'
+      - 'bin/**'
+      - 'deploy/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+# One release per commit SHA; cancel superseded in-flight runs.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # needed to create the GitHub Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so we can generate changelog since last tag
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: nexus/package-lock.json
+
+      - name: Compute release version
+        id: version
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          # CalVer + short SHA: v2026.04.17-a1b2c3d
+          # $SHA is github.sha — a 40-char lowercase hex string, not user input.
+          DATE=$(date -u +%Y.%m.%d)
+          SHA_SHORT=${SHA:0:7}
+          VERSION="v${DATE}-${SHA_SHORT}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building release: ${VERSION}"
+
+      - name: Install deps
+        working-directory: nexus
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: nexus
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: nexus
+        run: npm run build
+        env:
+          # Disable Next.js telemetry in CI builds.
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Prune to production deps
+        working-directory: nexus
+        run: npm prune --omit=dev
+
+      - name: Write VERSION file
+        working-directory: nexus
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: echo "$VERSION" > VERSION
+
+      - name: Create release tarball
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Tarball contents:
+          #   server.ts, .next/ (minus cache), public/, node_modules/ (prod only),
+          #   package.json, package-lock.json, VERSION, scripts/
+          # Transforms: strip the nexus/ prefix so extraction is flat.
+          TARBALL="nexus-${VERSION}.tar.gz"
+          tar -czf "$TARBALL" \
+            --exclude='nexus/.next/cache' \
+            --exclude='nexus/.git' \
+            --exclude='nexus/src' \
+            --exclude='nexus/node_modules/.cache' \
+            --transform 's,^nexus/,,' \
+            nexus/server.ts \
+            nexus/.next \
+            nexus/public \
+            nexus/node_modules \
+            nexus/package.json \
+            nexus/package-lock.json \
+            nexus/VERSION \
+            nexus/scripts
+          ls -lh "$TARBALL"
+
+      - name: Generate SHA256 checksum
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TARBALL="nexus-${VERSION}.tar.gz"
+          sha256sum "$TARBALL" > "${TARBALL}.sha256"
+          cat "${TARBALL}.sha256"
+
+      - name: Generate release notes
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          # Find previous release tag (ignores the one we're about to make).
+          PREV=$(git tag --list 'v*' --sort=-creatordate | head -1 || true)
+          {
+            echo "## What's changed"
+            echo ""
+            if [[ -n "$PREV" ]]; then
+              echo "Commits since ${PREV}:"
+              echo ""
+              # Commit messages are written to file (body_path), never interpolated
+              # into a shell command — safe even with backticks/$(...) in messages.
+              git log --pretty=format:'- %s (%h)' "${PREV}..HEAD"
+            else
+              echo "Initial release."
+            fi
+            echo ""
+            echo ""
+            echo "## Install"
+            echo ""
+            echo '```bash'
+            echo "bash <(curl -fsSL https://raw.githubusercontent.com/${REPO}/main/install.sh)"
+            echo '```'
+            echo ""
+            echo "## Update an existing install"
+            echo ""
+            echo 'From the Nexus UI → System → Updates → **Install update**, or run:'
+            echo ""
+            echo '```bash'
+            echo "nexus-update"
+            echo '```'
+          } > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            nexus-${{ steps.version.outputs.version }}.tar.gz
+            nexus-${{ steps.version.outputs.version }}.tar.gz.sha256
+          make_latest: 'true'
+          fail_on_unmatched_files: true
