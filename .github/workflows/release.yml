@@ -98,17 +98,27 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           # Tarball contents:
-          #   server.ts, .next/ (minus cache), public/, node_modules/ (prod only),
-          #   package.json, package-lock.json, VERSION, scripts/
+          #   server.ts, src/lib/ (imported by server.ts under --experimental-
+          #   strip-types, NOT compiled into .next), .next/ (minus cache),
+          #   public/, node_modules/ (prod only), package.json,
+          #   package-lock.json, VERSION, scripts/.
+          #
+          # src/lib is the ONLY part of src/ that ships — src/app,
+          # src/components, src/hooks are all compiled into .next/ and don't
+          # need to travel as raw .ts. src/lib does because server.ts
+          # imports relative files from it and runs as raw TypeScript via
+          # --experimental-strip-types (no bundler resolver).
+          #
           # Transforms: strip the nexus/ prefix so extraction is flat.
           TARBALL="nexus-${VERSION}.tar.gz"
           tar -czf "$TARBALL" \
             --exclude='nexus/.next/cache' \
             --exclude='nexus/.git' \
-            --exclude='nexus/src' \
+            --exclude='nexus/src/lib/*.test.ts' \
             --exclude='nexus/node_modules/.cache' \
             --transform 's,^nexus/,,' \
             nexus/server.ts \
+            nexus/src/lib \
             nexus/.next \
             nexus/public \
             nexus/node_modules \
@@ -116,6 +126,17 @@ jobs:
             nexus/package-lock.json \
             nexus/VERSION \
             nexus/scripts
+          # Post-build sanity: the chain server.ts imports from src/lib
+          # must actually be inside the tarball. Fails fast in CI if a
+          # future edit accidentally breaks this contract.
+          for f in server.ts src/lib/scheduler.ts src/lib/run-script-job.ts \
+                   src/lib/cron-match.ts src/lib/scheduled-jobs-store.ts \
+                   src/lib/exec-audit.ts src/lib/remote-shell.ts \
+                   src/lib/script-jobs.ts; do
+            tar -tzf "$TARBALL" "$f" >/dev/null || {
+              echo "::error::Missing $f in release tarball"; exit 1;
+            }
+          done
           ls -lh "$TARBALL"
 
       - name: Generate SHA256 checksum
