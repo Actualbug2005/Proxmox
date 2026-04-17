@@ -196,33 +196,56 @@ app.prepare().then(() => {
       session.clientWs = clientWs;
       const { pveWs, buffer } = session;
 
-      // Flush buffered data
+      // Per-session byte/message counters. First-message hex of whichever
+      // side speaks first pinpoints handshake stalls (e.g. if PVE sends
+      // zero bytes for 15s, RFB can't advance — visible here).
+      let pveToClientBytes = 0;
+      let clientToPveBytes = 0;
+      let pveFirstLogged = false;
+      let clientFirstLogged = false;
+
+      const logFirstFrom = (who: 'PVE' | 'client', data: Buffer | string): void => {
+        const buf = typeof data === 'string' ? Buffer.from(data) : data;
+        const head = buf.subarray(0, Math.min(32, buf.length));
+        console.log('[ws-relay] %s first-%s bytes=%d head=%s', sessionId, who, buf.length, head.toString('hex'));
+      };
+
+      // Flush buffered data (anything PVE sent before the client joined).
       for (const chunk of buffer) {
+        if (!pveFirstLogged) { logFirstFrom('PVE', chunk as Buffer | string); pveFirstLogged = true; }
+        pveToClientBytes += (chunk as Buffer).length ?? 0;
         if (clientWs.readyState === WebSocket.OPEN) clientWs.send(chunk);
       }
+      console.log('[ws-relay] %s joined, flushed %d buffered chunks', sessionId, buffer.length);
       session.buffer = [];
 
       pveWs.on('message', (data) => {
-        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(data);
+        const buf = data as Buffer;
+        if (!pveFirstLogged) { logFirstFrom('PVE', buf); pveFirstLogged = true; }
+        pveToClientBytes += buf.length ?? 0;
+        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(buf);
       });
       clientWs.on('message', (data) => {
-        if (pveWs.readyState === WebSocket.OPEN) pveWs.send(data);
+        const buf = data as Buffer;
+        if (!clientFirstLogged) { logFirstFrom('client', buf); clientFirstLogged = true; }
+        clientToPveBytes += buf.length ?? 0;
+        if (pveWs.readyState === WebSocket.OPEN) pveWs.send(buf);
       });
       // Log format uses %s placeholders (not string concatenation) so
       // untrusted remote values never reach util.format as format specifiers
       // — appeases semgrep CWE-134 and is also just the correct logging API.
       clientWs.on('close', (code, reason) => {
-        console.log('[ws-relay] %s client closed code=%d reason=%s', sessionId, code, reason.toString());
+        console.log('[ws-relay] %s client closed code=%d reason=%s pveTx=%d clientTx=%d', sessionId, code, reason.toString(), pveToClientBytes, clientToPveBytes);
         pveWs.close();
         relaySessions.delete(sessionId);
       });
       clientWs.on('error', (err) => {
-        console.error('[ws-relay] %s client error: %s', sessionId, err.message);
+        console.error('[ws-relay] %s client error: %s pveTx=%d clientTx=%d', sessionId, err.message, pveToClientBytes, clientToPveBytes);
         pveWs.close();
         relaySessions.delete(sessionId);
       });
       pveWs.on('close', (code, reason) => {
-        console.log('[ws-relay] %s PVE closed code=%d reason=%s', sessionId, code, reason?.toString() ?? '');
+        console.log('[ws-relay] %s PVE closed code=%d reason=%s pveTx=%d clientTx=%d', sessionId, code, reason?.toString() ?? '', pveToClientBytes, clientToPveBytes);
         if (clientWs.readyState === WebSocket.OPEN) clientWs.close(1000, 'PVE closed');
         relaySessions.delete(sessionId);
       });
