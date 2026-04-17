@@ -6,6 +6,8 @@ import { ResourceTree } from '@/components/dashboard/resource-tree';
 import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
 import { TaskList } from '@/components/dashboard/task-list';
 import { BulkActionBar, type BulkActionRequest } from '@/components/dashboard/bulk-action-bar';
+import { BulkProgressPanel } from '@/components/dashboard/bulk-progress-panel';
+import { useStartBulkOp, type BulkLifecycleTarget } from '@/hooks/use-bulk-lifecycle';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -43,13 +45,36 @@ export default function DashboardPage() {
   // a resource that's since been removed, it's silently filtered.
   const selectedResources = (resources ?? []).filter((r) => selectedIds.has(r.id));
 
-  // Phase 1 stub — Phase 4 replaces this with the bulk-lifecycle mutation
-  // once the API route lands. Logging intent keeps the UI end-to-end
-  // testable without the server backing yet.
+  const startBulk = useStartBulkOp();
+
   function handleBulkAction(req: BulkActionRequest) {
-    toast.info(
-      `Bulk ${req.op}: ${selectedResources.length} selected`,
-      'Backend not yet wired — Phase 4 will connect this to /api/cluster/bulk-lifecycle.',
+    // Translate ClusterResourcePublic rows → API target shape. Skip any
+    // non-guest entries defensively — the action bar already filters to
+    // qemu/lxc in the checkbox UI, but the type lets others through.
+    const targets: BulkLifecycleTarget[] = selectedResources
+      .filter((r) => (r.type === 'qemu' || r.type === 'lxc') && r.node && r.vmid)
+      .map((r) => ({
+        guestType: r.type as 'qemu' | 'lxc',
+        node: r.node!,
+        vmid: r.vmid!,
+        name: r.name,
+      }));
+    if (targets.length === 0) {
+      toast.error('Nothing to do', 'Selection contained no VMs or CTs.');
+      return;
+    }
+    startBulk.mutate(
+      { op: req.op, targets, snapshot: req.snapshot },
+      {
+        onSuccess: (data) => {
+          toast.success(
+            `Bulk ${req.op} queued`,
+            `${data.itemCount} item${data.itemCount === 1 ? '' : 's'} in flight.`,
+          );
+          setSelectedIds(new Set());
+        },
+        onError: (err) => toast.error('Bulk action failed', err.message),
+      },
     );
   }
 
@@ -108,6 +133,10 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Floating progress panel — persists across the page's lifetime and
+          auto-surfaces the most recent active batch. */}
+      <BulkProgressPanel />
+
       {resources && (
         <>
           {/* Summary stats */}
@@ -136,6 +165,7 @@ export default function DashboardPage() {
                 selected={selectedResources}
                 onClear={() => setSelectedIds(new Set())}
                 onAction={handleBulkAction}
+                disabled={startBulk.isPending}
               />
               <div className="studio-card rounded-lg p-3">
                 <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-2">
