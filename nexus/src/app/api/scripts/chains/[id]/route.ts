@@ -18,7 +18,7 @@ import {
 import { sanitiseEnv } from '@/lib/script-jobs';
 import * as store from '@/lib/chains-store';
 import type { Chain, ChainStep, ChainStepPolicy } from '@/lib/chains-store';
-import { toDto } from '../route';
+import { toDto } from '@/lib/chains-dto';
 
 const MAX_STEPS = 32;
 

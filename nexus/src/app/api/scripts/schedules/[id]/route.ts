@@ -18,7 +18,7 @@ import {
 } from '@/lib/run-script-job';
 import { sanitiseEnv } from '@/lib/script-jobs';
 import * as store from '@/lib/scheduled-jobs-store';
-import { toDto } from '../route';
+import { toDto } from '@/lib/scheduled-jobs-dto';
 
 interface PatchBody {
   slug?: string;

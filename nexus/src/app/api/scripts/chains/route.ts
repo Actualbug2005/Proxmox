@@ -28,56 +28,8 @@ import {
 } from '@/lib/run-script-job';
 import { sanitiseEnv } from '@/lib/script-jobs';
 import * as store from '@/lib/chains-store';
-import type {
-  Chain,
-  ChainStep,
-  ChainStepPolicy,
-  ChainStepRun,
-} from '@/lib/chains-store';
-
-// ─── DTO ─────────────────────────────────────────────────────────────────────
-
-export interface ChainStepDto {
-  slug?: string;
-  scriptUrl: string;
-  scriptName: string;
-  node: string;
-  method?: string;
-  env?: Record<string, string>;
-  timeoutMs?: number;
-}
-
-export interface ChainDto {
-  id: string;
-  owner: string;
-  name: string;
-  description?: string;
-  steps: ChainStepDto[];
-  policy: ChainStepPolicy;
-  schedule?: string;
-  enabled: boolean;
-  lastFiredAt?: number;
-  lastRun?: ChainStepRun[];
-  createdAt: number;
-  updatedAt: number;
-}
-
-export function toDto(c: Chain): ChainDto {
-  return {
-    id: c.id,
-    owner: c.owner,
-    name: c.name,
-    description: c.description,
-    steps: c.steps.map((s) => ({ ...s })),
-    policy: c.policy,
-    schedule: c.schedule,
-    enabled: c.enabled,
-    lastFiredAt: c.lastFiredAt,
-    lastRun: c.lastRun,
-    createdAt: c.createdAt,
-    updatedAt: c.updatedAt,
-  };
-}
+import type { ChainStep, ChainStepPolicy } from '@/lib/chains-store';
+import { toDto } from '@/lib/chains-dto';
 
 // ─── Step validation helper ─────────────────────────────────────────────────
 

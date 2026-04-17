@@ -8,7 +8,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readCsrfCookie } from '@/lib/proxmox-client';
-import type { ScheduledJobDto } from '@/app/api/scripts/schedules/route';
+import type { ScheduledJobDto } from '@/lib/scheduled-jobs-dto';
 
 export type { ScheduledJobDto };
 

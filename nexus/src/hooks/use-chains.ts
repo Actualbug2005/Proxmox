@@ -13,7 +13,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readCsrfCookie } from '@/lib/proxmox-client';
-import type { ChainDto, ChainStepDto } from '@/app/api/scripts/chains/route';
+import type { ChainDto, ChainStepDto } from '@/lib/chains-dto';
 import type {
   ChainStepPolicy,
   ChainStepRun,
