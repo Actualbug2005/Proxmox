@@ -90,18 +90,21 @@ pinned_release_json() {
 
 # Extract {tag, tarball_url, sha256_url} from a release JSON blob. We use
 # python3 because it ships on Debian 12/13 stock — avoids a jq dependency.
+#
+# IMPORTANT: use `python3 -c '...'`, never `python3 - <<HEREDOC`. The latter
+# consumes stdin for the script itself, which then leaves `sys.stdin` empty
+# when the caller pipes JSON in — producing a confusing JSONDecodeError on
+# "line 1 column 1 (char 0)".
 parse_release() {
-  python3 - "$@" <<'PY'
+  python3 -c '
 import sys, json
 data = json.load(sys.stdin)
 tag = data.get("tag_name", "")
 assets = {a["name"]: a["browser_download_url"] for a in data.get("assets", [])}
 tar = next((u for n, u in assets.items() if n.endswith(".tar.gz")), "")
 sha = next((u for n, u in assets.items() if n.endswith(".tar.gz.sha256")), "")
-print(tag)
-print(tar)
-print(sha)
-PY
+print(tag); print(tar); print(sha)
+'
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
