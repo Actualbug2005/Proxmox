@@ -20,6 +20,14 @@ concurrency:
 permissions:
   contents: write   # needed to create the GitHub Release
 
+# Opt into the Node.js 24 runtime for all JavaScript actions ahead of the
+# June 2026 forced switch, per
+# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+# All the actions we use (@v4 generation) support it already; this just
+# silences the deprecation warning.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
