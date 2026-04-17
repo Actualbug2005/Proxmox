@@ -187,8 +187,22 @@ function spawnDetached(params: {
   const curlMaxTimeSec = Math.ceil(timeoutMs / 1000);
   // The URL is passed to bash via stdin — it never touches an argv slot or
   // a shell string literal. $SCRIPT_URL below is a bash variable.
+  //
+  // Terminal environment:
+  //   Community scripts call `clear` / `tput` / whiptail inside
+  //   misc/build.func. Without a TTY AND without TERM set, `clear`
+  //   exits non-zero ("TERM environment variable not set"), which the
+  //   script's ERR trap surfaces as a line-876 fatal. Setting TERM to a
+  //   known terminfo entry gives `clear` a definition to resolve; the
+  //   COLUMNS/LINES defaults keep whiptail from computing a 0x0 window
+  //   when it manages to run. None of this creates a real TTY —
+  //   anything that truly needs isatty() (whiptail's "advanced" mode)
+  //   will still fail, but the default non-interactive path works.
   child.stdin?.end(
     `set -euo pipefail\n` +
+    `export TERM=xterm-256color\n` +
+    `export COLUMNS=\${COLUMNS:-120}\n` +
+    `export LINES=\${LINES:-40}\n` +
     envPreamble +
     `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
     `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 --max-time ${curlMaxTimeSec} -- "$SCRIPT_URL" | bash\n`,

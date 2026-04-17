@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { readCsrfCookie } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { Loader2, RefreshCw, Download, CheckCircle2, ExternalLink } from 'lucide-react';
@@ -136,7 +138,7 @@ export default function UpdatesPage() {
                 type="button"
                 onClick={() => updateM.mutate()}
                 disabled={updateM.isPending || pollingAfterUpdate}
-                className="inline-flex items-center gap-2 rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-200 disabled:opacity-50"
               >
                 {updateM.isPending || pollingAfterUpdate ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -173,9 +175,40 @@ export default function UpdatesPage() {
               </a>
             )}
           </div>
-          <pre className="mt-3 whitespace-pre-wrap font-mono text-xs leading-relaxed text-zinc-400">
-            {releaseNotes}
-          </pre>
+          <div className="mt-3 text-sm leading-relaxed text-zinc-300">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: (props) => <h1 className="mt-6 mb-2 text-base font-semibold text-zinc-100 first:mt-0" {...props} />,
+                h2: (props) => <h2 className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-200 first:mt-0" {...props} />,
+                h3: (props) => <h3 className="mt-4 mb-2 text-sm font-semibold text-zinc-200 first:mt-0" {...props} />,
+                p: (props) => <p className="my-2 text-zinc-300" {...props} />,
+                ul: (props) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-zinc-600" {...props} />,
+                ol: (props) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:text-zinc-600" {...props} />,
+                li: (props) => <li className="text-zinc-300" {...props} />,
+                a: (props) => <a className="text-indigo-400 underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                strong: (props) => <strong className="font-semibold text-zinc-100" {...props} />,
+                em: (props) => <em className="italic text-zinc-200" {...props} />,
+                code: ({ className, children, ...props }) => {
+                  const isBlock = /\bhljs\b|^language-/.test(className ?? '');
+                  return isBlock ? (
+                    <code className="block w-full whitespace-pre overflow-x-auto rounded-md border border-zinc-800/60 bg-zinc-900/60 p-3 font-mono text-xs text-zinc-200" {...props}>{children}</code>
+                  ) : (
+                    <code className="rounded bg-zinc-800/60 px-1.5 py-0.5 font-mono text-[0.8125rem] text-zinc-200" {...props}>{children}</code>
+                  );
+                },
+                pre: (props) => <pre className="my-3 overflow-x-auto" {...props} />,
+                blockquote: (props) => <blockquote className="my-3 border-l-2 border-zinc-700 pl-3 text-zinc-400 italic" {...props} />,
+                hr: () => <hr className="my-4 border-zinc-800/60" />,
+                table: (props) => <table className="my-3 w-full border-collapse text-xs" {...props} />,
+                thead: (props) => <thead className="border-b border-zinc-800/60 text-zinc-400" {...props} />,
+                th: (props) => <th className="px-2 py-1.5 text-left font-medium" {...props} />,
+                td: (props) => <td className="border-b border-zinc-800/40 px-2 py-1.5 text-zinc-300" {...props} />,
+              }}
+            >
+              {releaseNotes}
+            </ReactMarkdown>
+          </div>
         </section>
       )}
 
