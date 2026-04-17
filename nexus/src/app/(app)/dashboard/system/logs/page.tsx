@@ -6,52 +6,9 @@ import { api } from '@/lib/proxmox-client';
 import { useSystemNode } from '@/app/(app)/dashboard/system/node-context';
 import { Loader2, ScrollText, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { parseJournalLine, PRIORITY_CLASS, type Priority } from '@/lib/journal-parse';
 
 type Mode = 'table' | 'tail';
-type Priority = 'error' | 'warning' | 'info' | 'debug';
-
-interface ParsedEntry {
-  raw: string;
-  time: string;
-  host: string;
-  unit: string;
-  message: string;
-  priority: Priority;
-}
-
-// Priorities 0-3 map to error, 4 to warning, 5-6 to info, 7 to debug (syslog RFC 5424).
-// journalctl also writes a leading "<N>" prefix on kernel lines; otherwise we
-// infer from well-known keywords in the message body.
-const ERROR_RE = /<[0-3]>|\b(?:error|fatal|panic|segfault|crit(?:ical)?|emerg)\b/i;
-const WARN_RE = /<4>|\bwarn(?:ing)?\b/i;
-const DEBUG_RE = /<7>|\bdebug\b/i;
-
-function parsePriority(line: string, message: string): Priority {
-  const probe = `${line} ${message}`;
-  if (ERROR_RE.test(probe)) return 'error';
-  if (WARN_RE.test(probe)) return 'warning';
-  if (DEBUG_RE.test(probe)) return 'debug';
-  return 'info';
-}
-
-const PRIORITY_CLASS: Record<Priority, string> = {
-  error: 'bg-red-500/10 text-red-400 border border-red-500/20',
-  warning: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
-  info: 'bg-zinc-800/40 text-zinc-400 border border-zinc-800/60',
-  debug: 'bg-zinc-800 text-zinc-500 border border-zinc-800/60',
-};
-
-// Parse a journalctl text line: "Apr 14 23:06:22 pve pveproxy[12345]: message"
-// Falls back gracefully if format doesn't match.
-function parseEntry(raw: string): ParsedEntry {
-  const m = raw.match(/^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:]+?):\s+(.*)$/);
-  if (!m) {
-    return { raw, time: '', host: '', unit: '', message: raw, priority: parsePriority(raw, raw) };
-  }
-  const [, time, host, unitWithPid, message] = m;
-  const unit = unitWithPid.replace(/\[\d+\]$/, '');
-  return { raw, time, host, unit, message, priority: parsePriority(raw, message) };
-}
 
 export default function LogsPage() {
   const { node } = useSystemNode();
@@ -84,7 +41,7 @@ export default function LogsPage() {
     }
   }, [tailEntries, mode, paused]);
 
-  const parsed = useMemo(() => (entries ?? []).map(parseEntry), [entries]);
+  const parsed = useMemo(() => (entries ?? []).map(parseJournalLine), [entries]);
 
   const allUnits = useMemo(
     () => [...new Set(parsed.map((p) => p.unit).filter(Boolean))].sort(),
@@ -244,7 +201,7 @@ export default function LogsPage() {
             className="bg-gray-950 border border-zinc-800/60 rounded-lg p-4 text-xs text-zinc-400 font-mono overflow-y-auto h-[28rem] whitespace-pre-wrap"
           >
             {(tailEntries ?? [])
-              .map((raw) => parseEntry(raw))
+              .map((raw) => parseJournalLine(raw))
               .filter((e) => !unitFilter || e.unit === unitFilter)
               .map((e) => e.raw)
               .join('\n')}

@@ -199,7 +199,9 @@ Branch-per-feature, PR against `main`. Before opening a PR:
 
 ## License
 
-See `LICENSE` at the repo root.
+Released under the [MIT License](./LICENSE). You can use, copy, modify, distribute, or sublicense the code freely as long as the copyright notice travels with it.
+
+Community scripts fetched at runtime from [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE) and its PocketBase API are under their own MIT license — no code from that project is bundled here; Nexus only reads the published metadata and forwards execution requests to the node you pick.
 
 ## Credits
 
