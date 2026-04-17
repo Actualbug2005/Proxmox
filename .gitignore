@@ -1,1 +1,9 @@
 .gitnexus
+
+# OS cruft
+.DS_Store
+
+# Editor / per-user tool config
+.vscode/
+.serena/
+.claude/settings.local.json
