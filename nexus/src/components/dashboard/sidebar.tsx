@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
+import { ThemeToggle } from '@/components/dashboard/theme-toggle';
 
 interface NavItem {
   href: string;
@@ -210,6 +211,7 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
             <p className="truncate text-xs font-medium text-zinc-300">{username ?? 'Unknown'}</p>
             <p className="text-[11px] uppercase tracking-widest text-zinc-600">Proxmox</p>
           </div>
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             title="Sign out"
