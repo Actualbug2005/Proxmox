@@ -423,6 +423,7 @@ import type {
   MigrateVMParamsPublic,
   MigrateCTParams,
   MigrateCTParamsPublic,
+  MigratePrecondition,
   UpdateVMConfigParams,
   UpdateVMConfigParamsPublic,
   UpdateCTConfigParams,
@@ -571,6 +572,11 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/clone`, encodeCloneVM(params)),
     migrate: (node: string, vmid: number, params: MigrateVMParamsPublic) =>
       proxmox.post<string>(`nodes/${node}/qemu/${vmid}/migrate`, encodeMigrateVM(params)),
+    /** PVE precondition check — returns allowed/not-allowed target nodes
+     *  and any local-disk/-resource obstacles. Call BEFORE migrate so the
+     *  wizard can filter + explain unreachable targets. */
+    migratePrecondition: (node: string, vmid: number) =>
+      proxmox.get<MigratePrecondition>(`nodes/${node}/qemu/${vmid}/migrate`),
     create: (node: string, params: Omit<CreateVMParams, 'node'>) =>
       proxmox.post<string>(`nodes/${node}/qemu`, params as Record<string, unknown>),
     vncproxy: (node: string, vmid: number) =>
@@ -625,6 +631,8 @@ export const api = {
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/clone`, params as Record<string, unknown>),
     migrate: (node: string, vmid: number, params: MigrateCTParamsPublic) =>
       proxmox.post<string>(`nodes/${node}/lxc/${vmid}/migrate`, encodeMigrateCT(params)),
+    migratePrecondition: (node: string, vmid: number) =>
+      proxmox.get<MigratePrecondition>(`nodes/${node}/lxc/${vmid}/migrate`),
     create: (node: string, params: Omit<CreateCTParamsPublic, 'node'>) =>
       proxmox.post<string>(`nodes/${node}/lxc`, encodeCreateCT(params)),
     vncproxy: (node: string, vmid: number) =>

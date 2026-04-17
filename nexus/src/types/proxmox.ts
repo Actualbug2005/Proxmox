@@ -650,6 +650,15 @@ export interface MigrateVMParams {
   target: string;
   online?: PveBool;
   with_local_disks?: PveBool;
+  /** Bandwidth cap in KiB/s. 0 or omitted = unlimited. */
+  bwlimit?: number;
+  /** Dedicated migration network CIDR. Overrides cluster default. */
+  migration_network?: string;
+  /** Map local disk storage on the target — PVE accepts either a single
+   *  storage name (applies to all) or the `<from>:<to>` form per-disk. */
+  targetstorage?: string;
+  /** Force migration even when PVE's precondition check would reject. */
+  force?: PveBool;
   [key: string]: unknown;
 }
 
@@ -657,7 +666,27 @@ export interface MigrateCTParams {
   target: string;
   restart?: PveBool;
   online?: PveBool;
+  /** Bandwidth cap in KiB/s. */
+  bwlimit?: number;
+  /** Restart timeout in seconds — only meaningful with `restart: true`. */
+  timeout?: number;
   [key: string]: unknown;
+}
+
+/**
+ * Shape returned by PVE's migration-precondition endpoints:
+ *   GET /nodes/{node}/qemu/{vmid}/migrate
+ *   GET /nodes/{node}/lxc/{vmid}/migrate
+ *
+ * Each field may be absent on minor PVE versions; the wizard treats
+ * missing arrays as "no information" (allow every online cluster node).
+ */
+export interface MigratePrecondition {
+  running?: boolean;
+  allowed_nodes?: string[];
+  not_allowed_nodes?: Array<{ node?: string; reason?: string }>;
+  local_disks?: Array<{ volid?: string; referenced_in_config?: string | number }>;
+  local_resources?: string[];
 }
 
 export interface UpdateVMConfigParams {

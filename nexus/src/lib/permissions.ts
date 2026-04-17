@@ -65,3 +65,15 @@ export async function requireNodeSysAudit(
   if (await userHasPrivilege(session, `/nodes/${node}`, 'Sys.Audit')) return true;
   return userHasPrivilege(session, `/nodes/${node}`, 'Sys.Modify');
 }
+
+/**
+ * VM.Migrate on /vms/{vmid} is the PVE privilege that gates live + offline
+ * migration of both QEMU VMs and LXC CTs (they share the /vms/ ACL path).
+ * Root@pam satisfies this implicitly; other users need the explicit grant.
+ */
+export async function requireVmMigrate(
+  session: PVEAuthSession,
+  vmid: number,
+): Promise<boolean> {
+  return userHasPrivilege(session, `/vms/${vmid}`, 'VM.Migrate');
+}
