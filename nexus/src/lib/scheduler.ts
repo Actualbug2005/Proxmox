@@ -25,9 +25,7 @@ const DEDUP_WINDOW_MS = 55_000;
 export type FireHandler = (job: store.ScheduledJob) => Promise<{ jobId?: string }>;
 
 declare global {
-  // eslint-disable-next-line no-var
   var __nexusSchedulerTimer: NodeJS.Timeout | undefined;
-  // eslint-disable-next-line no-var
   var __nexusSchedulerTickRunning: boolean | undefined;
 }
 

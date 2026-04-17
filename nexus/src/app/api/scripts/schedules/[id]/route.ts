@@ -1,0 +1,164 @@
+/**
+ * /api/scripts/schedules/[id] — per-schedule read/update/delete.
+ *
+ * Access model: only the schedule's owner may read, update, or delete it.
+ * There is no "admin override" today; that lands when the UI grows a
+ * team/organisation concept.
+ */
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession, getSessionId } from '@/lib/auth';
+import { validateCsrf } from '@/lib/csrf';
+import { requireNodeSysModify } from '@/lib/permissions';
+import { EXEC_LIMITS } from '@/lib/exec-policy';
+import { validateCron } from '@/lib/cron-match';
+import {
+  RunScriptJobError,
+  validateNodeName,
+  validateScriptUrl,
+} from '@/lib/run-script-job';
+import { sanitiseEnv } from '@/lib/script-jobs';
+import * as store from '@/lib/scheduled-jobs-store';
+import { toDto } from '../route';
+
+interface PatchBody {
+  slug?: string;
+  scriptUrl?: string;
+  scriptName?: string;
+  node?: string;
+  method?: string;
+  env?: Record<string, unknown>;
+  timeoutMs?: number;
+  schedule?: string;
+  enabled?: boolean;
+}
+
+async function loadOwned(
+  id: string,
+): Promise<
+  | { kind: 'ok'; job: store.ScheduledJob; user: string }
+  | { kind: 'err'; response: NextResponse }
+> {
+  const session = await getSession();
+  if (!session) {
+    return { kind: 'err', response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  const job = await store.get(id);
+  // Deliberately return 404 for both "not found" and "not yours" so a
+  // non-owner can't probe for schedule ids.
+  if (!job || job.owner !== session.username) {
+    return { kind: 'err', response: NextResponse.json({ error: 'Not found' }, { status: 404 }) };
+  }
+  return { kind: 'ok', job, user: session.username };
+}
+
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const res = await loadOwned(id);
+  if (res.kind === 'err') return res.response;
+  return NextResponse.json({ job: toDto(res.job) });
+}
+
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  const res = await loadOwned(id);
+  if (res.kind === 'err') return res.response;
+  const existing = res.job;
+
+  const body = (await req.json()) as PatchBody;
+  const patch: Partial<Omit<store.ScheduledJob, 'id' | 'owner' | 'createdAt'>> = {};
+
+  if (body.scriptUrl !== undefined) {
+    try {
+      patch.scriptUrl = validateScriptUrl(body.scriptUrl).toString();
+    } catch (err) {
+      if (err instanceof RunScriptJobError) {
+        return NextResponse.json({ error: err.message }, { status: err.status });
+      }
+      throw err;
+    }
+  }
+  if (body.scriptName !== undefined) patch.scriptName = String(body.scriptName);
+  if (body.slug !== undefined) {
+    patch.slug = typeof body.slug === 'string' && body.slug.length <= 63 ? body.slug : undefined;
+  }
+  if (body.method !== undefined) {
+    patch.method =
+      typeof body.method === 'string' && body.method.length <= 32 ? body.method : undefined;
+  }
+  if (body.env !== undefined) {
+    patch.env = sanitiseEnv(body.env).env;
+  }
+  if (body.timeoutMs !== undefined) {
+    if (
+      typeof body.timeoutMs === 'number' &&
+      Number.isFinite(body.timeoutMs) &&
+      body.timeoutMs > 0
+    ) {
+      patch.timeoutMs = Math.min(body.timeoutMs, EXEC_LIMITS.maxTimeoutMs);
+    } else {
+      patch.timeoutMs = undefined;
+    }
+  }
+  if (body.schedule !== undefined) {
+    try {
+      validateCron(body.schedule);
+    } catch (err) {
+      return NextResponse.json(
+        { error: `Invalid cron expression: ${err instanceof Error ? err.message : String(err)}` },
+        { status: 400 },
+      );
+    }
+    patch.schedule = body.schedule;
+  }
+  if (body.enabled !== undefined) patch.enabled = Boolean(body.enabled);
+
+  // Node change re-checks ACL. No change → reuse the existing record's node.
+  let targetNode = existing.node;
+  if (body.node !== undefined) {
+    try {
+      targetNode = validateNodeName(body.node);
+    } catch (err) {
+      if (err instanceof RunScriptJobError) {
+        return NextResponse.json({ error: err.message }, { status: err.status });
+      }
+      throw err;
+    }
+    patch.node = targetNode;
+  }
+  if (patch.node && patch.node !== existing.node) {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!(await requireNodeSysModify(session, targetNode))) {
+      return NextResponse.json(
+        { error: 'Forbidden: Sys.Modify required on /nodes/' + targetNode },
+        { status: 403 },
+      );
+    }
+  }
+
+  const updated = await store.update(id, patch);
+  if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ job: toDto(updated) });
+}
+
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const sessionId = await getSessionId();
+  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!validateCsrf(req, sessionId)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  const res = await loadOwned(id);
+  if (res.kind === 'err') return res.response;
+
+  const removed = await store.remove(id);
+  if (!removed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json({ removed: true });
+}

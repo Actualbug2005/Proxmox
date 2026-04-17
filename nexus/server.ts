@@ -10,6 +10,7 @@
 import { createServer } from 'node:http';
 import next from 'next';
 import { startScheduler } from './src/lib/scheduler';
+import { runScriptJob } from './src/lib/run-script-job';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -173,16 +174,21 @@ app.prepare().then(() => {
     console.log(`▲ Next.js + WS relay ready on http://localhost:${port}`);
   });
 
-  // Scheduler tick. Phase 1 stub: log the fire and advance lastFiredAt so we
-  // can verify the loop end-to-end without Phase 2's executor. Phase 2 swaps
-  // this handler for a real runScriptJob() call.
+  // Scheduler tick — fires due schedules through the shared runner. ACL
+  // was enforced at schedule-create time; the runner validates scriptUrl
+  // and node name again as defense in depth.
+  const DEFAULT_SCHED_TIMEOUT_MS = 15 * 60 * 1000;
   startScheduler(async (job) => {
-    console.info('[scheduler] would fire:', {
-      id: job.id,
-      scriptName: job.scriptName,
+    const result = await runScriptJob({
+      user: job.owner,
       node: job.node,
-      owner: job.owner,
+      scriptUrl: job.scriptUrl,
+      scriptName: job.scriptName,
+      slug: job.slug,
+      method: job.method,
+      env: job.env,
+      timeoutMs: job.timeoutMs ?? DEFAULT_SCHED_TIMEOUT_MS,
     });
-    return { jobId: undefined };
+    return { jobId: result.jobId };
   });
 });
