@@ -1,9 +1,20 @@
 /**
- * termproxy ticket + eager WS relay session creator.
+ * termproxy | vncproxy ticket + eager WS relay session creator.
  *
- * 1. Acquires a PVE termproxy ticket
- * 2. Immediately opens a server-side WS to PVE (before the 10s ticket timeout)
- * 3. Returns a session ID the browser uses to join via ws://host/api/ws-relay?session=<id>
+ * 1. Acquires a PVE console ticket (termproxy for shell, vncproxy for VNC).
+ * 2. Immediately opens a server-side WS to PVE (before the 10 s ticket timeout).
+ * 3. Returns a session ID the browser uses to join via
+ *    wss://host/api/ws-relay?session=<id> — TLS is terminated at the edge
+ *    (Caddy / Cloudflare Tunnel) so the browser always uses secure
+ *    WebSockets in production. Local `next dev` over plain HTTP is the
+ *    only case where the browser falls back to unencrypted transport.
+ *
+ * Dispatch is driven by `body.mode`:
+ *   - `"shell"` (default) → termproxy; xterm front-end.
+ *   - `"vnc"`             → vncproxy; noVNC front-end.
+ * The relay in server.ts skips the termproxy auth preamble in VNC mode so
+ * the RFB handshake reaches noVNC unmodified. The PVE endpoint path also
+ * swaps (vncwebsocket already; termproxy → vncproxy for the ticket call).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, getSessionId } from '@/lib/auth';
@@ -20,6 +31,7 @@ type CreateRelaySession = (params: {
   ticketPort: string;
   pveAuthCookie: string;
   username: string;
+  mode?: 'shell' | 'vnc';
 }) => Promise<void>;
 
 function getCreateRelaySession(): CreateRelaySession {
@@ -35,6 +47,8 @@ import { randomUUID } from 'crypto';
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
 const TYPE_SET = new Set(['qemu', 'lxc', 'node'] as const);
 type ValidType = 'qemu' | 'lxc' | 'node';
+const MODE_SET = new Set(['shell', 'vnc'] as const);
+type ConsoleMode = 'shell' | 'vnc';
 
 export async function POST(req: NextRequest) {
   const sessionId = await getSessionId();
@@ -45,10 +59,11 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { node, vmid, type } = (await req.json()) as {
+  const { node, vmid, type, mode: rawMode } = (await req.json()) as {
     node: unknown;
     vmid: unknown;
     type: unknown;
+    mode?: unknown;
   };
 
   if (typeof node !== 'string' || !NODE_RE.test(node)) {
@@ -58,6 +73,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
   }
   const validType = type as ValidType;
+  // Default is shell so existing xterm callers that never set `mode` keep
+  // working unchanged.
+  const mode: ConsoleMode =
+    typeof rawMode === 'string' && MODE_SET.has(rawMode as ConsoleMode)
+      ? (rawMode as ConsoleMode)
+      : 'shell';
+  // vncproxy doesn't exist at the node scope (there's no "node console") —
+  // refuse the combination up front rather than letting PVE 404.
+  if (mode === 'vnc' && validType === 'node') {
+    return NextResponse.json({ error: 'VNC console is only valid for qemu/lxc' }, { status: 400 });
+  }
   let vmidNum: number | null = null;
   if (validType !== 'node') {
     if (typeof vmid !== 'number' || !Number.isInteger(vmid) || vmid < 0 || vmid > 999_999_999) {
@@ -69,27 +95,36 @@ export async function POST(req: NextRequest) {
   const host = session.proxmoxHost;
   const base = `https://${host}:8006/api2/json`;
 
-  const termUrl =
+  const proxyEndpoint = mode === 'vnc' ? 'vncproxy' : 'termproxy';
+  const proxyUrl =
     validType === 'node'
-      ? `${base}/nodes/${node}/termproxy`
-      : `${base}/nodes/${node}/${validType}/${vmidNum}/termproxy`;
+      ? `${base}/nodes/${node}/${proxyEndpoint}`
+      : `${base}/nodes/${node}/${validType}/${vmidNum}/${proxyEndpoint}`;
 
-  const res = await pveFetch(termUrl, {
+  // vncproxy requires websocket=1 to return a ticket usable with the
+  // vncwebsocket bridge; termproxy ignores the flag but setting it is
+  // harmless, so we send it unconditionally to keep the form encoding
+  // identical between the two branches.
+  const res = await pveFetch(proxyUrl, {
     method: 'POST',
     headers: {
       Cookie: `PVEAuthCookie=${session.ticket}`,
       CSRFPreventionToken: session.csrfToken,
-      'Content-Length': '0',
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
+    body: 'websocket=1',
   });
 
   if (!res.ok) {
     const text = await res.text();
-    return NextResponse.json({ error: `PVE termproxy failed: ${text}` }, { status: res.status });
+    return NextResponse.json(
+      { error: `PVE ${proxyEndpoint} failed: ${text}` },
+      { status: res.status },
+    );
   }
 
   const data = (await res.json()) as {
-    data: { ticket: string; port: number; upid: string };
+    data: { ticket: string; port: number; upid?: string; user?: string };
   };
   const { ticket, port, upid } = data.data;
 
@@ -113,16 +148,18 @@ export async function POST(req: NextRequest) {
       ticketPort: String(port),
       pveAuthCookie: session.ticket,
       username: session.username,
+      mode,
     });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to open PVE terminal connection: ${String(err)}` },
+      { error: `Failed to open PVE console connection: ${String(err)}` },
       { status: 502 },
     );
   }
 
   return NextResponse.json({
     sessionId: relaySessionId,
-    upid,
+    upid: upid ?? null,
+    mode,
   });
 }
