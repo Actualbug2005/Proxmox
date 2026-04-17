@@ -265,7 +265,7 @@ function StepConfirm({ state }: { state: WizardState }) {
     <div className="space-y-2">
       <p className="text-sm text-zinc-400 mb-4">Review your settings before creating the VM.</p>
       {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between py-2 border-b border-zinc-800/60/60 last:border-0">
+        <div key={label} className="flex justify-between py-2 border-b border-zinc-800/60 last:border-0">
           <span className="text-xs text-zinc-500">{label}</span>
           <span className="text-sm text-zinc-200 font-mono">{value}</span>
         </div>
@@ -390,7 +390,7 @@ export default function CreateVMPage() {
           <button
             onClick={() => createM.mutate()}
             disabled={createM.isPending}
-            className="flex items-center gap-2 px-6 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm font-medium rounded-lg transition disabled:opacity-50"
           >
             {createM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Create VM
@@ -399,7 +399,7 @@ export default function CreateVMPage() {
           <button
             onClick={() => setStep((s) => s + 1)}
             disabled={!canNext()}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm font-medium rounded-lg transition disabled:opacity-50"
           >
             Next
             <ChevronRight className="w-4 h-4" />

@@ -181,7 +181,7 @@ export default function LogsPage() {
                   </thead>
                   <tbody>
                     {filtered.slice(0, PAGE_SIZE * page).map((entry, i) => (
-                      <tr key={i} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                      <tr key={i} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                         <td className="px-4 py-1.5 font-mono text-zinc-500 whitespace-nowrap">{entry.time || '—'}</td>
                         <td className="px-4 py-1.5">
                           <span className={cn('inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-widest', PRIORITY_CLASS[entry.priority])}>
@@ -223,7 +223,7 @@ export default function LogsPage() {
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition',
                 paused
-                  ? 'bg-zinc-100 hover:bg-white text-white'
+                  ? 'bg-zinc-300 hover:bg-zinc-200 text-zinc-900'
                   : 'bg-zinc-800 hover:bg-zinc-800 text-zinc-300',
               )}
             >

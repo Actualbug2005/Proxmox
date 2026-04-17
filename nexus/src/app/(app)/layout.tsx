@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { CommandPalette } from '@/components/dashboard/command-palette';
+import { JobStatusBar } from '@/components/script-jobs/JobStatusBar';
 
 /**
  * Master authenticated shell — applied to every route under (app).
@@ -41,6 +42,12 @@ export default async function AppShellLayout({
       </main>
 
       <CommandPalette />
+
+      {/* Floating script-job status bar — renders itself null when idle,
+       * so it only appears on screens where the user has actually kicked
+       * off a community script. Mounted at the layout level so long-running
+       * scripts remain visible while the user navigates to other pages. */}
+      <JobStatusBar />
     </>
   );
 }

@@ -68,7 +68,7 @@ function CloneDialog({ currentName, onConfirm, onCancel, isLoading }: {
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
           <button onClick={() => onConfirm(Number(newid) || (nextid ?? 0), hostname)} disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50">
+            className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Clone'}
           </button>
         </div>
@@ -100,7 +100,7 @@ function MigrateDialog({ currentNode, onConfirm, onCancel, isLoading }: {
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
           <button onClick={() => target && onConfirm(target)} disabled={!target || isLoading}
-            className="px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50">
+            className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Migrate'}
           </button>
         </div>
@@ -362,7 +362,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                     <div className="flex gap-2">
                       <button onClick={() => { setEditConfig(false); setConfigDraft({}); }} className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-400 rounded-lg transition">Cancel</button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-50">
+                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
                         {saveConfigM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         Save
                       </button>

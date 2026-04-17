@@ -50,7 +50,7 @@ export default function PoolsPage() {
         </div>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
         >
           <Plus className="w-4 h-4" /> New pool
         </button>
@@ -172,7 +172,7 @@ function PoolEditor({ initial, onClose, onSaved }: { initial: PVEPool | null; on
           <button
             onClick={() => saveM.mutate({ poolid, ...(comment ? { comment } : {}) })}
             disabled={!poolid || saveM.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
           >
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? 'Save' : 'Create'}
@@ -319,7 +319,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
             <button
               onClick={addMember}
               disabled={!addTarget || addM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
             >
               {addM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Add

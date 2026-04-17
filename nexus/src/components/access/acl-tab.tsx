@@ -51,7 +51,7 @@ export function ACLTab() {
 
       <div className="space-y-4">
         <div className="flex justify-end">
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition">
             <Plus className="w-4 h-4" /> New entry
           </button>
         </div>
@@ -73,7 +73,7 @@ export function ACLTab() {
               </thead>
               <tbody>
                 {acls.map((a, i) => (
-                  <tr key={`${a.path}-${a.ugid}-${a.roleid}-${i}`} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                  <tr key={`${a.path}-${a.ugid}-${a.roleid}-${i}`} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                     <td className="px-4 py-3 font-mono text-xs text-zinc-200">{a.path}</td>
                     <td className="px-4 py-3 text-xs text-zinc-400">
                       <Badge variant="outline" className="text-xs mr-1">{a.type}</Badge>
@@ -165,7 +165,7 @@ function ACLEditor({ users, groups, roles, onClose, onSaved }: {
         </div>
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
-          <button onClick={() => saveM.mutate()} disabled={!path || !roleid || (who === 'user' ? !userid : !groupid) || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40">
+          <button onClick={() => saveM.mutate()} disabled={!path || !roleid || (who === 'user' ? !userid : !groupid) || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40">
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Create
           </button>

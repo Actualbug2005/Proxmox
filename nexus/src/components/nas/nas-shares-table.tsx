@@ -119,7 +119,7 @@ export function NasSharesTable({ node }: Props) {
             </thead>
             <tbody>
               {sorted.map((s) => (
-                <tr key={s.id} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/30">
+                <tr key={s.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/30">
                   <td className="px-4 py-3 text-zinc-200 font-medium">{s.name}</td>
                   <td className="px-4 py-3 font-mono text-zinc-400 break-all">{s.path}</td>
                   <td className="px-4 py-3">

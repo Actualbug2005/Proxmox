@@ -142,7 +142,7 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
         <button
           onClick={submit}
           disabled={saveM.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
         >
           {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save options

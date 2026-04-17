@@ -146,8 +146,8 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
                       key={`${a.id ?? a.name}-${i}`}
                       className={
                         failing
-                          ? 'border-b border-zinc-800/60/60 bg-red-500/5'
-                          : 'border-b border-zinc-800/60/40 hover:bg-zinc-800/30'
+                          ? 'border-b border-zinc-800/60 bg-red-500/5'
+                          : 'border-b border-zinc-800/40 hover:bg-zinc-800/30'
                       }
                     >
                       <td className="px-4 py-2 font-mono text-zinc-500">{a.id ?? '—'}</td>

@@ -125,8 +125,8 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
             onClick={submit}
             disabled={restoreM.isPending || typeof targetVmid !== 'number' || !targetStorage}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition text-white',
-              'bg-zinc-100 hover:bg-white disabled:opacity-40',
+              'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition text-zinc-900',
+              'bg-zinc-300 hover:bg-zinc-200 disabled:opacity-40',
             )}
           >
             {restoreM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Undo2 className="w-4 h-4" />}

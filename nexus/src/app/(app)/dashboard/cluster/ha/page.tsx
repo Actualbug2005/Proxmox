@@ -171,7 +171,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewRes(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               Add resource
@@ -203,7 +203,7 @@ export default function HAPage() {
                   {resources.map((r) => {
                     const current = statusByResource.get(r.sid);
                     return (
-                      <tr key={r.sid} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                      <tr key={r.sid} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                         <td className="px-4 py-3 font-mono text-zinc-200">{r.sid}</td>
                         <td className="px-4 py-3"><Badge variant={stateVariant(r.state)} className="text-xs">{r.state}</Badge></td>
                         <td className="px-4 py-3"><Badge variant={stateVariant(current)} className="text-xs">{current ?? 'unknown'}</Badge></td>
@@ -258,7 +258,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewGroup(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               New group
@@ -287,7 +287,7 @@ export default function HAPage() {
                 </thead>
                 <tbody>
                   {groups.map((g) => (
-                    <tr key={g.group} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                    <tr key={g.group} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                       <td className="px-4 py-3 font-mono text-zinc-200">{g.group}</td>
                       <td className="px-4 py-3 font-mono text-xs text-zinc-400">{g.nodes}</td>
                       <td className="px-4 py-3 space-x-1">
@@ -336,7 +336,7 @@ export default function HAPage() {
                 </thead>
                 <tbody>
                   {haStatus.map((s) => (
-                    <tr key={s.id} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+                    <tr key={s.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                       <td className="px-4 py-3 font-mono text-xs text-zinc-200">{s.id}</td>
                       <td className="px-4 py-3 text-xs text-zinc-400">{s.type}</td>
                       <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{s.node ?? '—'}</td>

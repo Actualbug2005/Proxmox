@@ -147,7 +147,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-zinc-100 hover:bg-white disabled:bg-zinc-100/50 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2"
+              className="w-full bg-zinc-300 hover:bg-zinc-200 disabled:bg-zinc-300/50 text-zinc-900 font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? 'Signing in…' : 'Sign in'}

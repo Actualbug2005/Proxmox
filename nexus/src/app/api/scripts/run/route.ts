@@ -1,19 +1,33 @@
 /**
- * Execute a community script on a Proxmox node via ssh to root@<node>.
+ * POST /api/scripts/run — fire-and-forget community-script executor.
  *
- * Security mechanism:
+ * Response model (changed 2026-04-17):
+ *   Previously this handler *awaited* the child process for up to 15 min, so
+ *   edge proxies with short response timeouts (Cloudflare Tunnel: 100 s)
+ *   returned 502 long before most community scripts finished. The handler
+ *   now spawns the child detached, records a job in the script-jobs
+ *   registry, and returns 200 with { jobId } immediately. Clients poll
+ *   /api/scripts/jobs/[jobId] for status + log.
+ *
+ * Security mechanism (unchanged):
  *   1. URL is parsed with the WHATWG URL constructor and matched against an
- *      origin + pathname whitelist — the pathname is restricted to characters
- *      that cannot break out of a single-quoted shell context, so string
- *      interpolation into the command cannot inject.
+ *      origin + pathname whitelist — the pathname is restricted to
+ *      characters that cannot break out of a single-quoted shell context.
  *   2. Caller must hold Sys.Modify on /nodes/<node> via the PVE ACL.
  *   3. CSRF double-submit header is validated before any work happens.
  *   4. The script URL is piped to bash over stdin via spawn(ssh, ..., bash -s)
  *      so the URL never appears in the remote argv either.
+ *
+ * New: env overrides
+ *   Clients may supply `env: Record<string,string>` with hostname / storage /
+ *   cpu etc. overrides. Names are filtered through an allow-list and values
+ *   through a strict regex; anything else is silently dropped. Accepted
+ *   vars become `export K=V` lines in the bash preamble.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { closeSync, writeSync } from 'node:fs';
 import { hostname } from 'node:os';
 import { getSession, getSessionId } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
@@ -21,23 +35,22 @@ import { requireNodeSysModify } from '@/lib/permissions';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { RATE_LIMITS, acquireSlot, takeToken } from '@/lib/rate-limit';
 import { writeAuditEntry } from '@/lib/exec-audit';
-
-// PVE's self-signed cert is handled inside pveFetch (used by permissions.ts).
-// No process-global NODE_TLS_REJECT_UNAUTHORIZED mutation — it leaked TLS
-// verification off for every outbound fetch in the Node runtime.
+import {
+  appendTail,
+  buildEnvPreamble,
+  createJob,
+  ensureJobGcStarted,
+  finaliseJob,
+  sanitiseEnv,
+  setJobPid,
+} from '@/lib/script-jobs';
 
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
-// Only the raw-content CDN is trusted. github.com was removed because its
-// /raw/ paths 302 to raw.githubusercontent.com AND repo owners can
-// configure arbitrary redirects — combined with curl's default redirect-
-// following behaviour, that gave an attacker controlling any mirror in a
-// redirect chain root RCE on every PVE node. See the hardened curl
-// invocation in pipeScriptToRemoteBash for belt-and-braces.
+// Only the raw-content CDN is trusted. See README.md §Script-execution trust
+// boundary for why github.com is not in this set.
 const TRUSTED_ORIGINS = new Set([
   'https://raw.githubusercontent.com',
 ]);
-// Paths must belong to the community-scripts/ProxmoxVE repo and contain only
-// the shell-safe character set — letters, digits, dot, dash, underscore, slash.
 const SCRIPT_PATH_RE = /^\/community-scripts\/ProxmoxVE\/[A-Za-z0-9._\-/]+$/;
 
 interface PVEMembers {
@@ -56,12 +69,34 @@ async function resolveNodeAddress(node: string): Promise<string> {
   return node;
 }
 
-function pipeScriptToRemoteBash(
-  node: string,
-  address: string,
-  scriptUrl: string,
-  timeoutMs: number,
-): Promise<{ upid: string }> {
+/**
+ * Spawn the ssh|bash pipeline detached and wire its output to both the
+ * job's log file (via the inherited fd) and the in-memory tail (for live
+ * status-bar rendering). The slot releaser / audit-writer is invoked
+ * asynchronously when the child finally closes — the POST handler has
+ * long since returned by then.
+ */
+function spawnDetached(params: {
+  jobId: string;
+  node: string;
+  address: string;
+  scriptUrl: string;
+  envPreamble: string;
+  timeoutMs: number;
+  logFd: number;
+  onClose: (status: 'success' | 'failed' | 'aborted', exitCode: number | null) => void;
+}): { pid: number | undefined } {
+  const {
+    jobId,
+    node,
+    address,
+    scriptUrl,
+    envPreamble,
+    timeoutMs,
+    logFd,
+    onClose,
+  } = params;
+
   const isLocal = node === hostname();
   const file = isLocal ? 'bash' : 'ssh';
   const args = isLocal
@@ -74,87 +109,97 @@ function pipeScriptToRemoteBash(
         'bash', '-s',
       ];
 
-  return new Promise((resolve, reject) => {
-    // H8 — timeout enforcement.
-    // AbortController ties the timer to the child: when the signal aborts,
-    // Node sends SIGTERM to the child. We keep a separate hard-kill timer
-    // that escalates to SIGKILL 5s later in case the remote hangs in a
-    // state where SIGTERM doesn't free the process (e.g., stuck SSH handshake).
-    const controller = new AbortController();
-    const softKillTimer = setTimeout(() => controller.abort(), timeoutMs);
-    let hardKillTimer: NodeJS.Timeout | null = null;
+  const controller = new AbortController();
+  let timedOut = false;
+  const softKillTimer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  let hardKillTimer: NodeJS.Timeout | null = null;
 
-    const child = spawn(file, args, {
-      stdio: ['pipe', 'ignore', 'pipe'],
-      signal: controller.signal,
-    });
-
-    let stderr = '';
-    let timedOut = false;
-
-    child.stderr.on('data', (d: Buffer) => {
-      stderr += d.toString('utf8');
-    });
-
-    controller.signal.addEventListener('abort', () => {
-      timedOut = true;
-      hardKillTimer = setTimeout(() => {
-        if (!child.killed) child.kill('SIGKILL');
-      }, 5_000);
-    });
-
-    const cleanup = () => {
-      clearTimeout(softKillTimer);
-      if (hardKillTimer) clearTimeout(hardKillTimer);
-    };
-
-    child.on('error', (err) => {
-      cleanup();
-      // AbortError fires when we kill the child via the controller. Surface
-      // it as a user-meaningful timeout rather than a generic error.
-      if (timedOut) {
-        reject(new Error(`Script timed out after ${timeoutMs}ms`));
-      } else {
-        reject(err);
-      }
-    });
-
-    child.on('close', (code) => {
-      cleanup();
-      if (timedOut) {
-        reject(new Error(`Script timed out after ${timeoutMs}ms`));
-      } else if (code === 0) {
-        resolve({ upid: `nexus-script:${Date.now()}` });
-      } else {
-        reject(new Error(`script failed (exit ${code}): ${stderr.slice(0, 500)}`));
-      }
-    });
-
-    // The URL is passed to bash via stdin — it never touches an argv slot or
-    // a shell string literal. `$SCRIPT_URL` below is a bash variable, not an
-    // interpolation site.
-    //
-    // curl flags hardened per audit C3:
-    //   --proto '=https'         reject any non-HTTPS URL outright
-    //   --proto-redir '=https'   reject any redirect that would leave HTTPS
-    //                            (blocks http://, ftp://, file://, gopher://
-    //                             redirect-downgrades)
-    //   --max-redirs 3           cap redirect chain so an attacker-controlled
-    //                            mirror can't chain through metadata services
-    //                            or loop the request into a timing oracle
-    //   --max-time in curl itself is also bounded via timeoutMs above as a
-    //   belt-and-braces second layer — the AbortController covers the parent
-    //   process side, curl's own timeout covers the network side.
-    const curlMaxTimeSec = Math.ceil(timeoutMs / 1000);
-    child.stdin.end(
-      `set -euo pipefail\n` +
-      `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
-      `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 --max-time ${curlMaxTimeSec} -- "$SCRIPT_URL" | bash\n`,
-    );
+  // stdio: [stdin=pipe, stdout=logFd, stderr=logFd] so every byte the child
+  // writes lands in the log file directly — we still want to mirror into
+  // the ring buffer for the status bar, so we open a second pipe below.
+  //
+  // Actually we can't do both at once with child_process on a single fd:
+  // using pipe means we read from Node, using the fd means we don't. We
+  // use two pipes (stdout + stderr), then tee each chunk to:
+  //   - fs.write(logFd, chunk)       — durable log
+  //   - appendTail(jobId, chunk)     — ephemeral ring for UI
+  const child = spawn(file, args, {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    signal: controller.signal,
   });
+
+  // The logFd is ours to own — close it when the child exits.
+  const tee = (chunk: Buffer) => {
+    try {
+      // Sync write keeps log ordering deterministic (stdout and stderr
+      // pipe events interleave via the event loop; async writes could
+      // reorder them relative to the appendTail call below).
+      writeSync(logFd, chunk);
+    } catch {
+      /* fd might be closed on abort — drop the write, not fatal */
+    }
+    appendTail(jobId, chunk);
+  };
+
+  child.stdout?.on('data', tee);
+  child.stderr?.on('data', tee);
+
+  controller.signal.addEventListener('abort', () => {
+    hardKillTimer = setTimeout(() => {
+      if (!child.killed) child.kill('SIGKILL');
+    }, 5_000);
+  });
+
+  child.on('error', (err) => {
+    tee(Buffer.from(`\n[nexus] spawn error: ${err.message}\n`, 'utf8'));
+    cleanup();
+    onClose('failed', null);
+  });
+
+  child.on('close', (code, signal) => {
+    cleanup();
+    if (timedOut) {
+      tee(Buffer.from(`\n[nexus] timed out after ${timeoutMs}ms\n`, 'utf8'));
+      onClose('failed', code);
+    } else if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+      tee(Buffer.from(`\n[nexus] aborted by user (${signal})\n`, 'utf8'));
+      onClose('aborted', code);
+    } else if (code === 0) {
+      onClose('success', 0);
+    } else {
+      onClose('failed', code);
+    }
+  });
+
+  function cleanup() {
+    clearTimeout(softKillTimer);
+    if (hardKillTimer) clearTimeout(hardKillTimer);
+    try {
+      closeSync(logFd);
+    } catch {
+      /* already closed */
+    }
+  }
+
+  const curlMaxTimeSec = Math.ceil(timeoutMs / 1000);
+  // The URL is passed to bash via stdin — it never touches an argv slot or
+  // a shell string literal. $SCRIPT_URL below is a bash variable.
+  child.stdin?.end(
+    `set -euo pipefail\n` +
+    envPreamble +
+    `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
+    `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 --max-time ${curlMaxTimeSec} -- "$SCRIPT_URL" | bash\n`,
+  );
+
+  return { pid: child.pid };
 }
 
 export async function POST(req: NextRequest) {
+  ensureJobGcStarted();
+
   const sessionId = await getSessionId();
   if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!validateCsrf(req, sessionId)) {
@@ -163,12 +208,16 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { node, scriptUrl, scriptName, timeoutMs: rawTimeoutMs } = (await req.json()) as {
+  const body = (await req.json()) as {
     node?: string;
     scriptUrl?: string;
     scriptName?: string;
+    slug?: string;
+    method?: string;
+    env?: Record<string, unknown>;
     timeoutMs?: number;
   };
+  const { node, scriptUrl, scriptName, slug, method, env: rawEnv, timeoutMs: rawTimeoutMs } = body;
 
   if (!node || !scriptUrl || typeof node !== 'string' || typeof scriptUrl !== 'string') {
     return NextResponse.json({ error: 'node and scriptUrl are required' }, { status: 400 });
@@ -177,9 +226,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid node name' }, { status: 400 });
   }
 
-  // H8 — clamp caller-provided timeout to the policy ceiling. Default 15 min
-  // is enough for every community script we've seen; ceiling at 45 min
-  // matches EXEC_LIMITS.maxTimeoutMs for operational parity with /api/exec.
   const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
   const timeoutMs =
     typeof rawTimeoutMs === 'number' && Number.isFinite(rawTimeoutMs) && rawTimeoutMs > 0
@@ -206,7 +252,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Rate limit BEFORE slot acquisition — 429 on token refusal is cheap.
   const token = await takeToken(
     sessionId,
     'scripts.run',
@@ -233,37 +278,56 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { env: safeEnv, rejected } = sanitiseEnv(rawEnv);
+  const envPreamble = buildEnvPreamble(safeEnv);
+
+  // Pre-resolve node address so a DNS/members error fails fast BEFORE we
+  // register a job (no empty 'failed' ghost records from trivial input bugs).
+  const address = await resolveNodeAddress(node);
+
+  const { job, fd } = createJob({
+    node,
+    scriptUrl: parsed.toString(),
+    scriptName: typeof scriptName === 'string' ? scriptName : parsed.pathname.split('/').pop() ?? 'script',
+    slug: typeof slug === 'string' && slug.length <= 63 ? slug : undefined,
+    method: typeof method === 'string' && method.length <= 32 ? method : undefined,
+    user: session.username,
+    env: safeEnv,
+  });
+
   const started = Date.now();
-  let exitCode: number | null = null;
-  try {
-    const address = await resolveNodeAddress(node);
-    const { upid } = await pipeScriptToRemoteBash(node, address, parsed.toString(), timeoutMs);
-    exitCode = 0;
-    return NextResponse.json({ upid, node, scriptName: scriptName ?? null });
-  } catch (err) {
-    exitCode = 1;
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : String(err) },
-      { status: 502 },
-    );
-  } finally {
-    // Release concurrency slot first so an audit-write hang doesn't deadlock
-    // the user's budget. Audit writes are best-effort — log but never bubble
-    // up to the caller.
-    await slot.release();
-    try {
-      await writeAuditEntry({
-        user: session.username,
-        node,
-        endpoint: 'scripts.run',
-        // Log the script URL as the "command" — that's what identifies what
-        // actually ran on the target node (the URL is the input to curl|bash).
-        command: parsed.toString(),
-        exitCode,
-        durationMs: Date.now() - started,
-      });
-    } catch (auditErr) {
-      console.error('[api/scripts/run] audit write failed:', auditErr);
-    }
-  }
+  const { pid } = spawnDetached({
+    jobId: job.id,
+    node,
+    address,
+    scriptUrl: parsed.toString(),
+    envPreamble,
+    timeoutMs,
+    logFd: fd,
+    onClose: async (status, exitCode) => {
+      finaliseJob(job.id, status, exitCode);
+      // Release concurrency slot first so an audit-write hang doesn't
+      // deadlock the user's budget. Audit writes are best-effort.
+      await slot.release();
+      try {
+        await writeAuditEntry({
+          user: session.username,
+          node,
+          endpoint: 'scripts.run',
+          command: parsed.toString(),
+          exitCode: exitCode ?? 1,
+          durationMs: Date.now() - started,
+        });
+      } catch (auditErr) {
+        console.error('[api/scripts/run] audit write failed:', auditErr);
+      }
+    },
+  });
+  if (pid !== undefined) setJobPid(job.id, pid);
+
+  return NextResponse.json({
+    jobId: job.id,
+    startedAt: job.startedAt,
+    rejectedEnvKeys: rejected,
+  });
 }

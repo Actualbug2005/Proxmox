@@ -150,7 +150,7 @@ function IfaceForm({
         <button
           onClick={handleSave}
           disabled={isSaving || (!initial?.iface && !iface)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save
@@ -285,7 +285,7 @@ export default function NetworkPage() {
         </div>
         <button
           onClick={() => { setShowCreate(true); setSelectedIface(null); }}
-          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           New Interface

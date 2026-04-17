@@ -219,7 +219,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
                     <tr
                       key={f.relativePath}
                       className={cn(
-                        'border-b border-zinc-800/60/40 transition',
+                        'border-b border-zinc-800/40 transition',
                         isClickableDir
                           ? 'hover:bg-zinc-800/40 cursor-pointer'
                           : 'hover:bg-zinc-800/20',

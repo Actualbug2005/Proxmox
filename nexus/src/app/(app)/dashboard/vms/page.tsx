@@ -154,7 +154,7 @@ export default function VMsPage() {
         </div>
         <Link
           href="/dashboard/vms/create"
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm font-medium rounded-lg transition"
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm font-medium rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Create VM

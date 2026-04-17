@@ -73,7 +73,12 @@
       "Bash(curl -s \"https://api.github.com/repos/community-scripts/ProxmoxVE/contents/misc?per_page=10\")",
       "Bash(npx --no-install tsc --noEmit -p tsconfig.json)",
       "Bash(echo \"---exit: $?---\")",
-      "Bash(npx --no-install tsc --noEmit)"
+      "Bash(npx --no-install tsc --noEmit)",
+      "Bash(echo \"---tsc: $?---\")",
+      "Bash(npx --no-install eslint src/app/api/scripts/run/route.ts src/lib/script-jobs.ts src/components/script-jobs/ src/app/\\\\\\(app\\\\\\)/scripts/page.tsx src/app/\\\\\\(app\\\\\\)/layout.tsx src/app/api/scripts/jobs/ src/hooks/use-script-jobs.ts)",
+      "Bash(echo \"---eslint: $?---\")",
+      "Bash(git -C /Users/devlin/Documents/GitHub/Proxmox status --short)",
+      "Bash(git -C /Users/devlin/Documents/GitHub/Proxmox diff --stat)"
     ]
   },
   "enabledPlugins": {

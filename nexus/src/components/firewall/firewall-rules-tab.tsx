@@ -56,7 +56,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
       <div className="flex justify-end">
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           New rule
@@ -109,7 +109,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
             </thead>
             <tbody>
               {sorted.map((r, idx) => (
-                <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-zinc-800/60/40' : 'border-b border-zinc-800/60/40 hover:bg-zinc-800/20'}>
+                <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-zinc-800/40' : 'border-b border-zinc-800/40 hover:bg-zinc-800/20'}>
                   <td className="px-3 py-3 font-mono text-xs text-zinc-500">{r.pos}</td>
                   <td className="px-3 py-3">
                     <Badge variant={r.type === 'in' ? 'success' : r.type === 'out' ? 'warning' : 'outline'} className="text-xs">

@@ -58,7 +58,7 @@ export default function VncConsolePage() {
                 href={url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
               >
                 <ExternalLink className="w-4 h-4" />
                 Open manually

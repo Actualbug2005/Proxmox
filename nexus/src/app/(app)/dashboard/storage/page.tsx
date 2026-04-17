@@ -265,7 +265,7 @@ export default function StoragePage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowMapStorage(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               Map Storage
@@ -367,7 +367,7 @@ export default function StoragePage() {
                 </div>
                 <button
                   onClick={() => setShowCreateShare(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   Create Share

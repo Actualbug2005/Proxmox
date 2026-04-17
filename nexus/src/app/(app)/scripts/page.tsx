@@ -42,8 +42,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { readCsrfCookie } from '@/lib/proxmox-client';
 import { useClusterResources } from '@/hooks/use-cluster';
+import { useStartScriptJob } from '@/hooks/use-script-jobs';
 import type {
   CommunityScript,
   InstallMethod,
@@ -426,10 +426,20 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
     setSelectedNode(nodes[0].node ?? nodes[0].id);
   }
 
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [execError, setExecError] = useState<string | null>(null);
-  const [execSuccess, setExecSuccess] = useState<{ upid: string } | null>(null);
+  // Advanced config: caller-supplied env overrides. Empty strings are
+  // treated as "use the script's default" and stripped before send.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [envInputs, setEnvInputs] = useState<Record<string, string>>({});
+  function setEnv(key: string, value: string) {
+    setEnvInputs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const startJob = useStartScriptJob();
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+  // The jobId the server returned for the most recent Run from this pane.
+  // Kept locally so the "Started" banner shows until the user triggers a
+  // new run; the bottom-right status bar takes over from there.
+  const [justStartedId, setJustStartedId] = useState<string | null>(null);
 
   async function handleCopy() {
     try {
@@ -441,35 +451,29 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
     }
   }
 
-  async function handleRun() {
-    if (!selectedNode) return;
-    setIsExecuting(true);
-    setExecError(null);
-    try {
-      const csrf = readCsrfCookie();
-      const res = await fetch('/api/scripts/run', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
+  function handleRun() {
+    if (!selectedNode || startJob.isPending) return;
+    // Strip empty overrides so the server doesn't receive "CT_ID=" lines
+    // that override the community script's default with an empty string.
+    const env = Object.fromEntries(
+      Object.entries(envInputs).filter(([, v]) => v.trim() !== ''),
+    );
+    startJob.mutate(
+      {
+        node: selectedNode,
+        scriptUrl,
+        scriptName: manifest.name,
+        slug: manifest.slug,
+        method: activeMethod?.type,
+        env,
+      },
+      {
+        onSuccess: (data) => {
+          setJustStartedId(data.jobId);
+          setEnvInputs({}); // Clear so the next run starts clean.
         },
-        body: JSON.stringify({
-          node: selectedNode,
-          scriptUrl,
-          scriptName: manifest.name,
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      const body = (await res.json()) as { upid?: string };
-      setExecSuccess({ upid: body.upid ?? '' });
-    } catch (err) {
-      setExecError(err instanceof Error ? err.message : 'Execution failed');
-    } finally {
-      setIsExecuting(false);
-    }
+      },
+    );
   }
 
   return (
@@ -514,85 +518,85 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
         )}
 
         {/* Run execution card */}
-        {execSuccess ? (
-          <div className="studio-card rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-emerald-300">
-                Started on <span className="font-mono">{selectedNode}</span>
-              </p>
-              {execSuccess.upid && (
-                <p className="text-[11px] text-zinc-500 font-mono mt-1 break-all">UPID: {execSuccess.upid}</p>
+        <section className="studio-card rounded-lg p-4 space-y-3">
+          {methods.length > 1 && (
+            <div>
+              <h3 className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Install method</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {methods.map((m, i) => (
+                  <button
+                    key={m.type + i}
+                    onClick={() => setMethodIdx(i)}
+                    className={cn(
+                      'px-2.5 py-1 text-xs rounded-md border transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
+                      i === methodIdx
+                        ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200',
+                    )}
+                  >
+                    {prettyMethodName(m.type)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeMethod && <ResourceGrid method={activeMethod} />}
+
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+            <NodePicker nodes={nodes} value={selectedNode} onChange={setSelectedNode} />
+            <button
+              onClick={handleRun}
+              disabled={startJob.isPending || !selectedNode}
+              className="h-9 px-4 rounded-lg bg-indigo-500 hover:bg-indigo-400
+                         disabled:bg-indigo-500/40 disabled:cursor-not-allowed
+                         text-white text-sm font-medium transition
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300
+                         inline-flex items-center gap-1.5 shrink-0"
+            >
+              {startJob.isPending ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Starting…
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5" />
+                  Run on node
+                </>
               )}
-              <p className="text-xs text-zinc-500 mt-1">Check the Tasks panel for progress.</p>
-              <button
-                onClick={() => setExecSuccess(null)}
-                className="mt-2 text-xs text-zinc-400 hover:text-zinc-200 underline"
-              >
-                Run again
-              </button>
-            </div>
+            </button>
           </div>
-        ) : (
-          <section className="studio-card rounded-lg p-4 space-y-3">
-            {methods.length > 1 && (
-              <div>
-                <h3 className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Install method</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {methods.map((m, i) => (
-                    <button
-                      key={m.type + i}
-                      onClick={() => setMethodIdx(i)}
-                      className={cn(
-                        'px-2.5 py-1 text-xs rounded-md border transition-colors',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
-                        i === methodIdx
-                          ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200',
-                      )}
-                    >
-                      {prettyMethodName(m.type)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {activeMethod && <ResourceGrid method={activeMethod} />}
+          {/* Advanced configuration (env overrides) */}
+          <AdvancedConfigPanel
+            open={advancedOpen}
+            onToggle={() => setAdvancedOpen((v) => !v)}
+            values={envInputs}
+            onChange={setEnv}
+          />
 
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-              <NodePicker nodes={nodes} value={selectedNode} onChange={setSelectedNode} />
-              <button
-                onClick={handleRun}
-                disabled={isExecuting || !selectedNode}
-                className="h-9 px-4 rounded-lg bg-indigo-500 hover:bg-indigo-400
-                           disabled:bg-indigo-500/40 disabled:cursor-not-allowed
-                           text-white text-sm font-medium transition
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300
-                           inline-flex items-center gap-1.5 shrink-0"
-              >
-                {isExecuting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Starting…
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3.5 h-3.5" />
-                    Run on node
-                  </>
-                )}
-              </button>
+          {/* Post-start banner — persists until the user edits inputs or
+           * starts another job. Full log + abort live in the status bar. */}
+          {justStartedId && !startJob.isPending && !startJob.isError && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+              <p className="text-emerald-200">
+                Started on <span className="font-mono">{selectedNode}</span>. Track progress in the
+                <span className="font-medium"> bottom-right status bar</span> — it opens a live log
+                when clicked.
+              </p>
             </div>
+          )}
 
-            {execError && (
-              <div className="flex items-start gap-2 p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-xs">
-                <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-                <p className="text-red-300">{execError}</p>
-              </div>
-            )}
-          </section>
-        )}
+          {startJob.isError && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-xs">
+              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+              <p className="text-red-300">{startJob.error.message}</p>
+            </div>
+          )}
+        </section>
 
         {/* Install command */}
         <section>
@@ -771,6 +775,110 @@ function NodePicker({
         </select>
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
       </div>
+    </div>
+  );
+}
+
+// ─── Advanced configuration ─────────────────────────────────────────────────
+
+/**
+ * Env-override fields the UI exposes for community scripts. The names map
+ * to common conventions used by community-scripts/ProxmoxVE — in particular
+ * the `var_*` lowercase names used by the newer `build.func` templates AND
+ * the uppercase legacy names (`HN`, `CT_ID`, `PW`) used by older scripts.
+ *
+ * Values are best-effort — individual scripts may ignore them (especially
+ * the `VM` and `addon` types, which don't inherit the LXC build flow).
+ * The helper text on each field reminds the user.
+ *
+ * The server re-validates every name and value against its own allow-list
+ * + regex (see `sanitiseEnv` in lib/script-jobs.ts); anything not listed
+ * here but accepted there is safe to add later without UI changes.
+ */
+const ADVANCED_FIELDS: {
+  key: string;
+  label: string;
+  placeholder: string;
+  hint?: string;
+  width: 'half' | 'full';
+}[] = [
+  { key: 'HN', label: 'Hostname', placeholder: 'my-service', width: 'half' },
+  { key: 'CT_ID', label: 'Container ID', placeholder: 'e.g. 200', width: 'half' },
+  { key: 'var_cpu', label: 'CPU cores', placeholder: '1', width: 'half' },
+  { key: 'var_ram', label: 'RAM (MB)', placeholder: '512', width: 'half' },
+  { key: 'var_disk', label: 'Disk (GB)', placeholder: '2', width: 'half' },
+  { key: 'STORAGE', label: 'Storage pool', placeholder: 'local-lvm', width: 'half' },
+  {
+    key: 'PW',
+    label: 'Root password',
+    placeholder: 'leave empty for auto-generated',
+    hint: 'Only set if the script supports it — otherwise keep blank and let the script prompt or randomise.',
+    width: 'full',
+  },
+];
+
+function AdvancedConfigPanel({
+  open,
+  onToggle,
+  values,
+  onChange,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+}) {
+  const count = Object.values(values).filter((v) => v.trim() !== '').length;
+  return (
+    <div className="border-t border-zinc-800/60 pt-3">
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 text-left text-[11px] uppercase tracking-widest text-zinc-500
+                   hover:text-zinc-300
+                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
+      >
+        {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        Advanced configuration
+        {count > 0 && (
+          <span className="ml-1 tabular font-mono text-indigo-300">({count} override{count === 1 ? '' : 's'})</span>
+        )}
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3">
+          <p className="text-[11px] text-zinc-500 leading-relaxed">
+            These env vars are forwarded to the script. Individual scripts may ignore overrides —
+            leave a field blank to accept the script&apos;s built-in default.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {ADVANCED_FIELDS.map((f) => (
+              <div key={f.key} className={f.width === 'full' ? 'col-span-2' : 'col-span-1'}>
+                <label
+                  htmlFor={`adv-${f.key}`}
+                  className="block text-[11px] uppercase tracking-widest text-zinc-500 mb-1"
+                >
+                  {f.label}
+                  <span className="ml-1 text-zinc-600 font-mono normal-case tracking-normal">
+                    {f.key}
+                  </span>
+                </label>
+                <input
+                  id={`adv-${f.key}`}
+                  type={f.key === 'PW' ? 'password' : 'text'}
+                  value={values[f.key] ?? ''}
+                  onChange={(e) => onChange(f.key, e.target.value)}
+                  placeholder={f.placeholder}
+                  autoComplete={f.key === 'PW' ? 'new-password' : 'off'}
+                  className="w-full h-8 bg-zinc-900 border border-zinc-800/60 rounded-md px-2
+                             text-xs text-zinc-100 placeholder-zinc-600
+                             focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
+                />
+                {f.hint && <p className="text-[10px] text-zinc-600 mt-0.5 leading-snug">{f.hint}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

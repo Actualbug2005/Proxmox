@@ -61,7 +61,7 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
           <button
             onClick={() => migrateM.mutate()}
             disabled={!target || migrateM.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
           >
             {migrateM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
             {kind === 'migrate' ? 'Migrate' : 'Relocate'}

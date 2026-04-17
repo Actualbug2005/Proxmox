@@ -101,7 +101,7 @@ export function StorageContentTable({
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.volid} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20">
+              <tr key={item.volid} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
                 <td className="px-4 py-3 font-mono text-zinc-200 text-xs break-all max-w-xs" title={item.volid}>
                   {volidName(item.volid)}
                 </td>

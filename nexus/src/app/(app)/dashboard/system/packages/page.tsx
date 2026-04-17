@@ -141,7 +141,7 @@ export default function PackagesPage() {
             <button
               onClick={() => installM.mutate([])}
               disabled={installM.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
             >
               {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
               Upgrade All PVE
@@ -166,7 +166,7 @@ export default function PackagesPage() {
                   {(pvePackages ?? []).map((pkg) => {
                     const newVersion = newVersionByPkg.get(pkg.Package);
                     return (
-                      <tr key={pkg.Package} className="border-b border-zinc-800/60/50 hover:bg-zinc-800/30">
+                      <tr key={pkg.Package} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
                         <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
                         <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.Version}</td>
                         <td className="px-4 py-3">
@@ -206,7 +206,7 @@ export default function PackagesPage() {
               <button
                 onClick={() => installM.mutate([])}
                 disabled={installM.isPending}
-                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition disabled:opacity-40"
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
               >
                 {installM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
                 Upgrade All
@@ -237,7 +237,7 @@ export default function PackagesPage() {
                 </thead>
                 <tbody>
                   {filteredSystem.map((pkg) => (
-                    <tr key={pkg.Package} className="border-b border-zinc-800/60/50 hover:bg-zinc-800/30">
+                    <tr key={pkg.Package} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"

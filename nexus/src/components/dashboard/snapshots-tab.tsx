@@ -87,7 +87,7 @@ function CreateSnapshotDialog({
           <button
             onClick={() => onSubmit({ snapname, description: description || undefined, vmstate: kind === 'qemu' && vmstate })}
             disabled={!snapname || isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
             Create
@@ -126,7 +126,7 @@ function EditDescription({
         <button
           onClick={() => onSave(val)}
           disabled={isPending}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-100 hover:bg-white text-white rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
         >
           {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
           Save
@@ -242,7 +242,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 hover:bg-white text-white text-sm rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
           >
             <Plus className="w-4 h-4" />
             Create snapshot
@@ -275,7 +275,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                 {items.map((s: PVESnapshotPublic) => {
                   const isCurrent = currentParent === s.name;
                   return (
-                    <tr key={s.name} className="border-b border-zinc-800/60/40 hover:bg-zinc-800/20 align-top">
+                    <tr key={s.name} className="border-b border-zinc-800/40 hover:bg-zinc-800/20 align-top">
                       <td className="px-4 py-3 font-mono text-zinc-200">
                         <div className="flex items-center gap-2">
                           {isCurrent && <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />}
