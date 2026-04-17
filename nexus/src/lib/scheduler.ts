@@ -16,8 +16,10 @@
  * the old timer instead of stacking multiple loops.
  */
 
-import { matchesCron } from './cron-match';
-import * as store from './scheduled-jobs-store';
+// Explicit .ts extensions — these modules are reached from server.ts which
+// runs under Node's --experimental-strip-types (no bundler resolver).
+import { matchesCron } from './cron-match.ts';
+import * as store from './scheduled-jobs-store.ts';
 
 const SCHED_TICK_MS = 60_000;
 const DEDUP_WINDOW_MS = 55_000;

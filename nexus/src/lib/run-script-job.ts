@@ -18,8 +18,10 @@ import { spawn } from 'node:child_process';
 import { closeSync, writeSync } from 'node:fs';
 import { hostname } from 'node:os';
 
-import { writeAuditEntry } from './exec-audit';
-import { resolveNodeAddress } from './remote-shell';
+// Explicit .ts extensions — this module is reached from server.ts which
+// runs under Node's --experimental-strip-types (no bundler resolver).
+import { writeAuditEntry } from './exec-audit.ts';
+import { resolveNodeAddress } from './remote-shell.ts';
 import {
   appendTail,
   buildEnvPreamble,
@@ -28,7 +30,7 @@ import {
   finaliseJob,
   sanitiseEnv,
   setJobPid,
-} from './script-jobs';
+} from './script-jobs.ts';
 
 // ─── Validation primitives ──────────────────────────────────────────────────
 
@@ -43,13 +45,15 @@ export const SCRIPT_PATH_RE = /^\/community-scripts\/ProxmoxVE\/[A-Za-z0-9._\-/]
  * onto the HTTP response; the scheduler just logs.
  */
 export class RunScriptJobError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-  ) {
+  // Explicit fields instead of TS parameter properties — Node's strip-only
+  // mode (--experimental-strip-types) rejects the shorthand.
+  readonly status: number;
+  readonly code: string;
+  constructor(status: number, code: string, message: string) {
     super(message);
     this.name = 'RunScriptJobError';
+    this.status = status;
+    this.code = code;
   }
 }
 

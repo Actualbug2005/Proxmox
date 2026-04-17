@@ -9,8 +9,10 @@
  */
 import { createServer } from 'node:http';
 import next from 'next';
-import { startScheduler } from './src/lib/scheduler';
-import { runScriptJob } from './src/lib/run-script-job';
+// Node's --experimental-strip-types needs explicit extensions on relative
+// imports (no webpack/Next.js resolver in the custom-server entry point).
+import { startScheduler } from './src/lib/scheduler.ts';
+import { runScriptJob } from './src/lib/run-script-job.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
