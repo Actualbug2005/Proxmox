@@ -857,6 +857,11 @@ export const api = {
     rrd: (node: string, timeframe: 'hour' | 'day' | 'week' = 'hour') =>
       proxmox.get<NodeRRDData[]>(`nodes/${node}/rrddata?timeframe=${timeframe}&cf=AVERAGE`),
     tasks: (node: string) => proxmox.get<PVETask[]>(`nodes/${node}/tasks`),
+    /** Single-UPID status probe. The returned object carries `status`
+     *  ('running' | 'stopped') and `exitstatus` ('OK' | <reason>). Used
+     *  by useTaskCompletion to await long-running ops like clone. */
+    taskStatus: (node: string, upid: string) =>
+      proxmox.get<PVETask>(`nodes/${node}/tasks/${encodeURIComponent(upid)}/status`),
     power: (node: string, command: NodePowerCommand) =>
       proxmox.post<string>(`nodes/${node}/status`, { command }),
     journal: (node: string, params: JournalParams = {}) => {
