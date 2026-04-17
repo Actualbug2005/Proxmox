@@ -49,6 +49,7 @@ const sections: NavSection[] = [
       { href: '/console', label: 'Console', icon: Terminal },
       { href: '/scripts', label: 'Community Scripts', icon: Code2 },
       { href: '/dashboard/schedules', label: 'Scheduled Jobs', icon: Clock },
+      { href: '/dashboard/health', label: 'Health', icon: HeartPulse },
     ],
   },
   {
