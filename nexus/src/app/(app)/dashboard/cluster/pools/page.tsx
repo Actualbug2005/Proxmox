@@ -92,7 +92,7 @@ export default function PoolsPage() {
           description="Create a pool to group VMs, CTs, and storages. Pools are useful for granting access to multiple resources in one ACL entry."
         />
       ) : (
-        <div className="grid grid-cols-[280px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
           <div className="space-y-2">
             {pools.map((p) => (
               <button

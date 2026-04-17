@@ -140,7 +140,7 @@ export default function DashboardPage() {
       {resources && (
         <>
           {/* Summary stats */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
               { label: 'Nodes Online', value: `${onlineNodes}/${nodes.length}`, color: 'text-emerald-400' },
               { label: 'VMs Running', value: `${runningVMs}/${vms.length}`, color: 'text-blue-400' },
@@ -158,7 +158,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Main grid */}
-          <div className="grid grid-cols-[280px_1fr] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
             {/* Resource tree */}
             <div className="space-y-2">
               <BulkActionBar

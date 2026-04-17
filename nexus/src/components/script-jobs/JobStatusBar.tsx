@@ -87,7 +87,7 @@ export function JobStatusBar() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-40 w-80 max-w-[calc(100vw-2rem)]">
+      <div className="fixed right-4 z-40 w-80 max-w-[calc(100vw-2rem)] bottom-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/95 backdrop-blur shadow-xl overflow-hidden">
           <button
             onClick={() => setOpen((v) => !v)}

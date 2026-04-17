@@ -317,7 +317,7 @@ export default function NetworkPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-[260px_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
         <div className="space-y-1.5">
           {isLoading ? (
             <div className="flex items-center justify-center h-32">

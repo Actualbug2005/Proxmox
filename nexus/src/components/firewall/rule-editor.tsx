@@ -107,7 +107,7 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-zinc-500 block mb-1">Protocol</label>
               <input value={proto} onChange={(e) => setProto(e.target.value)} placeholder="tcp, udp, icmp…" className={inputCls} />

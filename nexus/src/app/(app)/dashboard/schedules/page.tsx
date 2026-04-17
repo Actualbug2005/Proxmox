@@ -99,7 +99,7 @@ export default function SchedulesPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="Total" value={String(stats.total)} color="text-zinc-100" />
         <StatCard label="Enabled" value={String(stats.enabled)} color="text-emerald-400" />
         <StatCard label="Fired in last 24h" value={String(stats.recentFires)} color="text-indigo-400" />

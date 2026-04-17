@@ -82,7 +82,7 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   return (
     <div
       className={cn(
-        'pointer-events-auto min-w-72 max-w-sm bg-zinc-900 border rounded-lg shadow-2xl px-4 py-3 flex items-start gap-3',
+        'pointer-events-auto min-w-56 sm:min-w-72 max-w-sm bg-zinc-900 border rounded-lg shadow-2xl px-4 py-3 flex items-start gap-3',
         tone,
       )}
       role="status"

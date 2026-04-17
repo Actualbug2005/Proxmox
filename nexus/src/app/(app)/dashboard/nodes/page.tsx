@@ -38,7 +38,7 @@ export default function NodesPage() {
       )}
 
       {nodes && (
-        <div className="grid grid-cols-[280px_1fr] gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
           <div className="space-y-2">
             {nodes.map((node) => {
               const name = node.node ?? node.id;

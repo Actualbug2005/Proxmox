@@ -18,7 +18,18 @@ interface TabBarProps<Id extends string> {
 
 export function TabBar<Id extends string>({ tabs, value, onChange, className }: TabBarProps<Id>) {
   return (
-    <div className={cn('flex gap-1 border-b border-zinc-800/60', className)}>
+    // overflow-x-auto on the track lets tab rows scroll horizontally on
+    // narrow viewports instead of wrapping + squishing. `-mx-4 px-4` on
+    // mobile restores the viewport-edge bleed so a half-hidden tab hints
+    // that there's more to the right; reset at sm+.
+    <div
+      className={cn(
+        'flex gap-1 border-b border-zinc-800/60 overflow-x-auto',
+        '-mx-4 px-4 sm:mx-0 sm:px-0',
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
       {tabs.map((t) => {
         const active = t.id === value;
         return (
