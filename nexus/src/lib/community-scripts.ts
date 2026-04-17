@@ -1,109 +1,96 @@
 /**
- * Community Scripts fetcher
- * Upstream: https://github.com/community-scripts/ProxmoxVE
+ * Community Scripts fetcher — PocketBase edition.
  *
- * Layout of the upstream repo:
- *   json/<slug>.json               — individual script manifest
- *   website/src/data/scripts.json  — aggregated index consumed by the
- *                                     official website (our primary source)
- *   ct/<slug>.sh                   — LXC install script
- *   vm/<slug>.sh                   — VM install script
- *   addon/<slug>.sh                — addon install script
+ * Upstream history: the community-scripts project used to ship per-slug
+ * manifests as static files in its Git repo (`json/<slug>.json` + an
+ * aggregated `website/src/data/scripts.json`). In early 2026 it migrated to a
+ * PocketBase public API — see community-scripts/ProxmoxVE-Local PR #510
+ * "migrate from JSON files to PocketBase public API" — and the old paths now
+ * 404. This module mirrors the new reference implementation (pbScripts.ts in
+ * ProxmoxVE-Local) while preserving the CommunityScript / ScriptManifest
+ * shape our UI already consumes.
  *
- * Phase D design notes:
- *   - The single source of truth for the UI contract is CommunityScript
- *     (re-exported unchanged from @/types/proxmox). Do not rename it —
- *     existing consumers (app/scripts/page.tsx, run route) rely on the
- *     shape.
- *   - The new ScriptCategory / ScriptManifest / ScriptOption interfaces
- *     below are STRUCTURAL enrichments, not replacements. They give
- *     API consumers a categorised envelope and expose the per-script
- *     metadata shape that the upstream json/*.json files actually ship.
- *   - All upstream IO goes through fetchUpstreamJSON(), which classifies
- *     failures into a discriminated FetchError union so the API layer can
- *     map them to correct HTTP status codes (502 vs 504 vs 500).
+ *   Collections (all public / unauthenticated reads):
+ *     script_scripts     — one record per script, card + full detail
+ *     script_categories  — category lookup (id, name, icon, sort_order)
+ *     z_ref_script_types — type slug lookup ("lxc" | "vm" | "pve" | "addon" | …)
+ *
+ *   The PocketBase record's `type` field is a relation; we always request
+ *   `expand=categories,type` so `expand.type.type` gives us the human slug
+ *   rather than an opaque record ID.
+ *
+ *   Install scripts themselves still live in the main ProxmoxVE repo:
+ *     ct/<slug>.sh              — LXC install (type `lxc` → our `ct`)
+ *     ct/alpine-<slug>.sh       — Alpine install-method variant
+ *     vm/<slug>.sh              — VM install
+ *     misc/<slug>.sh            — misc / pve helpers
+ *     addon/<slug>.sh           — addon install (when present)
+ *     turnkey/<slug>.sh         — TurnKey-based LXC
+ *
+ *   We build the full raw.githubusercontent URL per install method so the
+ *   /api/scripts/run route can validate it against its HTTPS allow-list.
  */
 
-import type { CommunityScript } from '@/types/proxmox';
+import type {
+  CommunityScript,
+  InstallMethod,
+  ScriptNote,
+} from '@/types/proxmox';
 
-export type { CommunityScript };
+export type { CommunityScript, InstallMethod, ScriptNote };
 
-const RAW_BASE = 'https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main';
-const GITHUB_API_BASE = 'https://api.github.com/repos/community-scripts/ProxmoxVE';
-const WEBSITE_INDEX_URL = `${RAW_BASE}/website/src/data/scripts.json`;
+// ─── Endpoints / config ──────────────────────────────────────────────────────
+
+const PB_BASE = 'https://db.community-scripts.org';
+const SCRIPTS_COLLECTION = `${PB_BASE}/api/collections/script_scripts/records`;
+const REPO_RAW_BASE = 'https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main';
 const CACHE_REVALIDATE_S = 3600;
 const FETCH_TIMEOUT_MS = 10_000;
+/** PocketBase hard-caps perPage at 500. Our dataset (~500 scripts) fits. */
+const PB_PAGE_SIZE = 500;
 
-// ─── Public interfaces ───────────────────────────────────────────────────────
+// ─── Re-exported / extended public interfaces ────────────────────────────────
 
 /**
- * One user-configurable option declared by a script manifest — e.g.
- * "password", "hostname", "storage pool". Matches the shape used inside
- * the upstream json/<slug>.json files.
+ * Full manifest for a single script. Superset of CommunityScript exported
+ * by /api/scripts/[slug]. The extra `options` field is retained as optional
+ * — the upstream PocketBase schema no longer ships per-script option
+ * declarations, so it's always absent today, but the field is preserved for
+ * consumers that already type-guard `manifest.options`.
+ */
+export interface ScriptManifest extends CommunityScript {
+  options?: ScriptOption[];
+}
+
+/**
+ * Legacy per-script option descriptor. Retained as a type-only export so
+ * downstream code that still references `ScriptOption` compiles; the new
+ * upstream schema does not populate it.
  */
 export interface ScriptOption {
-  /** Field name as presented to the user (e.g. "Hostname"). */
   label: string;
-  /** Internal parameter key the script consumes. */
   name: string;
-  /** Input widget type. Upstream only uses a small enumerated set. */
   type: 'string' | 'number' | 'boolean' | 'password' | 'select';
-  /** Default pre-fill value. */
   default?: string | number | boolean;
-  /** When type === 'select', the allowed values. */
   choices?: string[];
-  /** When true, the option cannot be empty. */
   required?: boolean;
-  /** Human description shown as helper text. */
   description?: string;
 }
 
-/**
- * Full manifest for a single script. This is a superset of CommunityScript
- * (which is the summary shape the list endpoint returns). The manifest is
- * what the /api/scripts/[slug] detail endpoint will return once we wire
- * it up — for now it's exported so the run route and the eventual
- * option-form UI share a single contract.
- */
-export interface ScriptManifest extends CommunityScript {
-  /** Parameters the caller can override when running the script. */
-  options?: ScriptOption[];
-  /** Upstream-declared install command URL (ct/vm/addon shell). */
-  install?: string;
-  /** Upstream-declared update command URL (when supported). */
-  updateable?: boolean;
-  /** Upstream website URL for docs. */
-  website?: string;
-  /** Upstream documentation URL. */
-  documentation?: string;
-  /** Logo/icon path relative to the upstream repo. */
-  logo?: string;
-}
-
-/**
- * A named grouping of scripts. The API's `?grouped=1` envelope returns
- * an array of these so the UI can render collapsible sections without
- * re-grouping client-side.
- */
 export interface ScriptCategory {
-  /** Canonical category name (e.g. "Network", "Databases"). */
   name: string;
-  /** Slugified form of `name` suitable for URL fragments. */
   slug: string;
-  /** Scripts belonging to this category, sorted alphabetically by name. */
   scripts: CommunityScript[];
 }
 
 // ─── Structured fetch errors ─────────────────────────────────────────────────
 
 /**
- * Discriminated union that the API route maps to HTTP status codes:
- *
- *   timeout         → 504 Gateway Timeout
- *   network         → 502 Bad Gateway (no response at all)
- *   http            → 502 Bad Gateway (upstream returned non-2xx)
- *   parse           → 502 Bad Gateway (response wasn't valid JSON/shape)
- *   empty           → 502 Bad Gateway (upstream returned []/null)
+ *   timeout  → 504 Gateway Timeout
+ *   network  → 502 (no response at all)
+ *   http     → 502 (upstream non-2xx)
+ *   parse    → 502 (body wasn't valid JSON / wrong shape)
+ *   empty    → 502 (upstream responded but returned zero records)
  */
 export type FetchErrorKind = 'timeout' | 'network' | 'http' | 'parse' | 'empty';
 
@@ -121,19 +108,8 @@ export class UpstreamFetchError extends Error {
   }
 }
 
-// ─── Internal helpers ────────────────────────────────────────────────────────
+// ─── Internal fetch helper ───────────────────────────────────────────────────
 
-/**
- * Wrap fetch with an AbortController-based timeout and classify every
- * failure mode into an UpstreamFetchError. The caller always gets back a
- * JSON-parsed body on success; every other outcome throws.
- *
- * Next.js fetch semantics: the { next: { revalidate } } directive lets
- * the runtime share a cached response across requests for up to an hour.
- * Since the upstream repo refreshes at most a few times per day, that's
- * the right trade-off between freshness and avoiding rate-limiting on
- * GitHub's raw CDN.
- */
 async function fetchUpstreamJSON<T>(url: string, init?: RequestInit): Promise<T> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
@@ -172,167 +148,329 @@ async function fetchUpstreamJSON<T>(url: string, init?: RequestInit): Promise<T>
   }
 }
 
-function buildInstallUrl(slug: string, type: string): string {
-  if (type === 'vm') return `${RAW_BASE}/vm/${slug}.sh`;
-  if (type === 'addon') return `${RAW_BASE}/addon/${slug}.sh`;
-  return `${RAW_BASE}/ct/${slug}.sh`;
+// ─── PocketBase record shape ─────────────────────────────────────────────────
+
+/**
+ * Minimal shape we read off a PB `script_scripts` record with
+ * `expand=categories,type`. PocketBase ships many extra fields (`created`,
+ * `updated`, `collectionId`, …) but they're not relevant to the UI.
+ */
+interface PBExpandedType {
+  /** Type slug — "lxc" | "vm" | "pve" | "addon" | "turnkey" | … */
+  type: string;
 }
 
-function coerceType(raw: unknown): CommunityScript['type'] {
-  const s = String(raw ?? 'ct').toLowerCase();
-  return (['ct', 'vm', 'misc', 'addon'].includes(s) ? s : 'ct') as CommunityScript['type'];
+interface PBExpandedCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  sort_order?: number;
 }
 
-function parseWebsiteJson(data: unknown): CommunityScript[] {
-  if (!Array.isArray(data)) return [];
+interface PBInstallMethod {
+  type: string;
+  script?: string | null;
+  config_path?: string | null;
+  resources: {
+    cpu: number;
+    ram: number;
+    hdd: number;
+    os: string;
+    version: string;
+  };
+}
 
-  const out: CommunityScript[] = [];
-  for (const item of data as Record<string, unknown>[]) {
-    const slug = String(item.slug ?? item.nsapp ?? '').trim();
-    if (!slug) continue;
-    const type = coerceType(item.type);
+interface PBNote {
+  text: string;
+  type: string;
+}
 
-    const script: CommunityScript = {
-      name: String(item.name ?? slug),
-      slug,
-      description: String(item.description ?? ''),
-      category: String(
-        (item.categories as string[] | undefined)?.[0] ?? item.category ?? 'Misc',
-      ),
-      type,
-      author: String(item.author ?? ''),
-      tags: (item.tags as string[] | undefined) ?? [],
-      scriptUrl: buildInstallUrl(slug, type),
-      jsonUrl: `${RAW_BASE}/json/${slug}.json`,
-      nsapp: String(item.nsapp ?? slug),
-      date_created: item.date_created as string | undefined,
-      default_credentials: item.default_credentials as CommunityScript['default_credentials'],
-      notes: (item.notes as string[] | undefined) ?? [],
-      resources: item.resources as CommunityScript['resources'],
-    };
-    out.push(script);
+interface PBScriptRecord {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  logo: string | null;
+  type: string;
+  port: number | null;
+  updateable: boolean;
+  privileged: boolean;
+  has_arm: boolean;
+  is_dev: boolean;
+  is_disabled: boolean;
+  is_deleted: boolean;
+  website: string | null;
+  documentation: string | null;
+  github: string | null;
+  script_created: string;
+  script_updated: string;
+  config_path: string | null;
+  default_user: string | null;
+  default_passwd: string | null;
+  install_methods: PBInstallMethod[];
+  notes: PBNote[];
+  execute_in: string[];
+  expand?: {
+    type?: PBExpandedType;
+    categories?: PBExpandedCategory[];
+  };
+}
+
+interface PBListResponse<T> {
+  page: number;
+  perPage: number;
+  totalPages: number;
+  totalItems: number;
+  items: T[];
+}
+
+// ─── PB → CommunityScript mappers ────────────────────────────────────────────
+
+/**
+ * Collapse the upstream type slug (lxc/vm/pve/addon/turnkey/…) into the
+ * four-member union the UI is typed against. `lxc` is the real name in
+ * PocketBase but `ct` is the term the rest of Proxmox (and our UI) uses.
+ */
+function mapTypeSlug(raw: string | undefined): CommunityScript['type'] {
+  switch ((raw ?? '').toLowerCase()) {
+    case 'lxc':
+    case 'ct':
+      return 'ct';
+    case 'vm':
+      return 'vm';
+    case 'addon':
+      return 'addon';
+    default:
+      // pve / turnkey / misc / anything unknown — surface as "misc" so the
+      // UI still renders rather than narrowing to `never`.
+      return 'misc';
   }
-  return out;
+}
+
+/**
+ * Map a PB install-method entry to the shape the UI consumes, resolving the
+ * script path and full URL against the main ProxmoxVE repo. Upstream leaves
+ * `install_methods[].script` as `null` on modern records and expects
+ * consumers to derive the path from (type, method.type, slug).
+ *
+ * Derivation rules, by method.type:
+ *   default  → <type-dir>/<slug>.sh
+ *   alpine   → ct/alpine-<slug>.sh              (LXC-only; upstream
+ *                                                 ships alpine variants under
+ *                                                 a prefixed filename in ct/)
+ *   other    → <type-dir>/<method.type>-<slug>.sh
+ *
+ * <type-dir> comes from the parent type slug:
+ *   lxc        → ct
+ *   vm         → vm
+ *   addon      → addon
+ *   turnkey    → turnkey
+ *   pve / misc → misc
+ */
+function resolveInstallMethod(
+  method: PBInstallMethod,
+  slug: string,
+  typeSlug: string,
+): InstallMethod {
+  const typeDir = typeDirFor(typeSlug);
+  const scriptPath =
+    method.script && typeof method.script === 'string' && method.script.length > 0
+      ? method.script.replace(/^\/+/, '')
+      : buildScriptPath(typeDir, slug, method.type);
+  return {
+    type: method.type,
+    resources: method.resources,
+    scriptPath,
+    scriptUrl: `${REPO_RAW_BASE}/${scriptPath}`,
+    config_path: method.config_path ?? null,
+  };
+}
+
+function typeDirFor(typeSlug: string): string {
+  switch (typeSlug.toLowerCase()) {
+    case 'lxc':
+    case 'ct':
+      return 'ct';
+    case 'vm':
+      return 'vm';
+    case 'addon':
+      return 'addon';
+    case 'turnkey':
+      return 'turnkey';
+    default:
+      return 'misc';
+  }
+}
+
+function buildScriptPath(typeDir: string, slug: string, methodType: string): string {
+  if (!methodType || methodType === 'default') return `${typeDir}/${slug}.sh`;
+  // The alpine variant always lives under ct/ even when the default is a VM;
+  // that said, upstream has always kept alpine variants as LXC, so no VM path
+  // prefix is needed here.
+  if (methodType === 'alpine') return `ct/alpine-${slug}.sh`;
+  return `${typeDir}/${methodType}-${slug}.sh`;
+}
+
+function mapNotes(notes: PBNote[] | undefined): ScriptNote[] {
+  if (!Array.isArray(notes)) return [];
+  return notes.map((n) => ({
+    text: n.text,
+    // PB sometimes ships "warn" shorthand; normalise to the canonical union.
+    type:
+      n.type === 'warning' || n.type === 'warn'
+        ? 'warning'
+        : n.type === 'danger' || n.type === 'error'
+          ? 'danger'
+          : 'info',
+  }));
+}
+
+function recordToScript(record: PBScriptRecord): CommunityScript {
+  const typeSlugRaw = record.expand?.type?.type ?? '';
+  const type = mapTypeSlug(typeSlugRaw);
+  const categories = (record.expand?.categories ?? []).map((c) => c.name);
+  const primaryCategory = categories[0] ?? 'Misc';
+
+  const methods = (record.install_methods ?? []).map((m) =>
+    resolveInstallMethod(m, record.slug, typeSlugRaw),
+  );
+  // Default method is our source of truth for scriptUrl + resources; fall
+  // back to the first method if upstream ever omits "default".
+  const defaultMethod =
+    methods.find((m) => m.type === 'default') ?? methods[0] ?? null;
+
+  const scriptUrl =
+    defaultMethod?.scriptUrl ??
+    `${REPO_RAW_BASE}/${typeDirFor(typeSlugRaw)}/${record.slug}.sh`;
+
+  const defaultCreds =
+    record.default_user || record.default_passwd
+      ? {
+          username: record.default_user ?? undefined,
+          password: record.default_passwd ?? undefined,
+        }
+      : undefined;
+
+  return {
+    name: record.name,
+    slug: record.slug,
+    description: record.description,
+    category: primaryCategory,
+    categories,
+    type,
+    scriptUrl,
+    logo: record.logo ?? undefined,
+    port: record.port,
+    updateable: Boolean(record.updateable),
+    privileged: Boolean(record.privileged),
+    has_arm: Boolean(record.has_arm),
+    website: record.website,
+    documentation: record.documentation,
+    github: record.github,
+    install_methods: methods,
+    execute_in: record.execute_in ?? [],
+    default_credentials: defaultCreds,
+    notes: mapNotes(record.notes),
+    resources: defaultMethod
+      ? {
+          cpu: defaultMethod.resources.cpu,
+          ram: defaultMethod.resources.ram,
+          // The UI expects hdd as a human-readable string ("2 GB"), while PB
+          // ships it as a bare GB integer. Render at the boundary so the UI
+          // doesn't have to know the unit convention.
+          hdd: `${defaultMethod.resources.hdd} GB`,
+          os: defaultMethod.resources.os,
+          version: defaultMethod.resources.version,
+        }
+      : undefined,
+    date_created: record.script_created || undefined,
+  };
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
- * Fetch the flat script index from the upstream repo.
+ * Common filter predicate — hide deleted, disabled, and dev-only scripts
+ * from the public listing. PB's `filter=` uses a JS-ish mini-language with
+ * single quotes for string literals and `&&` / `||` / `=` operators.
+ */
+const PB_PUBLIC_FILTER = "(is_deleted=false && is_disabled=false && is_dev=false)";
+
+/**
+ * Fetch the full script index. Pages through PocketBase until every record
+ * is collected — the dataset is small (~500) so a single page at
+ * perPage=500 almost always suffices, but we still loop in case upstream
+ * grows or lowers the page cap.
  *
- * Strategy:
- *   1. Try the website JSON (richest metadata) with explicit timeout and
- *      classified errors.
- *   2. If the website JSON 404s or times out AND the GitHub tree API
- *      responds, synthesise a bare index from the file tree. This fallback
- *      returns Scripts with empty descriptions but correct slugs/urls.
- *   3. If both upstream reads fail, re-throw the original website-JSON
- *      error so the API layer sees the real root cause.
- *   4. If both succeed but return no entries, throw an 'empty' error —
- *      callers want to surface that as 502 rather than render an empty UI.
+ * `empty` is an error rather than an empty array because the only way to
+ * legitimately get zero scripts is a provisioning bug upstream; callers
+ * want to render that as 502, not as "no results".
  */
 export async function fetchScriptIndex(): Promise<CommunityScript[]> {
-  let websiteErr: UpstreamFetchError | null = null;
+  const collected: CommunityScript[] = [];
+  let page = 1;
+  // Cap the loop at 20 pages × 500/page = 10 000 records — well above the
+  // realistic ceiling, defence against a pathological upstream reply that
+  // would otherwise loop forever.
+  const maxPages = 20;
 
-  try {
-    const data = await fetchUpstreamJSON<unknown>(WEBSITE_INDEX_URL);
-    const scripts = parseWebsiteJson(data);
-    if (scripts.length > 0) return scripts;
-    websiteErr = new UpstreamFetchError(
+  while (page <= maxPages) {
+    const url =
+      `${SCRIPTS_COLLECTION}?page=${page}&perPage=${PB_PAGE_SIZE}` +
+      `&expand=categories,type&sort=name` +
+      `&filter=${encodeURIComponent(PB_PUBLIC_FILTER)}`;
+
+    const body = await fetchUpstreamJSON<PBListResponse<PBScriptRecord>>(url);
+    for (const rec of body.items ?? []) {
+      collected.push(recordToScript(rec));
+    }
+    if (!body.items || body.items.length < PB_PAGE_SIZE) break;
+    page += 1;
+  }
+
+  if (collected.length === 0) {
+    throw new UpstreamFetchError(
       'empty',
-      WEBSITE_INDEX_URL,
-      'Website JSON parsed but yielded zero scripts',
+      SCRIPTS_COLLECTION,
+      'PocketBase responded but returned zero scripts',
     );
-  } catch (err) {
-    if (err instanceof UpstreamFetchError) websiteErr = err;
-    else throw err;
   }
-
-  // Fallback: synthesise a bare index from the GitHub tree API.
-  try {
-    const tree = await fetchUpstreamJSON<{ tree?: { path: string; type: string }[] }>(
-      `${GITHUB_API_BASE}/git/trees/main?recursive=1`,
-      { headers: { Accept: 'application/vnd.github+json' } },
-    );
-    const entries = tree.tree ?? [];
-    const ctScripts: CommunityScript[] = entries
-      .filter((f) => f.path.startsWith('ct/') && f.path.endsWith('.sh'))
-      .map((f) => {
-        const slug = f.path.replace(/^ct\//, '').replace(/\.sh$/, '');
-        return {
-          name: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-          slug,
-          description: '',
-          category: 'CT Scripts',
-          type: 'ct' as const,
-          scriptUrl: `${RAW_BASE}/ct/${slug}.sh`,
-          jsonUrl: `${RAW_BASE}/json/${slug}.json`,
-        };
-      });
-
-    if (ctScripts.length > 0) return ctScripts;
-    // Fallback succeeded but returned nothing — surface the original error.
-    throw websiteErr ?? new UpstreamFetchError('empty', WEBSITE_INDEX_URL, 'No scripts found');
-  } catch (err) {
-    // Prefer the primary error if the fallback also failed; it's more
-    // diagnostically useful than a secondary tree-API failure.
-    if (websiteErr) throw websiteErr;
-    throw err;
-  }
+  return collected;
 }
 
 /**
- * Fetch the full manifest for a single script. Errors propagate as
- * UpstreamFetchError so the caller can decide between 404 (missing
- * manifest) and 502 (upstream unreachable).
+ * Fetch the manifest for a single script slug. Returns `null` when the slug
+ * is unknown (PocketBase returns an empty `items` array rather than a 404);
+ * network / upstream errors propagate as UpstreamFetchError so the route
+ * handler can 502 vs. 404 appropriately.
  */
 export async function fetchScriptManifest(slug: string): Promise<ScriptManifest | null> {
-  if (!/^[a-z0-9][a-z0-9._-]*$/i.test(slug)) {
+  // Mirror the API route's slug regex one more time — defence in depth:
+  // even if an upstream consumer skips validation, we refuse to interpolate
+  // arbitrary input into PB's filter mini-language. PB's filter() helper
+  // normally escapes for us but we're building the query as a raw string.
+  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) {
     throw new Error(`Invalid slug: ${slug}`);
   }
-  const url = `${RAW_BASE}/json/${slug}.json`;
 
-  let data: Record<string, unknown>;
-  try {
-    data = await fetchUpstreamJSON<Record<string, unknown>>(url);
-  } catch (err) {
-    if (err instanceof UpstreamFetchError && err.kind === 'http' && err.status === 404) {
-      return null;
-    }
-    throw err;
-  }
+  // PB's filter string literals use single quotes; our slug regex already
+  // rules out quotes, backslashes, and whitespace, so direct interpolation
+  // is safe. We still wrap in encodeURIComponent for the URL layer.
+  const filter = `(slug='${slug}')`;
+  const url =
+    `${SCRIPTS_COLLECTION}?page=1&perPage=1&expand=categories,type` +
+    `&filter=${encodeURIComponent(filter)}`;
 
-  const type = coerceType(data.type);
-  return {
-    name: String(data.name ?? slug),
-    slug,
-    description: String(data.description ?? ''),
-    category: String(
-      (data.categories as string[] | undefined)?.[0] ?? data.category ?? 'Misc',
-    ),
-    type,
-    author: (data.author as string | undefined) ?? '',
-    tags: (data.tags as string[] | undefined) ?? [],
-    scriptUrl: buildInstallUrl(slug, type),
-    jsonUrl: url,
-    nsapp: (data.nsapp as string | undefined) ?? slug,
-    date_created: data.date_created as string | undefined,
-    default_credentials: data.default_credentials as CommunityScript['default_credentials'],
-    notes: (data.notes as string[] | undefined) ?? [],
-    resources: data.resources as CommunityScript['resources'],
-    options: (data.options as ScriptOption[] | undefined) ?? undefined,
-    install: (data.install as string | undefined) ?? undefined,
-    updateable: (data.updateable as boolean | undefined) ?? undefined,
-    website: (data.website as string | undefined) ?? undefined,
-    documentation: (data.documentation as string | undefined) ?? undefined,
-    logo: (data.logo as string | undefined) ?? undefined,
-  };
+  const body = await fetchUpstreamJSON<PBListResponse<PBScriptRecord>>(url);
+  const record = body.items?.[0];
+  if (!record) return null;
+  return recordToScript(record);
 }
 
 /**
- * Group a flat script list into ScriptCategory[] sorted by category name,
- * with each category's scripts sorted alphabetically. Pure function — the
- * API route calls this after a successful fetchScriptIndex().
+ * Group a flat script list by (primary) category. Pure function — called by
+ * /api/scripts?grouped=1 after a successful fetchScriptIndex().
  */
 export function groupByCategory(scripts: CommunityScript[]): ScriptCategory[] {
   const buckets = new Map<string, CommunityScript[]>();
@@ -347,22 +485,10 @@ export function groupByCategory(scripts: CommunityScript[]): ScriptCategory[] {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, list]) => ({
       name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      slug: name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, ''),
       scripts: [...list].sort((a, b) => a.name.localeCompare(b.name)),
     }));
-}
-
-/**
- * @deprecated Prefer fetchScriptManifest() for the full typed payload.
- * Retained because the run route currently imports it under the old name.
- */
-export async function fetchScriptDetail(slug: string): Promise<Partial<CommunityScript>> {
-  const manifest = await fetchScriptManifest(slug).catch(() => null);
-  if (!manifest) return {};
-  return {
-    default_credentials: manifest.default_credentials,
-    notes: manifest.notes,
-    resources: manifest.resources,
-    description: manifest.description,
-  };
 }

@@ -403,24 +403,86 @@ export interface NodeRRDData {
 
 // ─── Community Scripts ────────────────────────────────────────────────────────
 
+/**
+ * One note attached to a script. Upstream PocketBase records carry severity
+ * (`info | warning | danger`), which the UI renders as colour-coded callouts.
+ */
+export interface ScriptNote {
+  text: string;
+  type: 'info' | 'warning' | 'danger';
+}
+
+/**
+ * One install method variant declared by a script. Most LXC scripts ship a
+ * `default` (Debian) method plus an `alpine` variant with lower resource
+ * requirements; VM / misc scripts usually only declare `default`.
+ */
+export interface InstallMethod {
+  /** Method key — `default`, `alpine`, etc. Upstream doesn't enum-constrain it. */
+  type: string;
+  /** Minimum resources the method needs. */
+  resources: {
+    cpu: number;
+    /** RAM in MB. */
+    ram: number;
+    /** Disk in GB. */
+    hdd: number;
+    os: string;
+    version: string;
+  };
+  /** Relative script path inside the ProxmoxVE repo (e.g. "ct/alpine-adguard.sh"). */
+  scriptPath?: string;
+  /** Full raw.githubusercontent URL to the install script for this method. */
+  scriptUrl?: string;
+  /** Path to the service's config file on the installed host. */
+  config_path?: string | null;
+}
+
 export interface CommunityScript {
   name: string;
   slug: string;
   description: string;
+  /** Primary category — for backward compat with list/filter UIs. */
   category: string;
+  /** Full category set (a script can belong to several). */
+  categories?: string[];
+  /** Our canonical type. `ct` is the display name for an LXC container. */
   type: 'ct' | 'vm' | 'misc' | 'addon';
   author?: string;
   tags?: string[];
+  /** Default-method raw.githubusercontent URL, wired into the Run button. */
   scriptUrl: string;
   jsonUrl?: string;
   nsapp?: string;
   date_created?: string;
   method?: string;
+  /** Logo URL (selfhst/icons on jsDelivr, typically). */
+  logo?: string;
+  /** Web-interface port, when the installed service exposes one. */
+  port?: number | null;
+  updateable?: boolean;
+  privileged?: boolean;
+  has_arm?: boolean;
+  /** Upstream project homepage. */
+  website?: string | null;
+  /** Upstream project documentation URL. */
+  documentation?: string | null;
+  /** GitHub owner/repo of the upstream project (not the script itself). */
+  github?: string | null;
+  /** All install method variants the script supports. */
+  install_methods?: InstallMethod[];
+  /** Where the bootstrap script is expected to run (`pve`, `lxc`, ...). */
+  execute_in?: string[];
   default_credentials?: {
     username?: string;
     password?: string;
   };
-  notes?: string[];
+  /**
+   * Severity-tagged notes. (Was `string[]` pre-PocketBase; consumers that
+   * only need the text should read `n.text`.)
+   */
+  notes?: ScriptNote[];
+  /** Convenience snapshot of the default install method's resource needs. */
   resources?: {
     cpu?: number;
     ram?: number;

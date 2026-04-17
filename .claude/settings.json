@@ -67,7 +67,8 @@
       "Bash(curl -s \"https://db.community-scripts.org/api/collections/script_scripts/records?perPage=1&expand=categories,type\")",
       "Bash(python3 -m json.tool)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if 'pocket' in k.lower\\(\\) or 'pb' in k.lower\\(\\)]\")",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; print\\('next:',deps.get\\('next'\\)\\); print\\('react:',deps.get\\('react'\\)\\)\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; print\\('next:',deps.get\\('next'\\)\\); print\\('react:',deps.get\\('react'\\)\\)\")",
+      "Bash(node --input-type=module -e ' *)"
     ]
   },
   "enabledPlugins": {
