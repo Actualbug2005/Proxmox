@@ -25,6 +25,7 @@ import {
   Archive,
   RefreshCw,
   Clock,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -49,6 +50,7 @@ const sections: NavSection[] = [
       { href: '/console', label: 'Console', icon: Terminal },
       { href: '/scripts', label: 'Community Scripts', icon: Code2 },
       { href: '/dashboard/schedules', label: 'Scheduled Jobs', icon: Clock },
+      { href: '/dashboard/chains', label: 'Script Chains', icon: Workflow },
       { href: '/dashboard/health', label: 'Health', icon: HeartPulse },
     ],
   },
