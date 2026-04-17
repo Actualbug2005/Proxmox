@@ -55,6 +55,19 @@ jobs:
         working-directory: nexus
         run: npx tsc --noEmit
 
+      # Restore webpack's incremental build cache. Key is tight (lockfile +
+      # source hashes) so a code change invalidates, but the restore-keys
+      # fallback lets us reuse the previous build's cache for the unchanged
+      # portions — dramatically cuts CI build time after the first run.
+      - name: Cache .next/cache
+        uses: actions/cache@v4
+        with:
+          path: nexus/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('nexus/package-lock.json') }}-${{ hashFiles('nexus/src/**/*.{ts,tsx,js,jsx,css}', 'nexus/next.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('nexus/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-
+
       - name: Build
         working-directory: nexus
         run: npm run build
