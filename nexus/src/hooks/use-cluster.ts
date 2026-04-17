@@ -3,6 +3,36 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import type { ClusterResourcePublic } from '@/types/proxmox';
 
+export function useClusterStatus() {
+  return useQuery({
+    queryKey: ['cluster', 'status'],
+    queryFn: () => api.cluster.status(),
+    refetchInterval: POLL_INTERVALS.cluster,
+  });
+}
+
+/**
+ * The "main" node — i.e. the cluster member currently serving Nexus.
+ * `/cluster/status` flags exactly one node row with `local: true`; that's
+ * the one Nexus's PVE proxy talks to. Falls back to the first online node
+ * (then the first node) if /cluster/status hasn't loaded yet, so this is
+ * always safe to use as a select-default seed.
+ */
+export function useDefaultNode(): string | null {
+  const { data: status } = useClusterStatus();
+  const { data: nodes } = useNodes();
+
+  return useMemo(() => {
+    const local = status?.find((row) => row.type === 'node' && row.local);
+    if (local?.name) return local.name;
+
+    const firstOnline = nodes.find((n) => n.status === 'online');
+    if (firstOnline) return firstOnline.node ?? firstOnline.id;
+
+    return nodes[0]?.node ?? nodes[0]?.id ?? null;
+  }, [status, nodes]);
+}
+
 /**
  * Single source of truth for polling intervals. Keep these in milliseconds
  * and tune here rather than scattered across hooks/components.

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import { useNodes, useClusterResources } from '@/hooks/use-cluster';
+import { useNodes, useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
 import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatusDot } from '@/components/ui/status-dot';
@@ -14,9 +14,10 @@ import type { ClusterResourcePublic } from '@/types/proxmox';
 export default function NodesPage() {
   const { data: nodes, isLoading } = useNodes();
   const { data: resources } = useClusterResources();
+  const defaultNode = useDefaultNode();
   const [selected, setSelected] = useState<string | null>(null);
 
-  const selectedNode = selected ?? nodes?.[0]?.node ?? nodes?.[0]?.id ?? null;
+  const selectedNode = selected ?? defaultNode ?? nodes?.[0]?.node ?? nodes?.[0]?.id ?? null;
 
   const vmsByNode = (name: string) =>
     resources?.filter((r) => r.type === 'qemu' && r.node === name) ?? [];

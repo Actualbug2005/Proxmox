@@ -1,6 +1,6 @@
 'use client';
 
-import { useClusterResources } from '@/hooks/use-cluster';
+import { useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
 import { NodeCard } from '@/components/dashboard/node-card';
 import { ResourceTree } from '@/components/dashboard/resource-tree';
 import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
@@ -12,8 +12,10 @@ import type { ClusterResourcePublic } from '@/types/proxmox';
 export default function DashboardPage() {
   const { data: resources, isLoading, isError, refetch, dataUpdatedAt } = useClusterResources();
   const [selected, setSelected] = useState<ClusterResourcePublic | null>(null);
+  const defaultNode = useDefaultNode();
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
+  const defaultNodeResource = nodes.find((n) => (n.node ?? n.id) === defaultNode) ?? nodes[0];
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
 
@@ -105,22 +107,30 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {/* Node cards */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                {nodes.map((node) => (
-                  <NodeCard
-                    key={node.id}
-                    node={node}
-                    vmCount={vmsByNode(node.node ?? node.id).length}
-                    ctCount={ctsByNode(node.node ?? node.id).length}
-                  />
-                ))}
+                {nodes.map((node) => {
+                  const name = node.node ?? node.id;
+                  const isSelected = (selected?.type === 'node'
+                    ? (selected.node ?? selected.id)
+                    : (defaultNodeResource?.node ?? defaultNodeResource?.id)) === name;
+                  return (
+                    <NodeCard
+                      key={node.id}
+                      node={node}
+                      vmCount={vmsByNode(name).length}
+                      ctCount={ctsByNode(name).length}
+                      selected={isSelected}
+                      onClick={() => setSelected(node)}
+                    />
+                  );
+                })}
               </div>
 
-              {/* Metrics chart for selected node */}
+              {/* Metrics chart for selected node (defaults to local/main) */}
               {selected?.type === 'node' && (
                 <NodeMetricsChart nodeName={selected.node ?? selected.id} />
               )}
-              {!selected && nodes[0] && (
-                <NodeMetricsChart nodeName={nodes[0].node ?? nodes[0].id} />
+              {!selected && defaultNodeResource && (
+                <NodeMetricsChart nodeName={defaultNodeResource.node ?? defaultNodeResource.id} />
               )}
 
               {/* Recent tasks */}

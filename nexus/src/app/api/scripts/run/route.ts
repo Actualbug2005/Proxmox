@@ -198,11 +198,29 @@ function spawnDetached(params: {
   //   when it manages to run. None of this creates a real TTY —
   //   anything that truly needs isatty() (whiptail's "advanced" mode)
   //   will still fail, but the default non-interactive path works.
+  // Non-interactive dispatch:
+  //   mode=default       — read by misc/build.func's install_script() to
+  //                        skip the whiptail "Default / Advanced / …" menu
+  //                        and take the default path. Without this, the
+  //                        whiptail prompt opens, sees no TTY, and the
+  //                        script cleanly exits via exit_script() (exit 0,
+  //                        but nothing was actually installed).
+  //   PHS_SILENT=1       — the same skip flag for the post-install
+  //                        "Update/Settings" menu build.func's start()
+  //                        shows when re-run inside a container. Harmless
+  //                        on a fresh install; useful on reruns.
+  //   var_* overrides    — build.func's base_settings() / update_script()
+  //                        read these to pick hostname, CT ID, CPU, RAM,
+  //                        disk size, etc. Supplied by the UI's
+  //                        "Advanced configuration" panel and filtered
+  //                        through sanitiseEnv() before we interpolate.
   child.stdin?.end(
     `set -euo pipefail\n` +
     `export TERM=xterm-256color\n` +
     `export COLUMNS=\${COLUMNS:-120}\n` +
     `export LINES=\${LINES:-40}\n` +
+    `export mode=default\n` +
+    `export PHS_SILENT=1\n` +
     envPreamble +
     `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
     `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 --max-time ${curlMaxTimeSec} -- "$SCRIPT_URL" | bash\n`,

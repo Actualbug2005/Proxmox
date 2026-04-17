@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { useDefaultNode } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { CronInput } from '@/components/dashboard/cron-input';
 import { Loader2, Save, X } from 'lucide-react';
@@ -36,11 +37,18 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
 
   const { data: resources } = useQuery({ queryKey: ['cluster', 'resources'], queryFn: () => api.cluster.resources() });
   const nodes = (resources ?? []).filter((r) => r.type === 'node');
+  const defaultNode = useDefaultNode();
 
+  // Seed the node field with the local/main node on first render of a new job.
+  useEffect(() => {
+    if (!isEdit && !node && defaultNode) setNode(defaultNode);
+  }, [isEdit, node, defaultNode]);
+
+  const effectiveNode = node || defaultNode || nodes[0]?.node;
   const { data: storages } = useQuery({
-    queryKey: ['storage', node || nodes[0]?.node, 'list'],
-    queryFn: () => api.storage.list((node || nodes[0]?.node) ?? ''),
-    enabled: !!(node || nodes[0]?.node),
+    queryKey: ['storage', effectiveNode, 'list'],
+    queryFn: () => api.storage.list(effectiveNode ?? ''),
+    enabled: !!effectiveNode,
   });
   const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.content?.split(',').includes('backup'));
 

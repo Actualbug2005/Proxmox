@@ -252,43 +252,62 @@ export function ensureJobGcStarted(): void {
 /**
  * Whitelist of env var names the UI is allowed to set. Anything outside this
  * list is dropped silently so a compromised client can't reach into the
- * child's environment with e.g. LD_PRELOAD or PATH. Names map 1:1 to the
- * "var_*" conventions community-scripts use when running in non-interactive
- * / advanced mode.
+ * child's environment with e.g. LD_PRELOAD or PATH.
+ *
+ * Names are drawn from the upstream `misc/build.func` — specifically the
+ * `var_*` fallbacks in `base_settings()` (container ID, hostname, CPU,
+ * RAM, disk, password, bridge, network, gateway, MTU, DNS, MAC, VLAN, SSH,
+ * tags, IPv6, feature flags, storage, apt cacher) and the `var_verbose`
+ * toggle. We also expose `mode` — `default` | `advanced` | `mydefaults` —
+ * so a future UI can pick install variants, though today the run route
+ * overrides it to `default` since `advanced` requires a TTY anyway.
  *
  * NOTE: The fact that a var is in this list does NOT guarantee the script
  * respects it — community scripts vary. The UI labels these as "best-effort
  * overrides" to set expectations.
  */
 const ENV_WHITELIST = new Set([
-  'CT_ID',
-  'CTID',
-  'HN',
-  'HOSTNAME',
-  'CT_HOSTNAME',
-  'PW',
-  'PASSWORD',
-  'CT_PASSWORD',
-  'DISK_SIZE',
-  'var_disk',
-  'CORE_COUNT',
+  // Identity
+  'var_ctid',
+  'var_hostname',
+  'var_pw',
+  'var_tags',
+  // Resources
   'var_cpu',
-  'RAM_SIZE',
   'var_ram',
-  'BRG',
-  'STORAGE',
-  'CT_STORAGE',
-  'VLAN',
-  'MTU',
-  'NET',
-  'GATE',
-  'MAC',
-  'NSDNS',
-  'SSH',
-  'SSH_AUTHORIZED_KEY',
-  'VERB',
-  'APT_CACHER_IP',
-  'APP_PORT',
+  'var_disk',
+  // Storage
+  'var_container_storage',
+  'var_template_storage',
+  // Network
+  'var_brg',
+  'var_net',
+  'var_gateway',
+  'var_mtu',
+  'var_mac',
+  'var_vlan',
+  'var_searchdomain',
+  'var_ns',
+  'var_ipv6_method',
+  'var_ipv6_static',
+  // Access / SSH
+  'var_ssh',
+  'var_ssh_authorized_key',
+  'var_ssh_import_glob',
+  // Feature flags
+  'var_unprivileged',
+  'var_fuse',
+  'var_tun',
+  'var_gpu',
+  'var_nesting',
+  'var_keyctl',
+  // Misc
+  'var_apt_cacher',
+  'var_apt_cacher_ip',
+  'var_verbose',
+  // Install-mode dispatch (server currently pins this to `default`; the
+  // whitelist allows future UIs to pass `mydefaults` / a saved preset).
+  'mode',
 ]);
 
 /** Regex the VALUE of each env var must match. No shell metachars, no newlines. */

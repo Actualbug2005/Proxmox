@@ -1,20 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useNodes } from '@/hooks/use-cluster';
+import { useNodes, useDefaultNode } from '@/hooks/use-cluster';
 import { Loader2 } from 'lucide-react';
 import { SystemNodeContext } from './node-context';
 
 export default function SystemLayout({ children }: { children: React.ReactNode }) {
   const { data: nodes, isLoading } = useNodes();
+  const defaultNode = useDefaultNode();
   const [node, setNode] = useState('');
 
   useEffect(() => {
-    if (!node && nodes && nodes.length > 0) {
-      const first = nodes.find((n) => n.status === 'online') ?? nodes[0];
-      setNode(first.node ?? first.id ?? '');
-    }
-  }, [nodes, node]);
+    if (!node && defaultNode) setNode(defaultNode);
+  }, [defaultNode, node]);
 
   return (
     <SystemNodeContext.Provider value={{ node, setNode }}>

@@ -14,7 +14,7 @@
  * picked so the initial page payload stays small (just the index).
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search,
@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useClusterResources } from '@/hooks/use-cluster';
+import { useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
 import { useStartScriptJob } from '@/hooks/use-script-jobs';
 import type {
   CommunityScript,
@@ -421,10 +421,15 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
     () => (clusterResources ?? []).filter((r) => r.type === 'node' && r.status === 'online'),
     [clusterResources],
   );
+  const defaultNode = useDefaultNode();
   const [selectedNode, setSelectedNode] = useState('');
-  if (nodes.length > 0 && !selectedNode) {
-    setSelectedNode(nodes[0].node ?? nodes[0].id);
-  }
+  useEffect(() => {
+    if (!selectedNode && defaultNode && nodes.some((n) => (n.node ?? n.id) === defaultNode)) {
+      setSelectedNode(defaultNode);
+    } else if (!selectedNode && nodes.length > 0) {
+      setSelectedNode(nodes[0].node ?? nodes[0].id);
+    }
+  }, [defaultNode, nodes, selectedNode]);
 
   // Advanced config: caller-supplied env overrides. Empty strings are
   // treated as "use the script's default" and stripped before send.
@@ -802,17 +807,26 @@ const ADVANCED_FIELDS: {
   hint?: string;
   width: 'half' | 'full';
 }[] = [
-  { key: 'HN', label: 'Hostname', placeholder: 'my-service', width: 'half' },
-  { key: 'CT_ID', label: 'Container ID', placeholder: 'e.g. 200', width: 'half' },
+  // Names match `misc/build.func` in community-scripts/ProxmoxVE — the
+  // build.func reads these as `${var_*:-<default>}`, so a blank field
+  // falls back to the script's own default. See base_settings() / the
+  // `var_*` references in that file for the authoritative list.
+  { key: 'var_hostname', label: 'Hostname', placeholder: 'my-service', width: 'half' },
+  { key: 'var_ctid', label: 'Container ID', placeholder: 'next free', width: 'half' },
   { key: 'var_cpu', label: 'CPU cores', placeholder: '1', width: 'half' },
   { key: 'var_ram', label: 'RAM (MB)', placeholder: '512', width: 'half' },
   { key: 'var_disk', label: 'Disk (GB)', placeholder: '2', width: 'half' },
-  { key: 'STORAGE', label: 'Storage pool', placeholder: 'local-lvm', width: 'half' },
   {
-    key: 'PW',
+    key: 'var_container_storage',
+    label: 'Storage pool',
+    placeholder: 'local-lvm',
+    width: 'half',
+  },
+  {
+    key: 'var_pw',
     label: 'Root password',
     placeholder: 'leave empty for auto-generated',
-    hint: 'Only set if the script supports it — otherwise keep blank and let the script prompt or randomise.',
+    hint: 'Blank → script generates one. Fill only if you need a specific value; some scripts will reject empty.',
     width: 'full',
   },
 ];

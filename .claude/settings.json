@@ -78,7 +78,8 @@
       "Bash(npx --no-install eslint src/app/api/scripts/run/route.ts src/lib/script-jobs.ts src/components/script-jobs/ src/app/\\\\\\(app\\\\\\)/scripts/page.tsx src/app/\\\\\\(app\\\\\\)/layout.tsx src/app/api/scripts/jobs/ src/hooks/use-script-jobs.ts)",
       "Bash(echo \"---eslint: $?---\")",
       "Bash(git -C /Users/devlin/Documents/GitHub/Proxmox status --short)",
-      "Bash(git -C /Users/devlin/Documents/GitHub/Proxmox diff --stat)"
+      "Bash(git -C /Users/devlin/Documents/GitHub/Proxmox diff --stat)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func\")"
     ]
   },
   "enabledPlugins": {

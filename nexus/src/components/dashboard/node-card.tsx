@@ -11,9 +11,11 @@ interface NodeCardProps {
   vmCount?: number;
   ctCount?: number;
   className?: string;
+  selected?: boolean;
+  onClick?: () => void;
 }
 
-export function NodeCard({ node, vmCount = 0, ctCount = 0, className }: NodeCardProps) {
+export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, onClick }: NodeCardProps) {
   const cpu = cpuPercent(node.cpu);
   const mem = memPercent(node.mem, node.maxmem);
   const disk = memPercent(node.disk, node.maxdisk);
@@ -21,10 +23,23 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className }: NodeCard
   // StatusDot speaks running/stopped; translate node states.
   const dotStatus = online ? 'running' : 'error';
 
+  const interactive = !!onClick;
+
   return (
     <div
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={interactive ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      } : undefined}
       className={cn(
-        'studio-card rounded-lg p-5 transition hover:border-white/[0.14]',
+        'studio-card rounded-lg p-5 transition',
+        interactive && 'cursor-pointer hover:border-white/[0.14] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60',
+        selected && 'border-indigo-400/40 ring-1 ring-indigo-400/30',
         className,
       )}
     >
