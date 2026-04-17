@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 /*
- * Nexus "Studio Dark" design tokens
+ * Nexus — Dynamic Glass design tokens.
  *
- * Monochrome aesthetic in the Vercel/Linear lineage. A single ultra-subtle
- * indigo radial glow anchors the canvas, every card is a translucent
- * .studio-card (no backdrop-filter, just alpha), and the sidebar retains
- * its distinct .liquid-glass chrome material for hierarchy.
+ * Theme lives on the <html data-theme="dark|light"> attribute (set by
+ * next-themes). Tokens inside @theme are the default / dark palette so
+ * Tailwind's JIT still emits the utility classes (Tailwind v4 reads
+ * @theme at build time — it can't see the [data-theme="light"] block).
+ * The `[data-theme="light"]` block below overrides the same CSS variables
+ * at runtime so every utility that references them flips automatically.
  *
  * Tailwind v4 auto-generates utility classes from the namespaced CSS
  * variables inside @theme. This file IS the config — there is no
@@ -14,52 +16,52 @@
  */
 
 @theme {
-  /* ── Surfaces ────────────────────────────────────────────────────────
-   *  canvas    zinc-950  · body background (reinforced by the indigo glow)
-   *  glass     translucent zinc · sidebar/chrome (see .liquid-glass)
-   *  surface   zinc-900  · fallback for components referencing it directly
-   *  elevated  zinc-900  · solid fill when reduced-transparency is active
-   *  overlay   zinc-800  · popovers, modals, hover fills
-   */
-  --color-canvas: #09090b;
-  --color-glass: rgba(20, 20, 25, 0.45);
-  --color-surface: #18181b;
-  --color-elevated: #18181b;
-  --color-overlay: #27272a;
-  --color-border-muted: rgba(255, 255, 255, 0.08);
-
-  /* ── Borders (zinc-800 @ 60%) ────────────────────────────────────── */
+  /* ── Surfaces (dark defaults — Phase 2) ─────────────────────────────── */
+  --color-canvas: #09090b;            /* body fill */
+  --color-canvas-glow: rgba(55, 48, 163, 0.15); /* indigo-700 @ 15% */
+  --color-surface: #18181b;           /* solid card fill (modals, elevated) */
+  --color-surface-glass: rgba(24, 24, 27, 0.4); /* studio-card translucent fill */
+  --color-chrome-glass: rgba(20, 20, 25, 0.45); /* sidebar / liquid-glass */
+  --color-overlay: #27272a;           /* hover / focus fill */
   --color-border-subtle: rgba(39, 39, 42, 0.6);
   --color-border-strong: #3f3f46;
   --color-border-hairline: rgba(39, 39, 42, 0.4);
+  --color-border-chrome: rgba(255, 255, 255, 0.10); /* liquid-glass outer edge */
+  --color-border-chrome-top: rgba(255, 255, 255, 0.08); /* studio-card top catch */
+  --color-border-muted: rgba(255, 255, 255, 0.08);
+  --color-scrollbar: rgba(255, 255, 255, 0.1);
+  --color-scrollbar-hover: rgba(255, 255, 255, 0.2);
 
   /* ── Foreground ── */
-  --color-fg: #fafafa;
+  --color-fg: #fafafa;                /* primary text */
   --color-fg-secondary: #d4d4d8;
-  --color-fg-muted: #a1a1aa;
+  --color-fg-muted: #a1a1aa;          /* meta, timestamps */
   --color-fg-subtle: #71717a;
   --color-fg-faint: #52525b;
 
-  /* ── Radius standard ── */
-  --radius-lg: 0.5rem;           /* 8px · all containers */
+  /* ── Accents (shared — semantics transfer, only luminance tweaks) ── */
+  --color-accent: #818cf8;            /* indigo-400 */
+  --color-ok: #34d399;                /* emerald-400 */
+  --color-warn: #fbbf24;              /* amber-400 */
+  --color-err: #f87171;               /* red-400 */
 
-  /* ── Type scale — 11/12/13/14/16/18/24 ──
-   *  No 10px. Secondary meta starts at 12px (xs).
-   *  11px (nano) is reserved for ALL-CAPS section labels ONLY.
-   */
-  --text-nano: 0.6875rem;        /* 11px · SECTION LABELS, uppercase only */
+  /* ── Radius standard ── */
+  --radius-lg: 0.5rem;
+
+  /* ── Type scale — 11/12/13/14/16/18/24 ── */
+  --text-nano: 0.6875rem;
   --text-nano--line-height: 1rem;
-  --text-xs: 0.75rem;            /* 12px · secondary meta, timestamps */
+  --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
-  --text-data: 0.8125rem;        /* 13px · tabular data (CPU/MEM/ID) */
+  --text-data: 0.8125rem;
   --text-data--line-height: 1.125rem;
-  --text-sm: 0.875rem;           /* 14px · body, primary data */
+  --text-sm: 0.875rem;
   --text-sm--line-height: 1.25rem;
-  --text-base: 1rem;             /* 16px · subheadings */
+  --text-base: 1rem;
   --text-base--line-height: 1.5rem;
-  --text-lg: 1.125rem;           /* 18px · section titles */
+  --text-lg: 1.125rem;
   --text-lg--line-height: 1.5rem;
-  --text-xl: 1.5rem;             /* 24px · page titles */
+  --text-xl: 1.5rem;
   --text-xl--line-height: 2rem;
 
   /* ── Font families (Geist loaded in layout.tsx via next/font) ── */
@@ -67,13 +69,54 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Studio Dark canvas: a single static indigo-700 radial glow (15% alpha)
- * from the top-center, fixed so it doesn't stretch as tables scroll. The
- * aurora + noise overlay are gone — no more animated GPU compositing. */
+/* ─── Light theme override ────────────────────────────────────────────────
+ *
+ * Frosted Glass variant. Canvas is near-white with a cool indigo wash so
+ * liquid-glass still has something to refract. Surfaces are translucent
+ * blacks (not whites) because a white-on-white overlay reads as "fog"
+ * rather than "elevated chrome." Borders flip to hairline greys.
+ *
+ * Severity accents (ok/warn/err) darken a touch so 4.5:1 contrast holds
+ * against the lighter canvas — otherwise emerald-400 on zinc-50 is only
+ * 2.8:1 and fails WCAG AA for small text.
+ */
+[data-theme="light"] {
+  --color-canvas: #f8fafc;            /* slate-50 */
+  --color-canvas-glow: rgba(99, 102, 241, 0.10); /* indigo-500 @ 10% */
+  --color-surface: #ffffff;
+  --color-surface-glass: rgba(255, 255, 255, 0.55);
+  --color-chrome-glass: rgba(255, 255, 255, 0.6);
+  --color-overlay: rgba(15, 23, 42, 0.04); /* slate-900 @ 4% */
+  --color-border-subtle: rgba(15, 23, 42, 0.08);
+  --color-border-strong: #94a3b8;     /* slate-400 */
+  --color-border-hairline: rgba(15, 23, 42, 0.06);
+  --color-border-chrome: rgba(15, 23, 42, 0.1);
+  --color-border-chrome-top: rgba(255, 255, 255, 0.9);
+  --color-border-muted: rgba(15, 23, 42, 0.08);
+  --color-scrollbar: rgba(15, 23, 42, 0.15);
+  --color-scrollbar-hover: rgba(15, 23, 42, 0.3);
+
+  --color-fg: #0f172a;                /* slate-900 */
+  --color-fg-secondary: #1e293b;      /* slate-800 */
+  --color-fg-muted: #475569;          /* slate-600 */
+  --color-fg-subtle: #64748b;         /* slate-500 */
+  --color-fg-faint: #94a3b8;          /* slate-400 */
+
+  --color-accent: #4f46e5;            /* indigo-600 */
+  --color-ok: #059669;                /* emerald-600 */
+  --color-warn: #d97706;              /* amber-600 */
+  --color-err: #dc2626;               /* red-600 */
+}
+
+/*
+ * Body paints via tokens so the canvas flips when data-theme changes. The
+ * radial glow stays semantic — dark uses a low-alpha indigo that reads as
+ * "deep space"; light uses a lighter wash that reads as "cool morning".
+ */
 body {
-  background-color: #09090b;                                          /* zinc-950 */
+  background-color: var(--color-canvas);
   background-image: radial-gradient(ellipse 80% 50% at 50% -20%,
-                                     rgba(55, 48, 163, 0.15), transparent);
+                                     var(--color-canvas-glow), transparent);
   background-attachment: fixed;
   color: var(--color-fg);
   min-height: 100vh;
@@ -87,65 +130,68 @@ body {
  * The unified material for every content-layer container — dashboard stats,
  * tables' outer wrappers, dialog panels, card grids. Translucent fill +
  * ultra-thin light-catch on the top edge gives a subtle floating-glass
- * feel without any backdrop-filter blur (no GPU compositing overhead,
- * safe to stack dozens per page).
+ * feel without any backdrop-filter blur.
  *
- * `border-radius: 0.5rem !important` is belt-and-braces: Tailwind v4 emits
- * utilities into @layer utilities, and the unlayered author scope wins
- * already, but any `rounded-xl` / `rounded-2xl` we miss during the sweep
- * would otherwise beat this. !important locks the invariant.
- *
- * The :where() nested-card guard drops the fill to transparent when one
- * studio-card sits inside another — prevents compound-alpha darkening
- * (0.4 × 0.4 = 0.16 effective alpha) without escalating specificity. */
+ * In light mode the same trick reads differently: the fill is translucent
+ * white over a slate-50 canvas + indigo wash, which reads as "elevated
+ * frosted paper" rather than chrome. The top catch flips from white-on-dark
+ * (0.08 alpha) to white-on-light (0.9 alpha) so a specular highlight still
+ * reads without blowing out the card edge. */
 .studio-card {
-  background-color: rgba(24, 24, 27, 0.4);                            /* zinc-900 @ 40% */
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--color-surface-glass);
+  border: 1px solid var(--color-border-muted);
+  border-top: 1px solid var(--color-border-chrome-top);
   border-radius: 0.5rem !important;
 }
 
+/* Nested-card guard — compound-alpha darkening becomes compound-alpha
+ * whitening in light mode (a lot worse), so dropping inner fills to
+ * transparent is even more important than in dark. */
 :where(.studio-card) .studio-card {
   background-color: transparent;
 }
 
-/* Modal panels need to obscure the page underneath — the default 40% alpha
- * fill that looks great on the canvas causes table/text bleed-through when
- * a card is used as a dialog. When a studio-card is the direct child of a
- * full-viewport scrim (`.fixed.inset-0`), promote its fill to solid zinc-900.
- * Higher specificity (three classes) than the base rule, so it wins without
- * !important. Covers every modal in the app in one place. */
+/* Modal fills must be solid so tables behind them don't bleed through. */
 .fixed.inset-0 > .studio-card {
-  background-color: var(--color-elevated);
+  background-color: var(--color-surface);
   border-color: var(--color-border-subtle);
 }
 
-/* Liquid Glass utility — chrome-only (sidebar). Intentionally distinct
- * from .studio-card to create a chrome-vs-content hierarchy: the sidebar
- * is the OS shell floating above, studio-cards are the workspace. */
+/* ─── Liquid Glass utility ────────────────────────────────────────────────
+ * Chrome-only (sidebar). Backdrop-filter blur works in both themes but we
+ * bump saturation slightly in light mode to keep refracted colours from
+ * washing out against the pale canvas. */
 .liquid-glass {
-  background-color: var(--color-glass);
+  background-color: var(--color-chrome-glass);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid var(--color-border-chrome);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 var(--color-border-chrome-top),
     0 20px 40px -20px rgba(0, 0, 0, 0.5);
 }
 
-/* Accessibility: reduced-transparency collapses both materials to solid
- * zinc-900. Users who opt out of transparency get predictable high-
- * contrast surfaces. The indigo body glow stays (it's colour, not filter). */
+[data-theme="light"] .liquid-glass {
+  /* Light-mode drop shadow is softer and bluish — a black shadow on a
+   * white canvas reads as "heavy" rather than "floating". */
+  box-shadow:
+    inset 0 1px 0 var(--color-border-chrome-top),
+    0 20px 40px -20px rgba(15, 23, 42, 0.15);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+}
+
+/* Reduced-transparency: collapse both materials to solid surface. */
 @media (prefers-reduced-transparency: reduce) {
   .studio-card {
-    background-color: var(--color-elevated);
+    background-color: var(--color-surface);
     border-color: var(--color-border-subtle);
   }
   :where(.studio-card) .studio-card {
     background-color: transparent;
   }
   .liquid-glass {
-    background-color: var(--color-elevated);
+    background-color: var(--color-surface);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -157,8 +203,7 @@ body {
   font-feature-settings: "tnum", "cv11";
 }
 
-/* Scrollbar — translucent white thumb so it reads as etched glass rather
- * than an opaque OS-native bar. 8px hit target. */
+/* Scrollbar — thumb colour tracks theme so it's visible in both modes. */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -167,20 +212,14 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-scrollbar);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-scrollbar-hover);
 }
 
-/* ─── Modal choreography ──────────────────────────────────────────────────
- *
- * Native-feeling dialog entrance (Phase H). Entrance-only — the custom
- * dialog unmounts synchronously on close, so exit animations would need
- * a Radix migration or an isClosing flag. 200ms ease-out sits in Apple
- * HIG's 150–300ms micro-interaction band.
- */
+/* ─── Modal choreography ───────────────────────────────────────────────── */
 @keyframes modal-overlay-in {
   from { opacity: 0; }
   to { opacity: 1; }
