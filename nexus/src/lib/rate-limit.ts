@@ -269,4 +269,12 @@ export const RATE_LIMITS = {
 
   /** /api/exec — tighter because it's the higher-trust surface. */
   exec: { limit: 20, windowMs: 60_000, maxConcurrent: 3 },
+
+  /**
+   * /api/cluster/bulk-lifecycle — batch creation only; per-item PVE calls
+   * are gated by the orchestrator's internal worker pool, not this bucket.
+   * Ten batches per minute is generous for a 2-3 operator profile and
+   * prevents a runaway client from filling the in-memory registry.
+   */
+  bulkLifecycle: { limit: 10, windowMs: 60_000 },
 } as const;
