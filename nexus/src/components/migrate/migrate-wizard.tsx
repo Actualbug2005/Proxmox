@@ -132,7 +132,7 @@ export function MigrateWizard({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-2xl shadow-2xl">
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-2">

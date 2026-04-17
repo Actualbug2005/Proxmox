@@ -13,7 +13,7 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({ title, message, danger, onConfirm, onCancel }: ConfirmDialogProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start gap-3 mb-4">
           <AlertTriangle className={cn('w-5 h-5 mt-0.5 shrink-0', danger ? 'text-red-400' : 'text-yellow-400')} />

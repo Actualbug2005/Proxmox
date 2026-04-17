@@ -59,7 +59,7 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
     task.exitstatus === 'OK' ? 'success' : task.exitstatus ? 'danger' : 'info';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-y-auto py-8">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 overflow-y-auto sm:py-8">
       <div className="studio-card p-5 w-full max-w-5xl h-[80vh] shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">

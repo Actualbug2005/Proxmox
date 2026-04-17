@@ -51,7 +51,7 @@ function CloneDialog({ currentName, onConfirm, onCancel, isLoading }: {
   const [hostname, setHostname] = useState(`${currentName}-clone`);
   const { data: nextid } = useQuery({ queryKey: ['nextid'], queryFn: () => api.cluster.nextid() });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <h3 className="text-sm font-semibold text-white mb-4">Clone Container</h3>
         <div className="space-y-3">

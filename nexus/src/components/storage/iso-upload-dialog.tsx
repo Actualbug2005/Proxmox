@@ -77,7 +77,7 @@ export function IsoUploadDialog({ node, storage, defaultContent = 'iso', onClose
   const isPending = uploadM.isPending || downloadM.isPending;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
