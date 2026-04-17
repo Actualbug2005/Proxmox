@@ -18,6 +18,7 @@ import { useState } from 'react';
 import type { PVETask } from '@/types/proxmox';
 import { hintForTask } from '@/lib/task-hints';
 import { Lightbulb } from 'lucide-react';
+import { TaskCorrelationDrawer } from '@/components/tasks/task-correlation-drawer';
 
 function statusVariant(task: PVETask): 'success' | 'danger' | 'warning' | 'info' | 'outline' {
   const s = task.exitstatus ?? task.status ?? '';
@@ -48,6 +49,7 @@ export default function TasksPage() {
   const { data: nodes } = useNodes();
   const [nodeFilter, setNodeFilter] = useState('all');
   const [paused, setPaused] = useState(false);
+  const [drawerTask, setDrawerTask] = useState<PVETask | null>(null);
 
   const nodeNames = nodes?.map((n) => n.node ?? n.id) ?? [];
 
@@ -126,6 +128,8 @@ export default function TasksPage() {
         </div>
       )}
 
+      <TaskCorrelationDrawer task={drawerTask} onClose={() => setDrawerTask(null)} />
+
       {!isLoading && (
         <div className="studio-card overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
@@ -138,9 +142,11 @@ export default function TasksPage() {
           ) : (
             <div className="divide-y divide-zinc-800/60/50">
               {filtered.map((task) => (
-                <div
+                <button
                   key={task.upid}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-zinc-800/40 transition"
+                  type="button"
+                  onClick={() => setDrawerTask(task)}
+                  className="w-full text-left flex items-center gap-4 px-4 py-3 hover:bg-zinc-800/40 transition cursor-pointer focus:outline-none focus:bg-zinc-800/60"
                 >
                   <TaskStatusIcon task={task} />
 
@@ -182,7 +188,7 @@ export default function TasksPage() {
                       {formatDuration(task.starttime, task.endtime)}
                     </p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
