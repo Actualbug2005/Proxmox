@@ -18,7 +18,13 @@ const SECURITY_HEADERS = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      // Script logos come from two fixed upstream CDNs — selfhst icons on
+      // jsDelivr (used for nearly every community-script entry) and the
+      // raw.githubusercontent fallback (used for scripts that ship a logo
+      // inside the ProxmoxVE repo itself). Both are allow-listed by host
+      // rather than opening img-src to all of https: so a future injection
+      // can't pull a tracking pixel from an arbitrary origin.
+      "img-src 'self' data: blob: https://cdn.jsdelivr.net https://raw.githubusercontent.com",
       "font-src 'self' data:",
       "connect-src 'self' wss: https:",
       "frame-ancestors 'none'",

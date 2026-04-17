@@ -287,6 +287,20 @@ function resolveInstallMethod(
   };
 }
 
+/**
+ * Map a PocketBase type slug to the directory inside the main ProxmoxVE
+ * repo that holds its install scripts. Verified against the live repo on
+ * 2026-04-17:
+ *
+ *   lxc / ct → ct/<slug>.sh                  (+ ct/alpine-<slug>.sh)
+ *   vm       → vm/<slug>.sh                  (slug already carries -vm suffix)
+ *   addon    → tools/addon/<slug>.sh         (NOT addon/, that dir doesn't exist)
+ *   turnkey  → turnkey/<slug>.sh
+ *   pve      → tools/pve/<slug>.sh           (NOT misc/, that dir holds shared .func files)
+ *   misc/*   → tools/pve/<slug>.sh           (safe default — unknown types fall
+ *                                              through here; tools/pve is the
+ *                                              broadest bucket upstream uses)
+ */
 function typeDirFor(typeSlug: string): string {
   switch (typeSlug.toLowerCase()) {
     case 'lxc':
@@ -295,11 +309,13 @@ function typeDirFor(typeSlug: string): string {
     case 'vm':
       return 'vm';
     case 'addon':
-      return 'addon';
+      return 'tools/addon';
     case 'turnkey':
       return 'turnkey';
+    case 'pve':
+    case 'misc':
     default:
-      return 'misc';
+      return 'tools/pve';
   }
 }
 

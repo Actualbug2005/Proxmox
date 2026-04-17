@@ -68,7 +68,12 @@
       "Bash(python3 -m json.tool)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; [print\\(k,v\\) for k,v in deps.items\\(\\) if 'pocket' in k.lower\\(\\) or 'pb' in k.lower\\(\\)]\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)}; print\\('next:',deps.get\\('next'\\)\\); print\\('react:',deps.get\\('react'\\)\\)\")",
-      "Bash(node --input-type=module -e ' *)"
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(curl -sI https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/__TRACKED_VAR__)",
+      "Bash(curl -s \"https://api.github.com/repos/community-scripts/ProxmoxVE/contents/misc?per_page=10\")",
+      "Bash(npx --no-install tsc --noEmit -p tsconfig.json)",
+      "Bash(echo \"---exit: $?---\")",
+      "Bash(npx --no-install tsc --noEmit)"
     ]
   },
   "enabledPlugins": {
