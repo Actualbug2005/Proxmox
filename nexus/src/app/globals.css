@@ -109,6 +109,17 @@ body {
   background-color: transparent;
 }
 
+/* Modal panels need to obscure the page underneath — the default 40% alpha
+ * fill that looks great on the canvas causes table/text bleed-through when
+ * a card is used as a dialog. When a studio-card is the direct child of a
+ * full-viewport scrim (`.fixed.inset-0`), promote its fill to solid zinc-900.
+ * Higher specificity (three classes) than the base rule, so it wins without
+ * !important. Covers every modal in the app in one place. */
+.fixed.inset-0 > .studio-card {
+  background-color: var(--color-elevated);
+  border-color: var(--color-border-subtle);
+}
+
 /* Liquid Glass utility — chrome-only (sidebar). Intentionally distinct
  * from .studio-card to create a chrome-vs-content hierarchy: the sidebar
  * is the OS shell floating above, studio-cards are the workspace. */
