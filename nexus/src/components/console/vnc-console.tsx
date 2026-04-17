@@ -111,17 +111,42 @@ export function VncConsole({ node, vmid, type, className }: VncConsoleProps) {
       // Focus the canvas on click so keyboard events reach the guest.
       rfb.focusOnClick = true;
 
-      rfb.addEventListener('connect', () => setStatus('connected'));
+      // Watchdog: noVNC's WebSocket can fire `error` without a subsequent
+      // `close` when the handshake fails in CONNECTING state (seen with
+      // subprotocol mismatches and some edge proxies). That leaves us
+      // stuck in "Connecting…" forever. If no `connect` event within 15s,
+      // force an error state so the user at least sees something actionable.
+      const watchdog = setTimeout(() => {
+        if (rfbRef.current === rfb) {
+          setStatus((prev) => {
+            if (prev === 'connecting') {
+              setError('Timed out waiting for the VNC handshake. Check Nexus logs for WebSocket relay errors (journalctl -u nexus).');
+              try { rfb.disconnect(); } catch { /* already dead */ }
+              return 'error';
+            }
+            return prev;
+          });
+        }
+      }, 15_000);
+
+      rfb.addEventListener('connect', () => {
+        clearTimeout(watchdog);
+        setStatus('connected');
+      });
       rfb.addEventListener('disconnect', (e: Event) => {
-        setStatus('disconnected');
+        clearTimeout(watchdog);
         // noVNC dispatches a custom `disconnect` event whose `detail.clean`
         // tells us whether the server closed cleanly or we lost the link.
         const detail = (e as CustomEvent<{ clean: boolean; reason?: string }>).detail;
         if (detail && detail.clean === false) {
+          setStatus('error');
           setError(detail.reason ?? 'Connection lost');
+        } else {
+          setStatus('disconnected');
         }
       });
       rfb.addEventListener('securityfailure', (e: Event) => {
+        clearTimeout(watchdog);
         setStatus('error');
         const detail = (e as CustomEvent<{ reason?: string }>).detail;
         setError(detail?.reason ?? 'VNC authentication failed');

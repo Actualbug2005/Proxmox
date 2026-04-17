@@ -168,7 +168,19 @@ app.prepare().then(() => {
     handle(req, res);
   });
 
-  const wss = new WebSocketServer({ noServer: true });
+  // Explicit subprotocol negotiation. noVNC requests `binary` and pveproxy's
+  // vncwebsocket advertises it server-side — we must echo it back on the
+  // client-facing socket or some browsers abort the handshake without
+  // emitting a close event, leaving noVNC stuck in "Connecting...". When the
+  // browser sends no Sec-WebSocket-Protocol header at all (e.g. xterm path),
+  // we return `false` to proceed without a subprotocol.
+  const wss = new WebSocketServer({
+    noServer: true,
+    handleProtocols: (protocols) => {
+      if (protocols.has('binary')) return 'binary';
+      return false;
+    },
+  });
 
   httpServer.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url ?? '/', URL_BASE);
@@ -196,11 +208,26 @@ app.prepare().then(() => {
       clientWs.on('message', (data) => {
         if (pveWs.readyState === WebSocket.OPEN) pveWs.send(data);
       });
-      clientWs.on('close', () => { pveWs.close(); relaySessions.delete(sessionId); });
-      clientWs.on('error', () => { pveWs.close(); relaySessions.delete(sessionId); });
-      pveWs.on('close', () => {
+      // Log format uses %s placeholders (not string concatenation) so
+      // untrusted remote values never reach util.format as format specifiers
+      // — appeases semgrep CWE-134 and is also just the correct logging API.
+      clientWs.on('close', (code, reason) => {
+        console.log('[ws-relay] %s client closed code=%d reason=%s', sessionId, code, reason.toString());
+        pveWs.close();
+        relaySessions.delete(sessionId);
+      });
+      clientWs.on('error', (err) => {
+        console.error('[ws-relay] %s client error: %s', sessionId, err.message);
+        pveWs.close();
+        relaySessions.delete(sessionId);
+      });
+      pveWs.on('close', (code, reason) => {
+        console.log('[ws-relay] %s PVE closed code=%d reason=%s', sessionId, code, reason?.toString() ?? '');
         if (clientWs.readyState === WebSocket.OPEN) clientWs.close(1000, 'PVE closed');
         relaySessions.delete(sessionId);
+      });
+      pveWs.on('error', (err) => {
+        console.error('[ws-relay] %s PVE error: %s', sessionId, err.message);
       });
     });
   });
