@@ -14,6 +14,7 @@ import {
   Cpu, MemoryStick, HardDrive, Network, Save, ExternalLink,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
+import { MigrateWizard } from '@/components/migrate/migrate-wizard';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
@@ -77,38 +78,6 @@ function CloneDialog({ currentName, onConfirm, onCancel, isLoading }: {
   );
 }
 
-function MigrateDialog({ currentNode, onConfirm, onCancel, isLoading }: {
-  currentNode: string; isLoading: boolean;
-  onConfirm: (target: string) => void;
-  onCancel: () => void;
-}) {
-  const { data: resources } = useQuery({ queryKey: ['cluster', 'resources'], queryFn: () => api.cluster.resources() });
-  const nodes = (resources ?? []).filter((r) => r.type === 'node' && (r.node ?? r.id) !== currentNode);
-  const [target, setTarget] = useState('');
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-sm font-semibold text-white mb-4">Migrate Container</h3>
-        <div>
-          <label className="text-xs text-zinc-500 block mb-1">Target Node</label>
-          <select value={target} onChange={(e) => setTarget(e.target.value)}
-            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50">
-            <option value="">Select node…</option>
-            {nodes.map((n) => <option key={n.id} value={n.node ?? n.id}>{n.node ?? n.id}</option>)}
-          </select>
-        </div>
-        <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
-          <button onClick={() => target && onConfirm(target)} disabled={!target || isLoading}
-            className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Migrate'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CTDetailPage({ params }: { params: Promise<{ node: string; vmid: string }> }) {
   const { node, vmid: vmidStr } = use(params);
   const vmid = parseInt(vmidStr, 10);
@@ -163,10 +132,8 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
       api.containers.clone(node, vmid, { newid: p.newid, hostname: p.hostname }),
     onSuccess: () => { setShowClone(false); qc.invalidateQueries({ queryKey: ['cluster', 'resources'] }); },
   });
-  const migrateM = useMutation({
-    mutationFn: (target: string) => api.containers.migrate(node, vmid, { target }),
-    onSuccess: () => { setShowMigrate(false); router.push('/dashboard/cts'); },
-  });
+  // Migration moved to MigrateWizard (via useMigrateGuest). Navigation
+  // to the list view on success is preserved below via onSuccess.
   const saveConfigM = useMutation({
     mutationFn: () => api.containers.updateConfig(node, vmid, configDraft),
     onSuccess: () => {
@@ -467,8 +434,17 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
           onCancel={() => setShowClone(false)} />
       )}
       {showMigrate && (
-        <MigrateDialog currentNode={node} isLoading={migrateM.isPending}
-          onConfirm={(target) => migrateM.mutate(target)} onCancel={() => setShowMigrate(false)} />
+        <MigrateWizard
+          guestType="lxc"
+          sourceNode={node}
+          vmid={vmid}
+          vmName={ctName}
+          isRunning={isRunning}
+          cores={config?.cores ?? 1}
+          memoryBytes={(config?.memory ?? 512) * 1024 * 1024}
+          onClose={() => setShowMigrate(false)}
+          onSuccess={() => router.push('/dashboard/cts')}
+        />
       )}
     </div>
   );

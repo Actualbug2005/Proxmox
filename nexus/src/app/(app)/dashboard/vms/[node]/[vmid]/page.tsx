@@ -14,6 +14,7 @@ import {
   Cpu, MemoryStick, HardDrive, Network, Save, ExternalLink,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
+import { MigrateWizard } from '@/components/migrate/migrate-wizard';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
@@ -104,66 +105,6 @@ function CloneDialog({
   );
 }
 
-// ── Migrate dialog ────────────────────────────────────────────────────────────
-
-function MigrateDialog({
-  currentNode, isRunning, onConfirm, onCancel, isLoading,
-}: {
-  currentNode: string; isRunning: boolean; isLoading: boolean;
-  onConfirm: (target: string, online: boolean) => void;
-  onCancel: () => void;
-}) {
-  const { data: resources } = useQuery({
-    queryKey: ['cluster', 'resources'],
-    queryFn: () => api.cluster.resources(),
-  });
-  const nodes = (resources ?? []).filter((r) => r.type === 'node' && (r.node ?? r.id) !== currentNode);
-  const [target, setTarget] = useState('');
-  const [online, setOnline] = useState(isRunning);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="studio-card p-6 w-full max-w-md shadow-2xl">
-        <h3 className="text-sm font-semibold text-white mb-4">Migrate VM</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">Target Node</label>
-            <select
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
-            >
-              <option value="">Select node…</option>
-              {nodes.map((n) => (
-                <option key={n.id} value={n.node ?? n.id}>{n.node ?? n.id}</option>
-              ))}
-            </select>
-          </div>
-          {isRunning && (
-            <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
-              <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)}
-                className="rounded border-gray-600" />
-              Online migration (live)
-            </label>
-          )}
-        </div>
-        <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
-            Cancel
-          </button>
-          <button
-            onClick={() => target && onConfirm(target, online)}
-            disabled={!target || isLoading}
-            className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Migrate'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function VMDetailPage({ params }: { params: Promise<{ node: string; vmid: string }> }) {
@@ -219,11 +160,9 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
       api.vms.clone(node, vmid, { newid: p.newid, name: p.name, full: p.full }),
     onSuccess: () => { setShowClone(false); qc.invalidateQueries({ queryKey: ['cluster', 'resources'] }); },
   });
-  const migrateM = useMutation({
-    mutationFn: (p: { target: string; online: boolean }) =>
-      api.vms.migrate(node, vmid, { target: p.target, online: p.online }),
-    onSuccess: () => { setShowMigrate(false); router.push('/dashboard/vms'); },
-  });
+  // Migration mutation now lives inside MigrateWizard (via useMigrateGuest).
+  // The wizard calls onSuccess below, which preserves the old navigate-to-list
+  // behavior of the handrolled MigrateDialog.
   const saveConfigM = useMutation({
     mutationFn: () => api.vms.updateConfig(node, vmid, configDraft),
     onSuccess: () => {
@@ -615,12 +554,16 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         />
       )}
       {showMigrate && (
-        <MigrateDialog
-          currentNode={node}
+        <MigrateWizard
+          guestType="qemu"
+          sourceNode={node}
+          vmid={vmid}
+          vmName={vmName}
           isRunning={isRunning}
-          isLoading={migrateM.isPending}
-          onConfirm={(target, online) => migrateM.mutate({ target, online })}
-          onCancel={() => setShowMigrate(false)}
+          cores={(config?.cores ?? 1) * (config?.sockets ?? 1)}
+          memoryBytes={(config?.memory ?? 512) * 1024 * 1024}
+          onClose={() => setShowMigrate(false)}
+          onSuccess={() => router.push('/dashboard/vms')}
         />
       )}
     </div>
