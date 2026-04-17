@@ -203,18 +203,18 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         // the chrome, and allowTransparency on the xterm canvas lets that
         // pane show through the terminal viewport. An opaque bg here
         // would defeat the transparency.
-        'flex flex-col border border-zinc-800/60 rounded-lg overflow-hidden',
+        'flex flex-col border border-[var(--color-border-subtle)] rounded-lg overflow-hidden',
         fullscreen && 'fixed inset-0 z-50 rounded-none border-0',
         className,
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800/60 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-surface)] border-b border-[var(--color-border-subtle)] shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
-          <span className="text-xs text-zinc-500 ml-2">
+          <span className="text-xs text-[var(--color-fg-subtle)] ml-2">
             {type === 'node' ? `${node} — Shell` : `${node}/${type}/${vmid} — Console`}
           </span>
         </div>
@@ -228,7 +228,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
                   ? 'text-blue-400 bg-blue-500/10'
                   : status === 'error'
                     ? 'text-red-400 bg-red-500/10'
-                    : 'text-zinc-500 bg-zinc-800',
+                    : 'text-[var(--color-fg-subtle)] bg-[var(--color-overlay)]',
             )}
           >
             {status}
@@ -246,7 +246,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
           )}
           <button
             onClick={() => setFullscreen((f) => !f)}
-            className="p-1 text-zinc-500 hover:text-zinc-300 transition"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
           >
             {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
@@ -258,7 +258,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         {status === 'idle' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-sm text-zinc-500 mb-3">Terminal not connected</p>
+              <p className="text-sm text-[var(--color-fg-subtle)] mb-3">Terminal not connected</p>
               <button
                 onClick={connect}
                 className="px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
@@ -271,7 +271,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
 
         {status === 'connecting' && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex items-center gap-2 text-zinc-400">
+            <div className="flex items-center gap-2 text-[var(--color-fg-muted)]">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Connecting…</span>
             </div>

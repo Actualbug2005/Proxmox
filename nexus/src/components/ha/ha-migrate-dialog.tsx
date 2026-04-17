@@ -38,17 +38,17 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
           <h3 className="text-sm font-semibold text-white">
             {kind === 'migrate' ? 'Migrate' : 'Relocate'} {resource.sid}
           </h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-[var(--color-fg-subtle)] hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
-        <p className="text-xs text-zinc-500 mb-4">
+        <p className="text-xs text-[var(--color-fg-subtle)] mb-4">
           {kind === 'migrate'
             ? 'Online migration — guest stays running during the move. Not all storage types support this.'
             : 'Relocate — HA stops the guest, moves it, and starts it on the target node. Incurs downtime.'}
         </p>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Target node</label>
-            <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50">
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Target node</label>
+            <select value={target} onChange={(e) => setTarget(e.target.value)} className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50">
               <option value="">Select a node…</option>
               {nodes.map((n) => (
                 <option key={n.name} value={n.name}>{n.name}</option>
@@ -57,7 +57,7 @@ export function HAMigrateDialog({ resource, kind, onClose, onComplete }: HAMigra
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} disabled={migrateM.isPending} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40">Cancel</button>
+          <button onClick={onClose} disabled={migrateM.isPending} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40">Cancel</button>
           <button
             onClick={() => migrateM.mutate()}
             disabled={!target || migrateM.isPending}

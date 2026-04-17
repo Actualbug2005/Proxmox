@@ -97,7 +97,7 @@ export default function HAPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-white">Cluster Status &amp; HA</h1>
-        <p className="text-sm text-zinc-500">Quorum, HA resources, and HA groups</p>
+        <p className="text-sm text-[var(--color-fg-subtle)]">Quorum, HA resources, and HA groups</p>
       </div>
 
       <ClusterStatusPanel />
@@ -179,7 +179,7 @@ export default function HAPage() {
           </div>
 
           {loadingRes ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : !resources || resources.length === 0 ? (
             <EmptyState
               icon={HeartPulse}
@@ -190,13 +190,13 @@ export default function HAPage() {
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">SID</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Desired</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Group</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Restart / Relocate</th>
-                    <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
+                  <tr className="border-b border-[var(--color-border-subtle)]">
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">SID</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Desired</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Current</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Group</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Restart / Relocate</th>
+                    <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,39 +204,39 @@ export default function HAPage() {
                     const current = statusByResource.get(r.sid);
                     return (
                       <tr key={r.sid} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                        <td className="px-4 py-3 font-mono text-zinc-200">{r.sid}</td>
+                        <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">{r.sid}</td>
                         <td className="px-4 py-3"><Badge variant={stateVariant(r.state)} className="text-xs">{r.state}</Badge></td>
                         <td className="px-4 py-3"><Badge variant={stateVariant(current)} className="text-xs">{current ?? 'unknown'}</Badge></td>
-                        <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{r.group ?? '—'}</td>
-                        <td className="px-4 py-3 text-xs text-zinc-500">
+                        <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] font-mono">{r.group ?? '—'}</td>
+                        <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">
                           {r.max_restart ?? 1} / {r.max_relocate ?? 1}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex gap-1 justify-end">
                             <button
                               onClick={() => setMigrateTarget({ r, kind: 'migrate' })}
-                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Migrate (online)"
                             >
                               <ArrowRightLeft className="w-3 h-3" /> Migrate
                             </button>
                             <button
                               onClick={() => setMigrateTarget({ r, kind: 'relocate' })}
-                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-yellow-400 hover:text-yellow-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-yellow-400 hover:text-yellow-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Relocate (offline)"
                             >
                               <Shuffle className="w-3 h-3" /> Relocate
                             </button>
                             <button
                               onClick={() => setEditRes(r)}
-                              className="p-1 text-xs text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                              className="p-1 text-xs text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Edit"
                             >
                               <Pencil className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => setDeleteRes(r)}
-                              className="p-1 text-xs text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                              className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Remove from HA"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -266,7 +266,7 @@ export default function HAPage() {
           </div>
 
           {loadingGroups ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : !groups || groups.length === 0 ? (
             <EmptyState
               icon={Layers}
@@ -277,30 +277,30 @@ export default function HAPage() {
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Group</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Nodes (priority)</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Flags</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Used by</th>
-                    <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
+                  <tr className="border-b border-[var(--color-border-subtle)]">
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Group</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Nodes (priority)</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Flags</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Used by</th>
+                    <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {groups.map((g) => (
                     <tr key={g.group} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                      <td className="px-4 py-3 font-mono text-zinc-200">{g.group}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{g.nodes}</td>
+                      <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">{g.group}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{g.nodes}</td>
                       <td className="px-4 py-3 space-x-1">
                         {g.restricted ? <Badge variant="warning" className="text-xs">restricted</Badge> : null}
                         {g.nofailback ? <Badge variant="outline" className="text-xs">no failback</Badge> : null}
                       </td>
-                      <td className="px-4 py-3 text-xs text-zinc-500">{groupRefs(g.group)} resources</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{groupRefs(g.group)} resources</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex gap-1 justify-end">
-                          <button onClick={() => setEditGroup(g)} className="p-1 text-xs text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition" title="Edit">
+                          <button onClick={() => setEditGroup(g)} className="p-1 text-xs text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Edit">
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button onClick={() => setDeleteGroup(g)} className="p-1 text-xs text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition" title="Delete">
+                          <button onClick={() => setDeleteGroup(g)} className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Delete">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
@@ -326,22 +326,22 @@ export default function HAPage() {
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">ID</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Type</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Node</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">State</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Request</th>
+                  <tr className="border-b border-[var(--color-border-subtle)]">
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">ID</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Type</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Node</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">State</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Request</th>
                   </tr>
                 </thead>
                 <tbody>
                   {haStatus.map((s) => (
                     <tr key={s.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-200">{s.id}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-400">{s.type}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{s.node ?? '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-secondary)]">{s.id}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)]">{s.type}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] font-mono">{s.node ?? '—'}</td>
                       <td className="px-4 py-3"><Badge variant={stateVariant(s.state)} className="text-xs">{s.state ?? '—'}</Badge></td>
-                      <td className="px-4 py-3 text-xs text-zinc-500">{s.request_state ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{s.request_state ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

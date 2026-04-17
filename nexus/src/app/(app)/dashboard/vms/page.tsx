@@ -44,7 +44,7 @@ function VMActions({ vm, onDone }: { vm: ClusterResourcePublic; onDone: () => vo
           onClick={(e) => { e.stopPropagation(); start.mutate(); }}
           disabled={pending}
           title="Start"
-          className="p-1.5 rounded-md text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
+          className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
         >
           {start.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
         </button>
@@ -55,7 +55,7 @@ function VMActions({ vm, onDone }: { vm: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); shutdown.mutate(); }}
             disabled={pending}
             title="Shutdown"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
           >
             {shutdown.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
           </button>
@@ -63,7 +63,7 @@ function VMActions({ vm, onDone }: { vm: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); reboot.mutate(); }}
             disabled={pending}
             title="Reboot"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
           >
             {reboot.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
           </button>
@@ -71,7 +71,7 @@ function VMActions({ vm, onDone }: { vm: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); stop.mutate(); }}
             disabled={pending}
             title="Force Stop"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
           >
             {stop.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}
           </button>
@@ -130,7 +130,7 @@ export default function VMsPage() {
         className={cn(
           'px-3 py-3 text-[11px] font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap',
           align === 'right' ? 'text-right' : 'text-left',
-          active ? 'text-zinc-200' : 'text-zinc-500 hover:text-zinc-300',
+          active ? 'text-[var(--color-fg-secondary)]' : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
         )}
       >
         {label}
@@ -147,8 +147,8 @@ export default function VMsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">Virtual Machines</h1>
-          <p className="text-sm text-zinc-500 mt-0.5 tabular">
+          <h1 className="text-xl font-semibold text-[var(--color-fg)]">Virtual Machines</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5 tabular">
             {vms.length} total · {runningCount} running · {stoppedCount} stopped
           </p>
         </div>
@@ -163,13 +163,13 @@ export default function VMsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)]" />
         <input
           type="text"
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 studio-card text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
+          className="w-full pl-9 pr-4 py-2 studio-card text-sm text-[var(--color-fg-secondary)] placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
         />
       </div>
 
@@ -177,26 +177,26 @@ export default function VMsPage() {
       <div className="studio-card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
           </div>
         ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-zinc-600">
+          <div className="flex flex-col items-center justify-center h-48 text-[var(--color-fg-faint)]">
             <Monitor className="w-8 h-8 mb-2 opacity-40" />
             <p className="text-sm">{search ? 'No VMs match your search' : 'No virtual machines found'}</p>
           </div>
         ) : (
           <table className="w-full">
-            <thead className="border-b border-zinc-800/60 bg-zinc-900">
+            <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
               <tr>
                 <SortTh label="ID" k="vmid" align="right" />
                 <SortTh label="Name" k="name" />
                 <SortTh label="Status" k="status" />
                 <SortTh label="Node" k="node" />
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">CPU</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Memory</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Disk</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Uptime</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Actions</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">CPU</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Memory</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Disk</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Uptime</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60">
@@ -210,11 +210,11 @@ export default function VMsPage() {
                     onClick={() => router.push(`/dashboard/vms/${vm.node}/${vm.vmid}`)}
                     className="hover:bg-zinc-800/40 cursor-pointer transition group"
                   >
-                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-500">{vm.vmid}</td>
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-[var(--color-fg-subtle)]">{vm.vmid}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <StatusDot status={vm.status} size="sm" />
-                        <span className="text-sm font-medium text-zinc-100 group-hover:text-white transition">
+                        <span className="text-sm font-medium text-[var(--color-fg)] group-hover:text-white transition">
                           {vm.name ?? `VM ${vm.vmid}`}
                         </span>
                         {(vm.template ?? false) && (
@@ -223,40 +223,40 @@ export default function VMsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-sm text-zinc-300 capitalize">
+                      <span className="text-sm text-[var(--color-fg-secondary)] capitalize">
                         {vm.status ?? 'unknown'}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-zinc-400">{vm.node}</td>
+                    <td className="px-3 py-3 text-sm text-[var(--color-fg-muted)]">{vm.node}</td>
                     <td className="px-3 py-3 w-32">
                       {vm.status === 'running' ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200">{cpu.toFixed(1)}%</span>
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)]">{cpu.toFixed(1)}%</span>
                           <Gauge value={cpu} label="CPU usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
                     <td className="px-3 py-3 w-40">
                       {vm.status === 'running' && vm.maxmem ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
-                            {formatBytes(vm.mem ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(vm.maxmem)}
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)] whitespace-nowrap">
+                            {formatBytes(vm.mem ?? 0)} <span className="text-[var(--color-fg-faint)]">/</span> {formatBytes(vm.maxmem)}
                           </span>
                           <Gauge value={mem} label="Memory usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
                     <td className="px-3 py-3 w-40">
                       {vm.maxdisk ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
-                            {formatBytes(vm.disk ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(vm.maxdisk)}
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)] whitespace-nowrap">
+                            {formatBytes(vm.disk ?? 0)} <span className="text-[var(--color-fg-faint)]">/</span> {formatBytes(vm.maxdisk)}
                           </span>
                           <Gauge value={disk} label="Disk usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
-                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-400">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-[var(--color-fg-muted)]">
                       {vm.uptime ? formatUptime(vm.uptime) : '—'}
                     </td>
                     <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>

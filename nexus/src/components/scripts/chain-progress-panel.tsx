@@ -50,13 +50,13 @@ export function ChainProgressPanel() {
         className="flex w-full items-center gap-2 border-b border-white/5 px-3 py-2 text-left hover:bg-white/[0.03]"
       >
         <Workflow className="h-3.5 w-3.5 text-indigo-400" />
-        <span className="flex-1 text-xs font-medium text-zinc-200">
+        <span className="flex-1 text-xs font-medium text-[var(--color-fg-secondary)]">
           {live.length} chain{live.length === 1 ? '' : 's'} running
         </span>
         {collapsed ? (
-          <ChevronUp className="h-3.5 w-3.5 text-zinc-500" />
+          <ChevronUp className="h-3.5 w-3.5 text-[var(--color-fg-subtle)]" />
         ) : (
-          <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+          <ChevronDown className="h-3.5 w-3.5 text-[var(--color-fg-subtle)]" />
         )}
       </button>
 
@@ -83,8 +83,8 @@ function ChainProgressRow({ chain }: { chain: ChainDto }) {
       className="block border-b border-white/5 px-3 py-2 transition hover:bg-white/[0.04] last:border-b-0"
     >
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm text-zinc-100">{chain.name}</span>
-        <span className="shrink-0 font-mono text-[11px] text-zinc-500">
+        <span className="min-w-0 flex-1 truncate text-sm text-[var(--color-fg)]">{chain.name}</span>
+        <span className="shrink-0 font-mono text-[11px] text-[var(--color-fg-subtle)]">
           {done}/{total}
         </span>
       </div>

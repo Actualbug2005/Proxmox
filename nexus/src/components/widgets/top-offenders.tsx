@@ -32,26 +32,26 @@ export function TopOffendersWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           Top offenders
         </h3>
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {!pressure ? (
-        <p className="py-6 text-center text-xs text-zinc-600">
+        <p className="py-6 text-center text-xs text-[var(--color-fg-faint)]">
           {loading ? 'Ranking…' : 'No data.'}
         </p>
       ) : (
         <div className="space-y-4">
           <OffenderList
             title="CPU"
-            icon={<Cpu className="h-3 w-3 text-zinc-500" />}
+            icon={<Cpu className="h-3 w-3 text-[var(--color-fg-subtle)]" />}
             guests={pressure.topGuestsByCpu.slice(0, 4)}
           />
           <OffenderList
             title="Memory"
-            icon={<MemoryStick className="h-3 w-3 text-zinc-500" />}
+            icon={<MemoryStick className="h-3 w-3 text-[var(--color-fg-subtle)]" />}
             guests={pressure.topGuestsByMemory.slice(0, 4)}
           />
         </div>
@@ -73,10 +73,10 @@ function OffenderList({
     <div>
       <div className="mb-1.5 flex items-center gap-1.5">
         {icon}
-        <span className="text-[11px] uppercase tracking-widest text-zinc-500">{title}</span>
+        <span className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">{title}</span>
       </div>
       {guests.length === 0 ? (
-        <p className="py-1 text-xs text-zinc-600">Nothing notable.</p>
+        <p className="py-1 text-xs text-[var(--color-fg-faint)]">Nothing notable.</p>
       ) : (
         <div className="space-y-1">
           {guests.map((g) => (
@@ -85,10 +85,10 @@ function OffenderList({
               href={guestHref(g)}
               className="flex items-center gap-2 rounded-md px-2 py-1 text-xs transition hover:bg-white/[0.03]"
             >
-              <span className="min-w-0 flex-1 truncate text-zinc-200">
+              <span className="min-w-0 flex-1 truncate text-[var(--color-fg-secondary)]">
                 {g.name ?? `${g.type}/${g.vmid}`}
               </span>
-              <span className="shrink-0 font-mono text-[11px] text-zinc-500">{g.node}</span>
+              <span className="shrink-0 font-mono text-[11px] text-[var(--color-fg-subtle)]">{g.node}</span>
               <span className={cn('shrink-0 tabular', valueBadge(g.value))}>
                 {Math.round(g.value * 100)}%
               </span>

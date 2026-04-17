@@ -58,27 +58,27 @@ export default function StorageDetailPage({
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-2 text-sm">
-        <Link href="/dashboard/storage" className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition">
+        <Link href="/dashboard/storage" className="flex items-center gap-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition">
           <ChevronLeft className="w-3.5 h-3.5" />
           Storage
         </Link>
         <span className="text-zinc-700">/</span>
-        <span className="text-zinc-300">{storage}</span>
+        <span className="text-[var(--color-fg-secondary)]">{storage}</span>
       </div>
 
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-800/60 flex items-center justify-center">
-            <HardDrive className="w-5 h-5 text-zinc-400" />
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] flex items-center justify-center">
+            <HardDrive className="w-5 h-5 text-[var(--color-fg-muted)]" />
           </div>
           <div>
             <h1 className="text-xl font-semibold text-white">{storage}</h1>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-[var(--color-fg-subtle)]">
               {meta?.type}
               {typeof meta?.total === 'number' && typeof meta?.used === 'number' && (
                 <> · {formatBytes(meta.used)} of {formatBytes(meta.total)} used</>
               )}
-              <span className="ml-1 text-zinc-600">· node <span className="font-mono">{node}</span></span>
+              <span className="ml-1 text-[var(--color-fg-faint)]">· node <span className="font-mono">{node}</span></span>
             </p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function StorageDetailPage({
       )}
 
       {tabs.length === 0 ? (
-        <div className="studio-card p-8 text-center text-sm text-zinc-500">
+        <div className="studio-card p-8 text-center text-sm text-[var(--color-fg-subtle)]">
           This storage is not configured for any browsable content types.
         </div>
       ) : (

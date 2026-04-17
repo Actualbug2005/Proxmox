@@ -46,7 +46,7 @@ export default function PoolsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Pools</h1>
-          <p className="text-sm text-zinc-500">Resource pools group VMs, CTs, and storages for ACL scoping</p>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Resource pools group VMs, CTs, and storages for ACL scoping</p>
         </div>
         <button
           onClick={() => setShowNew(true)}
@@ -84,7 +84,7 @@ export default function PoolsPage() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
+        <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" /></div>
       ) : !pools || pools.length === 0 ? (
         <EmptyState
           icon={FolderTree}
@@ -99,18 +99,18 @@ export default function PoolsPage() {
                 key={p.poolid}
                 onClick={() => setSelected(p.poolid)}
                 className={cn(
-                  'w-full text-left bg-zinc-900 border rounded-lg p-3 transition',
-                  selected === p.poolid ? 'border-zinc-300/50' : 'border-zinc-800/60 hover:border-zinc-800/60',
+                  'w-full text-left bg-[var(--color-surface)] border rounded-lg p-3 transition',
+                  selected === p.poolid ? 'border-zinc-300/50' : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-subtle)]',
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <FolderTree className="w-4 h-4 text-zinc-500" />
-                  <span className="font-mono text-sm text-zinc-200 flex-1">{p.poolid}</span>
+                  <FolderTree className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                  <span className="font-mono text-sm text-[var(--color-fg-secondary)] flex-1">{p.poolid}</span>
                   {p.members && p.members.length > 0 && (
                     <Badge variant="outline" className="text-xs">{p.members.length}</Badge>
                   )}
                 </div>
-                {p.comment && <p className="text-xs text-zinc-500 mt-1 pl-6 truncate">{p.comment}</p>}
+                {p.comment && <p className="text-xs text-[var(--color-fg-subtle)] mt-1 pl-6 truncate">{p.comment}</p>}
               </button>
             ))}
           </div>
@@ -123,7 +123,7 @@ export default function PoolsPage() {
                 onDelete={() => setDeleteTarget(selectedPool)}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-zinc-600 gap-2">
+              <div className="flex flex-col items-center justify-center h-64 text-[var(--color-fg-faint)] gap-2">
                 <FolderTree className="w-8 h-8" />
                 <p className="text-sm">Select a pool to view its members</p>
               </div>
@@ -148,27 +148,27 @@ function PoolEditor({ initial, onClose, onSaved }: { initial: PVEPool | null; on
     onError: (err) => toast.error('Save failed', err instanceof Error ? err.message : String(err)),
   });
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-sm shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit pool' : 'New pool'}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-[var(--color-fg-subtle)] hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Pool ID</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Pool ID</label>
             <input value={poolid} onChange={(e) => setPoolid(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))} disabled={isEdit} className={inputCls + (isEdit ? ' opacity-60' : '')} />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Comment</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Comment</label>
             <input value={comment} onChange={(e) => setComment(e.target.value)} className={inputCls} />
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">Cancel</button>
           <button
             onClick={() => saveM.mutate({ poolid, ...(comment ? { comment } : {}) })}
             disabled={!poolid || saveM.isPending}
@@ -243,20 +243,20 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
 
   const typeFilteredCandidates = candidates.filter((c) => c.type === selectedType);
 
-  const inputCls = 'px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <>
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-white font-mono">{pool.poolid}</h3>
-          {pool.comment && <p className="text-xs text-zinc-500 mt-0.5">{pool.comment}</p>}
+          {pool.comment && <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5">{pool.comment}</p>}
         </div>
         <div className="flex gap-1">
-          <button onClick={onEdit} className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition flex items-center gap-1.5">
+          <button onClick={onEdit} className="px-3 py-1.5 text-xs text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition flex items-center gap-1.5">
             <Pencil className="w-3 h-3" /> Edit
           </button>
-          <button onClick={onDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-zinc-800 rounded-lg transition">
+          <button onClick={onDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] rounded-lg transition">
             <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
         </div>
@@ -264,26 +264,26 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
 
       <div className="space-y-4">
         <div>
-          <h4 className="text-xs uppercase text-zinc-600 font-medium tracking-widest mb-2">Members ({members.length})</h4>
+          <h4 className="text-xs uppercase text-[var(--color-fg-faint)] font-medium tracking-widest mb-2">Members ({members.length})</h4>
           {members.length === 0 ? (
-            <p className="text-sm text-zinc-500">No members yet.</p>
+            <p className="text-sm text-[var(--color-fg-subtle)]">No members yet.</p>
           ) : (
-            <div className="bg-gray-950 border border-zinc-800/60 rounded-lg divide-y divide-zinc-800/60">
+            <div className="bg-gray-950 border border-[var(--color-border-subtle)] rounded-lg divide-y divide-zinc-800/60">
               {members.map((m) => {
                 const IconComp = Icon(m.type);
                 return (
                   <div key={m.id} className="flex items-center gap-3 px-3 py-2">
-                    <IconComp className="w-4 h-4 text-zinc-500 shrink-0" />
-                    <span className="font-mono text-sm text-zinc-300 flex-1">
+                    <IconComp className="w-4 h-4 text-[var(--color-fg-subtle)] shrink-0" />
+                    <span className="font-mono text-sm text-[var(--color-fg-secondary)] flex-1">
                       {m.name ?? m.id}
-                      {m.vmid && <span className="text-zinc-600 ml-2">({m.vmid})</span>}
+                      {m.vmid && <span className="text-[var(--color-fg-faint)] ml-2">({m.vmid})</span>}
                     </span>
                     <Badge variant="outline" className="text-xs">{m.type}</Badge>
-                    {m.node && <span className="text-xs text-zinc-600 font-mono">{m.node}</span>}
+                    {m.node && <span className="text-xs text-[var(--color-fg-faint)] font-mono">{m.node}</span>}
                     <button
                       onClick={() => removeM.mutate(m)}
                       disabled={removeM.isPending}
-                      className="p-1 text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
+                      className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                       title="Remove from pool"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -295,8 +295,8 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
           )}
         </div>
 
-        <div className="border-t border-zinc-800/60 pt-4">
-          <h4 className="text-xs uppercase text-zinc-600 font-medium tracking-widest mb-2">Add member</h4>
+        <div className="border-t border-[var(--color-border-subtle)] pt-4">
+          <h4 className="text-xs uppercase text-[var(--color-fg-faint)] font-medium tracking-widest mb-2">Add member</h4>
           <div className="flex gap-2 flex-wrap">
             <select value={selectedType} onChange={(e) => { setSelectedType(e.target.value as typeof selectedType); setAddTarget(''); }} className={inputCls}>
               <option value="qemu">VM (QEMU)</option>

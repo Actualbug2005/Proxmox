@@ -89,45 +89,45 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm transition',
-          'border-zinc-800/60 bg-zinc-800 text-zinc-200 hover:border-zinc-700',
+          'border-[var(--color-border-subtle)] bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] hover:border-[var(--color-border-strong)]',
           open && 'border-zinc-600',
         )}
       >
         <span className="min-w-0 flex-1 truncate text-left">
           {value ? (
             <>
-              <span className="text-zinc-100">{value.scriptName}</span>
-              <span className="ml-2 font-mono text-xs text-zinc-500">{value.slug}</span>
+              <span className="text-[var(--color-fg)]">{value.scriptName}</span>
+              <span className="ml-2 font-mono text-xs text-[var(--color-fg-subtle)]">{value.slug}</span>
             </>
           ) : (
-            <span className="text-zinc-500">Pick a community script…</span>
+            <span className="text-[var(--color-fg-subtle)]">Pick a community script…</span>
           )}
         </span>
-        <ChevronDown className={cn('h-3.5 w-3.5 text-zinc-500 transition', open && 'rotate-180')} />
+        <ChevronDown className={cn('h-3.5 w-3.5 text-[var(--color-fg-subtle)] transition', open && 'rotate-180')} />
       </button>
 
       {open && (
         <div
           className={cn(
-            'absolute left-0 right-0 z-40 mt-1 rounded-lg border border-zinc-800 bg-zinc-900 shadow-2xl',
+            'absolute left-0 right-0 z-40 mt-1 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] shadow-2xl',
             'max-h-80 overflow-hidden',
           )}
         >
-          <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-zinc-500" />
+          <div className="flex items-center gap-2 border-b border-[var(--color-border-subtle)] px-3 py-2">
+            <Search className="h-3.5 w-3.5 text-[var(--color-fg-subtle)]" />
             <input
               autoFocus
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search scripts…"
-              className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-[var(--color-fg-secondary)] placeholder-zinc-600 focus:outline-none"
             />
             {q && (
               <button
                 type="button"
                 onClick={() => setQ('')}
-                className="text-zinc-500 hover:text-zinc-300"
+                className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]"
                 aria-label="Clear"
               >
                 <X className="h-3.5 w-3.5" />
@@ -137,7 +137,7 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
 
           <div className="max-h-64 overflow-y-auto">
             {isLoading && (
-              <div className="flex items-center justify-center py-6 text-zinc-500">
+              <div className="flex items-center justify-center py-6 text-[var(--color-fg-subtle)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             )}
@@ -147,7 +147,7 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
               </div>
             )}
             {!isLoading && !error && filtered.length === 0 && (
-              <div className="px-3 py-4 text-xs text-zinc-500">No matches.</div>
+              <div className="px-3 py-4 text-xs text-[var(--color-fg-subtle)]">No matches.</div>
             )}
             {!isLoading &&
               !error &&
@@ -166,14 +166,14 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm text-zinc-100">{s.name}</span>
-                        <span className="shrink-0 font-mono text-[11px] uppercase text-zinc-500">
+                        <span className="truncate text-sm text-[var(--color-fg)]">{s.name}</span>
+                        <span className="shrink-0 font-mono text-[11px] uppercase text-[var(--color-fg-subtle)]">
                           {s.type}
                         </span>
                       </div>
-                      <div className="truncate font-mono text-[11px] text-zinc-500">{s.slug}</div>
+                      <div className="truncate font-mono text-[11px] text-[var(--color-fg-subtle)]">{s.slug}</div>
                       {s.description && (
-                        <div className="mt-0.5 line-clamp-1 text-xs text-zinc-400">
+                        <div className="mt-0.5 line-clamp-1 text-xs text-[var(--color-fg-muted)]">
                           {s.description}
                         </div>
                       )}

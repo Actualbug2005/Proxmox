@@ -115,8 +115,8 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
 
   function iconFor(type: FileNode['type']) {
     if (type === 'dir') return <Folder className="w-4 h-4 text-blue-400" />;
-    if (type === 'symlink') return <LinkIcon className="w-4 h-4 text-zinc-500" />;
-    return <FileIcon className="w-4 h-4 text-zinc-400" />;
+    if (type === 'symlink') return <LinkIcon className="w-4 h-4 text-[var(--color-fg-subtle)]" />;
+    return <FileIcon className="w-4 h-4 text-[var(--color-fg-muted)]" />;
   }
 
   return (
@@ -125,18 +125,18 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="fixed right-0 top-0 h-full w-full max-w-3xl bg-zinc-900 border-l border-zinc-800/60 flex flex-col shadow-2xl"
+        className="fixed right-0 top-0 h-full w-full max-w-3xl bg-[var(--color-surface)] border-l border-[var(--color-border-subtle)] flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)]">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-white truncate">{shareName}</h2>
-            <p className="text-xs text-zinc-500">File browser · {node}</p>
+            <p className="text-xs text-[var(--color-fg-subtle)]">File browser · {node}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-zinc-500 hover:text-zinc-300 transition"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -144,14 +144,14 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
         </div>
 
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-1 px-5 py-3 border-b border-zinc-800/60 text-xs overflow-x-auto">
+        <div className="flex items-center gap-1 px-5 py-3 border-b border-[var(--color-border-subtle)] text-xs overflow-x-auto">
           <button
             onClick={() => navigateToSegment(-1)}
             className={cn(
               'flex items-center gap-1 px-2 py-1 rounded-md transition',
               segments.length === 0
                 ? 'text-indigo-400 bg-white/5'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
+                : 'text-[var(--color-fg-muted)] hover:text-white hover:bg-[var(--color-overlay)]',
             )}
           >
             <Home className="w-3 h-3" />
@@ -159,14 +159,14 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
           </button>
           {segments.map((seg, i) => (
             <div key={i} className="flex items-center gap-1">
-              <ChevronRight className="w-3 h-3 text-zinc-600 shrink-0" />
+              <ChevronRight className="w-3 h-3 text-[var(--color-fg-faint)] shrink-0" />
               <button
                 onClick={() => navigateToSegment(i)}
                 className={cn(
                   'px-2 py-1 rounded-md transition font-mono',
                   i === segments.length - 1
                     ? 'text-indigo-400 bg-white/5'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800',
+                    : 'text-[var(--color-fg-muted)] hover:text-white hover:bg-[var(--color-overlay)]',
                 )}
               >
                 {seg}
@@ -179,7 +179,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           )}
 
@@ -194,20 +194,20 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
           )}
 
           {!isLoading && !error && sorted.length === 0 && (
-            <p className="text-sm text-zinc-600 py-16 text-center">
+            <p className="text-sm text-[var(--color-fg-faint)] py-16 text-center">
               This directory is empty.
             </p>
           )}
 
           {!isLoading && !error && sorted.length > 0 && (
             <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-zinc-900 border-b border-zinc-800/60">
+              <thead className="sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border-subtle)]">
                 <tr>
-                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium w-8"></th>
-                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Name</th>
-                  <th className="text-right px-4 py-2.5 text-zinc-500 font-medium w-24">Size</th>
-                  <th className="text-left px-4 py-2.5 text-zinc-500 font-medium w-48">Modified</th>
-                  <th className="text-right px-4 py-2.5 text-zinc-500 font-medium w-20">Actions</th>
+                  <th className="text-left px-4 py-2.5 text-[var(--color-fg-subtle)] font-medium w-8"></th>
+                  <th className="text-left px-4 py-2.5 text-[var(--color-fg-subtle)] font-medium">Name</th>
+                  <th className="text-right px-4 py-2.5 text-[var(--color-fg-subtle)] font-medium w-24">Size</th>
+                  <th className="text-left px-4 py-2.5 text-[var(--color-fg-subtle)] font-medium w-48">Modified</th>
+                  <th className="text-right px-4 py-2.5 text-[var(--color-fg-subtle)] font-medium w-20">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -228,16 +228,16 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
                       onClick={isClickableDir ? () => openDir(f.name) : undefined}
                     >
                       <td className="px-4 py-2 text-center">{iconFor(f.type)}</td>
-                      <td className="px-4 py-2 text-zinc-200 break-all">
+                      <td className="px-4 py-2 text-[var(--color-fg-secondary)] break-all">
                         {f.name}
                         {f.type === 'symlink' && (
-                          <span className="ml-2 text-[10px] text-zinc-500">symlink</span>
+                          <span className="ml-2 text-[10px] text-[var(--color-fg-subtle)]">symlink</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-right font-mono text-zinc-400">
+                      <td className="px-4 py-2 text-right font-mono text-[var(--color-fg-muted)]">
                         {f.type === 'file' ? formatBytes(f.size) : '—'}
                       </td>
-                      <td className="px-4 py-2 text-zinc-500">{formatMtime(f.mtime)}</td>
+                      <td className="px-4 py-2 text-[var(--color-fg-subtle)]">{formatMtime(f.mtime)}</td>
                       <td className="px-4 py-2 text-right">
                         {isDownloadable && (
                           <button
@@ -247,7 +247,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
                             }}
                             disabled={isDownloading}
                             aria-label={`Download ${f.name}`}
-                            className="p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-white/5 rounded-md transition disabled:opacity-40"
+                            className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 rounded-md transition disabled:opacity-40"
                           >
                             {isDownloading ? (
                               <Loader2 className="w-4 h-4 animate-spin" />

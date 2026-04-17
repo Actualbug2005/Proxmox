@@ -20,12 +20,12 @@ export function EmptyState({ icon: Icon, title, description, action, className }
       )}
     >
       {Icon && (
-        <div className="w-12 h-12 bg-zinc-800 border border-zinc-800/60 rounded-lg flex items-center justify-center mb-4">
-          <Icon className="w-5 h-5 text-zinc-500" />
+        <div className="w-12 h-12 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg flex items-center justify-center mb-4">
+          <Icon className="w-5 h-5 text-[var(--color-fg-subtle)]" />
         </div>
       )}
-      <p className="text-sm font-medium text-zinc-200">{title}</p>
-      {description && <p className="text-xs text-zinc-500 mt-1 max-w-sm">{description}</p>}
+      <p className="text-sm font-medium text-[var(--color-fg-secondary)]">{title}</p>
+      {description && <p className="text-xs text-[var(--color-fg-subtle)] mt-1 max-w-sm">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

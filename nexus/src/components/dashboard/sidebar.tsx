@@ -132,8 +132,8 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
           <Server className="h-4 w-4 text-zinc-900" />
         </div>
         <div>
-          <span className="text-sm font-semibold text-zinc-50">Nexus</span>
-          <p className="text-[11px] uppercase tracking-widest text-zinc-500">Proxmox UI</p>
+          <span className="text-sm font-semibold text-[var(--color-fg)]">Nexus</span>
+          <p className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">Proxmox UI</p>
         </div>
       </div>
 
@@ -143,12 +143,12 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
         <button
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
           className="flex w-full cursor-pointer items-center gap-2 rounded-lg
-                     border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-zinc-400
-                     transition hover:border-white/20 hover:bg-white/[0.06] hover:text-zinc-200
+                     border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-[var(--color-fg-muted)]
+                     transition hover:border-white/20 hover:bg-white/[0.06] hover:text-[var(--color-fg-secondary)]
                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
         >
           <span className="flex-1 text-left">Search…</span>
-          <kbd className="tabular font-mono text-zinc-500">⌘K</kbd>
+          <kbd className="tabular font-mono text-[var(--color-fg-subtle)]">⌘K</kbd>
         </button>
       </div>
 
@@ -158,7 +158,7 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
       <nav className="flex-1 space-y-4 overflow-y-auto px-2 pt-2 pb-3 mr-1">
         {sections.map((section) => (
           <div key={section.label}>
-            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
               {section.label}
             </p>
             <div className="space-y-0.5">
@@ -180,16 +180,16 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
                         // 'etched highlight' rather than a glow. Raw opacity
                         // stays low (10% zinc fill + 5% ring) so luminance
                         // is bounded; the blend mode supplies the crispness.
-                        // shadow-inner + text-zinc-200 complete the inset
+                        // shadow-inner + text-[var(--color-fg-secondary)] complete the inset
                         // reading.
-                        ? 'bg-zinc-500/10 ring-1 ring-inset ring-white/5 text-zinc-200 mix-blend-plus-lighter shadow-inner font-medium'
-                        : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100',
+                        ? 'bg-zinc-500/10 ring-1 ring-inset ring-white/5 text-[var(--color-fg-secondary)] mix-blend-plus-lighter shadow-inner font-medium'
+                        : 'text-[var(--color-fg-muted)] hover:bg-white/[0.06] hover:text-[var(--color-fg)]',
                     )}
                   >
                     <Icon
                       className={cn(
                         'h-4 w-4 shrink-0',
-                        active ? 'text-zinc-100' : 'text-zinc-500 group-hover:text-zinc-300',
+                        active ? 'text-[var(--color-fg)]' : 'text-[var(--color-fg-subtle)] group-hover:text-[var(--color-fg-secondary)]',
                       )}
                     />
                     <span className="flex-1 truncate">{label}</span>
@@ -204,19 +204,19 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
       {/* User */}
       <div className="border-t border-white/5 p-3">
         <div className="flex items-center gap-2.5 px-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-zinc-100 ring-1 ring-inset ring-white/10">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-[var(--color-fg)] ring-1 ring-inset ring-white/10">
             {username?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-zinc-300">{username ?? 'Unknown'}</p>
-            <p className="text-[11px] uppercase tracking-widest text-zinc-600">Proxmox</p>
+            <p className="truncate text-xs font-medium text-[var(--color-fg-secondary)]">{username ?? 'Unknown'}</p>
+            <p className="text-[11px] uppercase tracking-widest text-[var(--color-fg-faint)]">Proxmox</p>
           </div>
           <ThemeToggle />
           <button
             onClick={handleLogout}
             title="Sign out"
             aria-label="Sign out"
-            className="rounded-md p-1 text-zinc-500 transition hover:text-red-400
+            className="rounded-md p-1 text-[var(--color-fg-subtle)] transition hover:text-red-400
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
           >
             <LogOut className="h-4 w-4" />

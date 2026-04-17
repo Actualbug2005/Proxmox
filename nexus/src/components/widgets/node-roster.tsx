@@ -25,14 +25,14 @@ export function NodeRosterWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           Nodes
         </h3>
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {nodes.length === 0 && !isLoading && (
-        <p className="py-8 text-center text-sm text-zinc-600">No nodes.</p>
+        <p className="py-8 text-center text-sm text-[var(--color-fg-faint)]">No nodes.</p>
       )}
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">

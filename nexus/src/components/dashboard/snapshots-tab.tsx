@@ -41,7 +41,7 @@ function CreateSnapshotDialog({
   const [description, setDescription] = useState('');
   const [vmstate, setVmstate] = useState(false);
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
@@ -49,7 +49,7 @@ function CreateSnapshotDialog({
         <h3 className="text-sm font-semibold text-white mb-4">Create snapshot</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Name</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Name</label>
             <input
               value={snapname}
               onChange={(e) => setSnapname(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
@@ -57,10 +57,10 @@ function CreateSnapshotDialog({
               autoFocus
               className={inputCls}
             />
-            <p className="text-xs text-zinc-600 mt-1">Letters, digits, dash, underscore only.</p>
+            <p className="text-xs text-[var(--color-fg-faint)] mt-1">Letters, digits, dash, underscore only.</p>
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Description (optional)</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Description (optional)</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -69,7 +69,7 @@ function CreateSnapshotDialog({
             />
           </div>
           {kind === 'qemu' && (
-            <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
               <input
                 type="checkbox"
                 checked={vmstate}
@@ -81,7 +81,7 @@ function CreateSnapshotDialog({
           )}
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">
             Cancel
           </button>
           <button
@@ -113,12 +113,12 @@ function EditDescription({
         value={val}
         onChange={(e) => setVal(e.target.value)}
         rows={2}
-        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+        className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
       />
       <div className="flex gap-2 justify-end">
         <button
           onClick={onCancel}
-          className="p-1.5 text-zinc-500 hover:text-white bg-zinc-800 rounded-lg transition"
+          className="p-1.5 text-[var(--color-fg-subtle)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
           aria-label="Cancel"
         >
           <X className="w-3.5 h-3.5" />
@@ -233,10 +233,10 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-300">
+            <p className="text-sm text-[var(--color-fg-secondary)]">
               {items.length} snapshot{items.length !== 1 ? 's' : ''}
               {currentParent && items.length > 0 && (
-                <span className="text-zinc-600"> · currently at <span className="font-mono text-zinc-400">{currentParent}</span></span>
+                <span className="text-[var(--color-fg-faint)]"> · currently at <span className="font-mono text-[var(--color-fg-muted)]">{currentParent}</span></span>
               )}
             </p>
           </div>
@@ -251,7 +251,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
 
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
-            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
           </div>
         ) : items.length === 0 ? (
           <EmptyState
@@ -263,12 +263,12 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
           <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-800/60">
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Parent</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Created</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Description</th>
-                  <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium">Actions</th>
+                <tr className="border-b border-[var(--color-border-subtle)]">
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Name</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Parent</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Created</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Description</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -276,7 +276,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                   const isCurrent = currentParent === s.name;
                   return (
                     <tr key={s.name} className="border-b border-zinc-800/40 hover:bg-zinc-800/20 align-top">
-                      <td className="px-4 py-3 font-mono text-zinc-200">
+                      <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">
                         <div className="flex items-center gap-2">
                           {isCurrent && <ChevronRight className="w-3.5 h-3.5 text-indigo-400" />}
                           {s.name}
@@ -285,9 +285,9 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">{s.parent ?? '—'}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-500">{formatTime(s.snaptime)}</td>
-                      <td className="px-4 py-3 text-zinc-400 max-w-[20rem]">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-subtle)]">{s.parent ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{formatTime(s.snaptime)}</td>
+                      <td className="px-4 py-3 text-[var(--color-fg-muted)] max-w-[20rem]">
                         {editingDesc === s.name ? (
                           <EditDescription
                             initial={s.description ?? ''}
@@ -298,9 +298,9 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                         ) : (
                           <button
                             onClick={() => setEditingDesc(s.name)}
-                            className="text-left w-full hover:text-zinc-200 transition"
+                            className="text-left w-full hover:text-[var(--color-fg-secondary)] transition"
                           >
-                            {s.description || <span className="text-zinc-600 italic">click to add…</span>}
+                            {s.description || <span className="text-[var(--color-fg-faint)] italic">click to add…</span>}
                           </button>
                         )}
                       </td>
@@ -309,7 +309,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                           <button
                             onClick={() => setRollbackTarget(s.name)}
                             disabled={rollbackM.isPending}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                             title="Roll back to this snapshot"
                           >
                             <RotateCcw className="w-3 h-3" />
@@ -318,7 +318,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                           <button
                             onClick={() => setDeleteTarget(s.name)}
                             disabled={deleteM.isPending}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                             title="Delete snapshot"
                           >
                             <Trash2 className="w-3 h-3" />

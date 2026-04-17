@@ -136,14 +136,14 @@ export function MigrateWizard({
       <div className="studio-card p-6 w-full max-w-2xl shadow-2xl">
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-2">
-            <MoveRight className="w-4 h-4 text-zinc-400" />
+            <MoveRight className="w-4 h-4 text-[var(--color-fg-muted)]" />
             <h3 className="text-sm font-semibold text-white">
               Migrate {guestType === 'qemu' ? 'VM' : 'CT'} {vmName ? `"${vmName}"` : ''}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-white p-1"
+            className="text-[var(--color-fg-subtle)] hover:text-white p-1"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -192,7 +192,7 @@ export function MigrateWizard({
           <button
             onClick={() => (step > 0 ? setStep((step - 1) as 0 | 1 | 2) : onClose())}
             disabled={migrate.isPending}
-            className="inline-flex items-center gap-1 px-3 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-3 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
           >
             <ChevronLeft className="w-4 h-4" />
             {step > 0 ? 'Back' : 'Cancel'}
@@ -242,7 +242,7 @@ function StepIndicator({ step }: { step: 0 | 1 | 2 }) {
                 'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition',
                 done && 'bg-indigo-500 text-white',
                 active && !done && 'bg-zinc-200 text-zinc-900 ring-2 ring-indigo-400 ring-offset-2 ring-offset-zinc-900',
-                !done && !active && 'bg-zinc-800 text-zinc-500',
+                !done && !active && 'bg-[var(--color-overlay)] text-[var(--color-fg-subtle)]',
               )}
             >
               {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
@@ -250,7 +250,7 @@ function StepIndicator({ step }: { step: 0 | 1 | 2 }) {
             <span
               className={cn(
                 'ml-2 text-xs font-medium',
-                active ? 'text-zinc-100' : done ? 'text-zinc-400' : 'text-zinc-600',
+                active ? 'text-[var(--color-fg)]' : done ? 'text-[var(--color-fg-muted)]' : 'text-[var(--color-fg-faint)]',
               )}
             >
               {label}
@@ -259,7 +259,7 @@ function StepIndicator({ step }: { step: 0 | 1 | 2 }) {
               <div
                 className={cn(
                   'flex-1 h-px mx-3',
-                  done ? 'bg-indigo-500/60' : 'bg-zinc-800',
+                  done ? 'bg-indigo-500/60' : 'bg-[var(--color-overlay)]',
                 )}
               />
             )}
@@ -291,31 +291,31 @@ function StepSource({
 }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-300">
+      <p className="text-sm text-[var(--color-fg-secondary)]">
         This wizard will migrate the {guestType === 'qemu' ? 'VM' : 'LXC container'} below to
         a target node chosen from the live cluster pressure snapshot.
       </p>
       <div className="studio-card rounded-lg p-4 space-y-2">
         <div className="flex items-center gap-2">
-          <Server className="w-4 h-4 text-zinc-400" />
-          <span className="text-sm font-medium text-zinc-100">{vmName ?? `#${vmid}`}</span>
-          <span className="text-xs font-mono text-zinc-500">({vmid})</span>
+          <Server className="w-4 h-4 text-[var(--color-fg-muted)]" />
+          <span className="text-sm font-medium text-[var(--color-fg)]">{vmName ?? `#${vmid}`}</span>
+          <span className="text-xs font-mono text-[var(--color-fg-subtle)]">({vmid})</span>
           <Badge variant={isRunning ? 'success' : 'outline'}>
             {isRunning ? 'running' : 'stopped'}
           </Badge>
         </div>
         <dl className="grid grid-cols-3 gap-3 text-xs">
           <div>
-            <dt className="text-zinc-500">Source node</dt>
-            <dd className="text-zinc-200 font-mono">{sourceNode}</dd>
+            <dt className="text-[var(--color-fg-subtle)]">Source node</dt>
+            <dd className="text-[var(--color-fg-secondary)] font-mono">{sourceNode}</dd>
           </div>
           <div>
-            <dt className="text-zinc-500">vCPU</dt>
-            <dd className="text-zinc-200 tabular">{cores}</dd>
+            <dt className="text-[var(--color-fg-subtle)]">vCPU</dt>
+            <dd className="text-[var(--color-fg-secondary)] tabular">{cores}</dd>
           </div>
           <div>
-            <dt className="text-zinc-500">Memory</dt>
-            <dd className="text-zinc-200 tabular">{formatBytes(memoryBytes)}</dd>
+            <dt className="text-[var(--color-fg-subtle)]">Memory</dt>
+            <dd className="text-[var(--color-fg-secondary)] tabular">{formatBytes(memoryBytes)}</dd>
           </div>
         </dl>
       </div>
@@ -340,7 +340,7 @@ function StepTarget({
 }) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48 text-zinc-400">
+      <div className="flex items-center justify-center h-48 text-[var(--color-fg-muted)]">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         Analysing cluster pressure…
       </div>
@@ -359,7 +359,7 @@ function StepTarget({
   }
   if (scored.length === 0) {
     return (
-      <div className="text-center text-zinc-500 py-10">
+      <div className="text-center text-[var(--color-fg-subtle)] py-10">
         No other nodes in this cluster.
       </div>
     );
@@ -367,7 +367,7 @@ function StepTarget({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-[var(--color-fg-subtle)]">
         Ranked by score — lower cluster pressure at the time of checking scores higher.
         Disqualified rows cannot be chosen.
       </p>
@@ -403,23 +403,23 @@ function TargetRow({
       className={cn(
         'w-full text-left rounded-lg p-3 border transition flex items-center gap-3',
         selected && !disabled && 'border-indigo-400/60 bg-indigo-500/10',
-        !selected && !disabled && 'border-zinc-800/60 bg-zinc-900 hover:bg-zinc-800/60',
+        !selected && !disabled && 'border-[var(--color-border-subtle)] bg-[var(--color-surface)] hover:bg-zinc-800/60',
         disabled && 'border-zinc-800/40 bg-zinc-900/40 cursor-not-allowed opacity-60',
       )}
     >
-      <div className="w-8 h-8 shrink-0 rounded-md bg-zinc-800 flex items-center justify-center text-xs font-mono tabular">
+      <div className="w-8 h-8 shrink-0 rounded-md bg-[var(--color-overlay)] flex items-center justify-center text-xs font-mono tabular">
         {disabled ? '—' : Math.round(row.score)}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-zinc-100 font-mono">{row.node}</span>
+          <span className="text-sm font-medium text-[var(--color-fg)] font-mono">{row.node}</span>
           <TargetBadge label={row.label} />
         </div>
         {!disabled ? (
-          <div className="text-xs text-zinc-500 flex items-center gap-3 mt-0.5">
-            <span>CPU headroom <span className="text-zinc-300 tabular">{row.fit.cpuHeadroomPct}%</span></span>
+          <div className="text-xs text-[var(--color-fg-subtle)] flex items-center gap-3 mt-0.5">
+            <span>CPU headroom <span className="text-[var(--color-fg-secondary)] tabular">{row.fit.cpuHeadroomPct}%</span></span>
             <span>·</span>
-            <span>Mem headroom <span className="text-zinc-300 tabular">{row.fit.memHeadroomPct}%</span></span>
+            <span>Mem headroom <span className="text-[var(--color-fg-secondary)] tabular">{row.fit.memHeadroomPct}%</span></span>
           </div>
         ) : (
           <div className="text-xs text-red-400/80 mt-0.5 truncate" title={row.reasons.join('; ')}>
@@ -464,28 +464,28 @@ function StepConfirm({
       <div className="studio-card rounded-lg p-4">
         <div className="flex items-center gap-3">
           <div className="flex-1 text-center">
-            <div className="text-xs text-zinc-500">From</div>
-            <div className="text-sm font-medium text-zinc-100 font-mono">{sourceNode}</div>
+            <div className="text-xs text-[var(--color-fg-subtle)]">From</div>
+            <div className="text-sm font-medium text-[var(--color-fg)] font-mono">{sourceNode}</div>
           </div>
           <MoveRight className="w-4 h-4 text-indigo-300 shrink-0" />
           <div className="flex-1 text-center">
-            <div className="text-xs text-zinc-500">To</div>
-            <div className="text-sm font-medium text-zinc-100 font-mono">{target.node}</div>
+            <div className="text-xs text-[var(--color-fg-subtle)]">To</div>
+            <div className="text-sm font-medium text-[var(--color-fg)] font-mono">{target.node}</div>
             <div className="mt-1 flex justify-center">
               <TargetBadge label={target.label} />
             </div>
           </div>
         </div>
-        <div className="mt-3 text-xs text-zinc-500 text-center">
-          Migrating <span className="text-zinc-300">{vmName}</span> — target score{' '}
-          <span className="text-zinc-300 tabular">{Math.round(target.score)}</span>, CPU headroom
-          after placement <span className="text-zinc-300 tabular">{target.fit.cpuHeadroomPct}%</span>,
-          mem <span className="text-zinc-300 tabular">{target.fit.memHeadroomPct}%</span>.
+        <div className="mt-3 text-xs text-[var(--color-fg-subtle)] text-center">
+          Migrating <span className="text-[var(--color-fg-secondary)]">{vmName}</span> — target score{' '}
+          <span className="text-[var(--color-fg-secondary)] tabular">{Math.round(target.score)}</span>, CPU headroom
+          after placement <span className="text-[var(--color-fg-secondary)] tabular">{target.fit.cpuHeadroomPct}%</span>,
+          mem <span className="text-[var(--color-fg-secondary)] tabular">{target.fit.memHeadroomPct}%</span>.
         </div>
       </div>
 
       {isRunning && (
-        <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
           <input
             type="checkbox"
             checked={onlineToggle}

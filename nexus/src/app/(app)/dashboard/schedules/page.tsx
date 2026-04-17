@@ -72,15 +72,15 @@ export default function SchedulesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">Scheduled Jobs</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-[var(--color-fg)]">Scheduled Jobs</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">
             Community scripts that run on a cadence.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/60 rounded-lg text-xs text-zinc-300 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-xs text-[var(--color-fg-secondary)] transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -100,7 +100,7 @@ export default function SchedulesPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard label="Total" value={String(stats.total)} color="text-zinc-100" />
+        <StatCard label="Total" value={String(stats.total)} color="text-[var(--color-fg)]" />
         <StatCard label="Enabled" value={String(stats.enabled)} color="text-emerald-400" />
         <StatCard label="Fired in last 24h" value={String(stats.recentFires)} color="text-indigo-400" />
       </div>
@@ -108,7 +108,7 @@ export default function SchedulesPage() {
       {/* Loading / error */}
       {isLoading && (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
         </div>
       )}
       {isError && (
@@ -129,12 +129,12 @@ export default function SchedulesPage() {
       {/* Empty */}
       {!isLoading && jobs.length === 0 && (
         <div className="studio-card rounded-lg p-10 text-center">
-          <Clock className="w-8 h-8 text-zinc-500 mx-auto mb-3" />
-          <p className="text-sm text-zinc-300 mb-1">No scheduled jobs yet.</p>
-          <p className="text-xs text-zinc-500">
+          <Clock className="w-8 h-8 text-[var(--color-fg-subtle)] mx-auto mb-3" />
+          <p className="text-sm text-[var(--color-fg-secondary)] mb-1">No scheduled jobs yet.</p>
+          <p className="text-xs text-[var(--color-fg-subtle)]">
             Open a script on the Community Scripts page and click{' '}
-            <span className="font-mono text-zinc-400">Schedule</span>, or use{' '}
-            <span className="font-mono text-zinc-400">New schedule</span> above.
+            <span className="font-mono text-[var(--color-fg-muted)]">Schedule</span>, or use{' '}
+            <span className="font-mono text-[var(--color-fg-muted)]">New schedule</span> above.
           </p>
         </div>
       )}
@@ -193,9 +193,9 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
     <div className="studio-card rounded-lg p-4 flex items-center gap-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-medium text-zinc-100 truncate">{job.scriptName}</h3>
+          <h3 className="text-sm font-medium text-[var(--color-fg)] truncate">{job.scriptName}</h3>
           {job.slug && (
-            <span className="text-xs font-mono text-zinc-500">{job.slug}</span>
+            <span className="text-xs font-mono text-[var(--color-fg-subtle)]">{job.slug}</span>
           )}
           <span
             className={cn(
@@ -205,7 +205,7 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
             title={job.enabled ? 'Enabled' : 'Disabled'}
           />
         </div>
-        <div className="flex items-center gap-4 text-xs text-zinc-400">
+        <div className="flex items-center gap-4 text-xs text-[var(--color-fg-muted)]">
           <span className="inline-flex items-center gap-1">
             <Clock className="w-3 h-3" />
             {humanCron(job.schedule)}
@@ -220,14 +220,14 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
         <button
           onClick={toggle}
           disabled={updateM.isPending}
-          className="px-2.5 py-1 text-xs rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition disabled:opacity-40"
+          className="px-2.5 py-1 text-xs rounded-md bg-[var(--color-overlay)] hover:bg-zinc-700 text-[var(--color-fg-secondary)] transition disabled:opacity-40"
           title={job.enabled ? 'Disable' : 'Enable'}
         >
           {job.enabled ? 'Disable' : 'Enable'}
         </button>
         <button
           onClick={onEdit}
-          className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
+          className="p-1.5 rounded-md bg-[var(--color-overlay)] hover:bg-zinc-700 text-[var(--color-fg-secondary)] transition"
           title="Edit"
         >
           <Pencil className="w-3.5 h-3.5" />
@@ -235,7 +235,7 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
         <button
           onClick={remove}
           disabled={deleteM.isPending}
-          className="p-1.5 rounded-md bg-zinc-800 hover:bg-red-500/20 text-zinc-300 hover:text-red-300 transition disabled:opacity-40"
+          className="p-1.5 rounded-md bg-[var(--color-overlay)] hover:bg-red-500/20 text-[var(--color-fg-secondary)] hover:text-red-300 transition disabled:opacity-40"
           title="Delete"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -265,7 +265,7 @@ function computeStats(jobs: ScheduledJobDto[]) {
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="studio-card rounded-lg px-4 py-3">
-      <p className="text-xs text-zinc-500 mb-1">{label}</p>
+      <p className="text-xs text-[var(--color-fg-subtle)] mb-1">{label}</p>
       <p className={cn('text-2xl font-semibold tabular', color)}>{value}</p>
     </div>
   );

@@ -48,8 +48,8 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
         <div className="flex items-center gap-3">
           <StatusDot status={dotStatus} size="md" aria-label={node.status} />
           <div>
-            <h3 className="text-sm font-semibold text-zinc-100">{node.node ?? node.id}</h3>
-            <p className="text-xs text-zinc-500 tabular">
+            <h3 className="text-sm font-semibold text-[var(--color-fg)]">{node.node ?? node.id}</h3>
+            <p className="text-xs text-[var(--color-fg-subtle)] tabular">
               {vmCount} VM{vmCount !== 1 ? 's' : ''} · {ctCount} CT{ctCount !== 1 ? 's' : ''}
             </p>
           </div>
@@ -70,10 +70,10 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
-                <Cpu className="w-3 h-3 text-zinc-500" />
-                <span className="text-xs text-zinc-500">CPU</span>
+                <Cpu className="w-3 h-3 text-[var(--color-fg-subtle)]" />
+                <span className="text-xs text-[var(--color-fg-subtle)]">CPU</span>
               </div>
-              <span className="text-xs tabular font-mono text-zinc-300">
+              <span className="text-xs tabular font-mono text-[var(--color-fg-secondary)]">
                 {cpu.toFixed(1)}% / {node.maxcpu ?? '?'} cores
               </span>
             </div>
@@ -83,10 +83,10 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
-                <MemoryStick className="w-3 h-3 text-zinc-500" />
-                <span className="text-xs text-zinc-500">Memory</span>
+                <MemoryStick className="w-3 h-3 text-[var(--color-fg-subtle)]" />
+                <span className="text-xs text-[var(--color-fg-subtle)]">Memory</span>
               </div>
-              <span className="text-xs tabular font-mono text-zinc-300">
+              <span className="text-xs tabular font-mono text-[var(--color-fg-secondary)]">
                 {formatBytes(node.mem ?? 0)} / {formatBytes(node.maxmem ?? 0)}
               </span>
             </div>
@@ -97,10 +97,10 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
-                  <HardDrive className="w-3 h-3 text-zinc-500" />
-                  <span className="text-xs text-zinc-500">Disk</span>
+                  <HardDrive className="w-3 h-3 text-[var(--color-fg-subtle)]" />
+                  <span className="text-xs text-[var(--color-fg-subtle)]">Disk</span>
                 </div>
-                <span className="text-xs tabular font-mono text-zinc-300">
+                <span className="text-xs tabular font-mono text-[var(--color-fg-secondary)]">
                   {formatBytes(node.disk ?? 0)} / {formatBytes(node.maxdisk)}
                 </span>
               </div>
@@ -110,9 +110,9 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
 
           {node.uptime ? (
             <div className="flex items-center gap-1.5 pt-1">
-              <Clock className="w-3 h-3 text-zinc-500" />
-              <span className="text-xs text-zinc-500">Uptime:</span>
-              <span className="text-xs tabular font-mono text-zinc-300">{formatUptime(node.uptime)}</span>
+              <Clock className="w-3 h-3 text-[var(--color-fg-subtle)]" />
+              <span className="text-xs text-[var(--color-fg-subtle)]">Uptime:</span>
+              <span className="text-xs tabular font-mono text-[var(--color-fg-secondary)]">{formatUptime(node.uptime)}</span>
             </div>
           ) : null}
         </div>

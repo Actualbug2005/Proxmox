@@ -75,15 +75,15 @@ export default function ChainsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">Script Chains</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-[var(--color-fg)]">Script Chains</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">
             Ordered sequences of Community Scripts — run ad-hoc or on a schedule.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/60 rounded-lg text-xs text-zinc-300 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-surface)] hover:bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-xs text-[var(--color-fg-secondary)] transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -102,14 +102,14 @@ export default function ChainsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard label="Total" value={String(stats.total)} color="text-zinc-100" />
+        <StatCard label="Total" value={String(stats.total)} color="text-[var(--color-fg)]" />
         <StatCard label="In flight" value={String(stats.inFlight)} color="text-indigo-400" />
         <StatCard label="Scheduled" value={String(stats.scheduled)} color="text-emerald-400" />
       </div>
 
       {isLoading && (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
         </div>
       )}
       {isError && (
@@ -127,11 +127,11 @@ export default function ChainsPage() {
 
       {!isLoading && chains.length === 0 && (
         <div className="studio-card rounded-lg p-10 text-center">
-          <Zap className="w-8 h-8 text-zinc-500 mx-auto mb-3" />
-          <p className="text-sm text-zinc-300 mb-1">No chains yet.</p>
-          <p className="text-xs text-zinc-500">
+          <Zap className="w-8 h-8 text-[var(--color-fg-subtle)] mx-auto mb-3" />
+          <p className="text-sm text-[var(--color-fg-secondary)] mb-1">No chains yet.</p>
+          <p className="text-xs text-[var(--color-fg-subtle)]">
             Click{' '}
-            <span className="font-mono text-zinc-400">New chain</span> to compose a sequence of
+            <span className="font-mono text-[var(--color-fg-muted)]">New chain</span> to compose a sequence of
             Community Scripts.
           </p>
         </div>
@@ -197,8 +197,8 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
       <div className="flex items-center gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-medium text-zinc-100 truncate">{chain.name}</h3>
-            <span className="text-xs text-zinc-500">· {chain.steps.length} step{chain.steps.length === 1 ? '' : 's'}</span>
+            <h3 className="text-sm font-medium text-[var(--color-fg)] truncate">{chain.name}</h3>
+            <span className="text-xs text-[var(--color-fg-subtle)]">· {chain.steps.length} step{chain.steps.length === 1 ? '' : 's'}</span>
             <span
               className={cn(
                 'inline-block w-1.5 h-1.5 rounded-full',
@@ -207,7 +207,7 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
               title={chain.enabled ? 'Enabled' : 'Disabled'}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-fg-muted)]">
             <span className="inline-flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {humanCron(chain.schedule)}
@@ -230,14 +230,14 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
           <button
             onClick={toggle}
             disabled={updateM.isPending}
-            className="rounded-md bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 transition hover:bg-zinc-700 disabled:opacity-40"
+            className="rounded-md bg-[var(--color-overlay)] px-2.5 py-1 text-xs text-[var(--color-fg-secondary)] transition hover:bg-zinc-700 disabled:opacity-40"
             title={chain.enabled ? 'Disable' : 'Enable'}
           >
             {chain.enabled ? 'Disable' : 'Enable'}
           </button>
           <button
             onClick={onEdit}
-            className="rounded-md bg-zinc-800 p-1.5 text-zinc-300 transition hover:bg-zinc-700"
+            className="rounded-md bg-[var(--color-overlay)] p-1.5 text-[var(--color-fg-secondary)] transition hover:bg-zinc-700"
             title="Edit"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
           <button
             onClick={remove}
             disabled={deleteM.isPending}
-            className="rounded-md bg-zinc-800 p-1.5 text-zinc-300 transition hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+            className="rounded-md bg-[var(--color-overlay)] p-1.5 text-[var(--color-fg-secondary)] transition hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
             title="Delete"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -306,7 +306,7 @@ function computeStats(chains: ChainDto[]) {
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="studio-card rounded-lg px-4 py-3">
-      <p className="text-xs text-zinc-500 mb-1">{label}</p>
+      <p className="text-xs text-[var(--color-fg-subtle)] mb-1">{label}</p>
       <p className={cn('text-2xl font-semibold tabular', color)}>{value}</p>
     </div>
   );

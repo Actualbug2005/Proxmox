@@ -46,8 +46,8 @@ function IfaceForm({
   const [vlanDev, setVlanDev] = useState(initial?.['vlan-raw-device'] ?? '');
   const [vlanId, setVlanId] = useState(String(initial?.['vlan-id'] ?? ''));
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
-  const labelCls = 'text-xs text-zinc-500 block mb-1';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
+  const labelCls = 'text-xs text-[var(--color-fg-subtle)] block mb-1';
 
   function handleSave() {
     const params: NetworkIfaceParamsPublic & { iface: string } = { type, iface, address, netmask, gateway, autostart, comments };
@@ -138,13 +138,13 @@ function IfaceForm({
         <input value={comments} onChange={(e) => setComments(e.target.value)} className={inputCls} />
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
         <input type="checkbox" checked={autostart} onChange={(e) => setAutostart(e.target.checked)} className="rounded border-gray-600" />
         Autostart on boot
       </label>
 
       <div className="flex gap-3 justify-end pt-2">
-        <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
+        <button onClick={onCancel} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">
           Cancel
         </button>
         <button
@@ -243,7 +243,7 @@ export default function NetworkPage() {
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-48 text-zinc-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-[var(--color-fg-subtle)] text-sm">
         Select a node to manage network interfaces.
       </div>
     );
@@ -281,7 +281,7 @@ export default function NetworkPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Network</h1>
-          <p className="text-sm text-zinc-500">Manage interfaces on {node}</p>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Manage interfaces on {node}</p>
         </div>
         <button
           onClick={() => { setShowCreate(true); setSelectedIface(null); }}
@@ -300,7 +300,7 @@ export default function NetworkPage() {
             <button
               onClick={() => setShowRevertConfirm(true)}
               disabled={revertM.isPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
             >
               {revertM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
               Revert
@@ -321,7 +321,7 @@ export default function NetworkPage() {
         <div className="space-y-1.5">
           {isLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : (
             list.map((iface) => (
@@ -329,16 +329,16 @@ export default function NetworkPage() {
                 key={iface.iface}
                 onClick={() => { setSelectedIface(iface.iface); setEditing(false); setShowCreate(false); }}
                 className={cn(
-                  'w-full text-left bg-zinc-900 border rounded-lg p-3 transition',
-                  selectedIface === iface.iface ? 'border-zinc-300/50' : 'border-zinc-800/60 hover:border-zinc-800/60',
+                  'w-full text-left bg-[var(--color-surface)] border rounded-lg p-3 transition',
+                  selectedIface === iface.iface ? 'border-zinc-300/50' : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-subtle)]',
                 )}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', iface.active ? 'bg-emerald-400' : 'bg-gray-600')} />
-                  <span className="text-sm font-mono text-zinc-200 font-medium">{iface.iface}</span>
+                  <span className="text-sm font-mono text-[var(--color-fg-secondary)] font-medium">{iface.iface}</span>
                   <Badge variant={TYPE_COLORS[iface.type] ?? 'outline'} className="ml-auto text-xs">{iface.type}</Badge>
                 </div>
-                {iface.address && <p className="text-xs text-zinc-500 font-mono pl-3.5">{iface.cidr ?? iface.address}</p>}
+                {iface.address && <p className="text-xs text-[var(--color-fg-subtle)] font-mono pl-3.5">{iface.cidr ?? iface.address}</p>}
               </button>
             ))
           )}
@@ -361,13 +361,13 @@ export default function NetworkPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setEditing(true)}
-                    className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
+                    className="px-3 py-1.5 text-xs text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-zinc-800 rounded-lg transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] rounded-lg transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
@@ -387,8 +387,8 @@ export default function NetworkPage() {
                   ['Comments', selected.comments ?? '—'],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <dt className="text-xs text-zinc-500">{label}</dt>
-                    <dd className="text-zinc-200 font-mono text-xs mt-0.5">{value}</dd>
+                    <dt className="text-xs text-[var(--color-fg-subtle)]">{label}</dt>
+                    <dd className="text-[var(--color-fg-secondary)] font-mono text-xs mt-0.5">{value}</dd>
                   </div>
                 ))}
               </dl>
@@ -416,7 +416,7 @@ export default function NetworkPage() {
               />
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-zinc-600 gap-2">
+            <div className="flex flex-col items-center justify-center h-48 text-[var(--color-fg-faint)] gap-2">
               <Network className="w-8 h-8" />
               <p className="text-sm">Select an interface or create a new one</p>
             </div>

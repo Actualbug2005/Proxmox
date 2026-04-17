@@ -65,32 +65,32 @@ function CloneDialog({
         <h3 className="text-sm font-semibold text-white mb-4">Clone VM</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">New VM ID</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">New VM ID</label>
             <input
               type="number"
               placeholder={String(nextid ?? '...')}
               value={newid}
               onChange={(e) => setNewid(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+              className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
             />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Name</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+              className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
             <input type="checkbox" checked={full} onChange={(e) => setFull(e.target.checked)}
               className="rounded border-gray-600" />
             Full clone (copy disks)
           </label>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">
             Cancel
           </button>
           <button
@@ -208,20 +208,20 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
     <div className="p-6 space-y-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
-        <Link href="/dashboard/vms" className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition">
+        <Link href="/dashboard/vms" className="flex items-center gap-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition">
           <ChevronLeft className="w-3.5 h-3.5" />
           Virtual Machines
         </Link>
         <span className="text-zinc-700">/</span>
-        <span className="text-zinc-300">{vmName}</span>
+        <span className="text-[var(--color-fg-secondary)]">{vmName}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center',
-            isRunning ? 'bg-emerald-500/10' : 'bg-zinc-800')}>
-            <Monitor className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-zinc-500')} />
+            isRunning ? 'bg-emerald-500/10' : 'bg-[var(--color-overlay)]')}>
+            <Monitor className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-[var(--color-fg-subtle)]')} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -230,7 +230,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 {status?.status ?? 'unknown'}
               </Badge>
             </div>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5">
               VMID {vmid} · <span className="inline-flex items-center gap-1"><Server className="w-3 h-3" />{node}</span>
               {config?.ostype && <> · {config.ostype}</>}
             </p>
@@ -267,7 +267,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           )}
           <Link
             href={`/console?node=${node}&vmid=${vmid}&type=qemu`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition"
           >
             <Terminal className="w-4 h-4" />
             Console
@@ -276,19 +276,19 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
             href={`/console/vnc?node=${encodeURIComponent(node)}&vmid=${vmid}&type=qemu`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition"
             title="Open graphical console in a new tab"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Graphical Console
           </a>
           <button onClick={() => setShowClone(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition">
             <Copy className="w-4 h-4" />
             Clone
           </button>
           <button onClick={() => setShowMigrate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition">
             <MoveRight className="w-4 h-4" />
             Migrate
           </button>
@@ -301,7 +301,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-zinc-800/60">
+      <div className="flex gap-1 border-b border-[var(--color-border-subtle)]">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -310,7 +310,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               'px-4 py-2 text-sm font-medium border-b-2 transition -mb-px',
               tab === t.id
                 ? 'border-zinc-200 text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300',
+                : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
             )}
           >
             {t.label}
@@ -323,50 +323,50 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         <div className="space-y-4">
           {statusLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* CPU */}
               <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Cpu className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-medium text-zinc-400">CPU</span>
+                  <Cpu className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                  <span className="text-xs font-medium text-[var(--color-fg-muted)]">CPU</span>
                 </div>
                 <p className="text-2xl font-semibold text-white tabular-nums">{cpu.toFixed(1)}%</p>
                 <ProgressBar value={cpu} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} vCPUs</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">{status.cpus ?? status.maxcpu ?? '?'} vCPUs</p>
               </div>
               {/* Memory */}
               <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <MemoryStick className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-medium text-zinc-400">Memory</span>
+                  <MemoryStick className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                  <span className="text-xs font-medium text-[var(--color-fg-muted)]">Memory</span>
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.mem ?? 0)}</p>
                 <ProgressBar value={mem} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
               </div>
               {/* Disk */}
               <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <HardDrive className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-medium text-zinc-400">Disk</span>
+                  <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                  <span className="text-xs font-medium text-[var(--color-fg-muted)]">Disk</span>
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.disk ?? 0)}</p>
                 <ProgressBar value={disk} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
               </div>
               {/* Network */}
               <div className="studio-card p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Network className="w-4 h-4 text-zinc-500" />
-                  <span className="text-xs font-medium text-zinc-400">Network I/O</span>
+                  <Network className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                  <span className="text-xs font-medium text-[var(--color-fg-muted)]">Network I/O</span>
                 </div>
                 <p className="text-sm font-medium text-white">↑ {formatBytes(status.netout ?? 0)}</p>
                 <p className="text-sm font-medium text-white mt-1">↓ {formatBytes(status.netin ?? 0)}</p>
                 {status.uptime != null && (
-                  <p className="text-xs text-zinc-600 mt-2">Up {formatUptime(status.uptime)}</p>
+                  <p className="text-xs text-[var(--color-fg-faint)] mt-2">Up {formatUptime(status.uptime)}</p>
                 )}
               </div>
             </div>
@@ -375,15 +375,15 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
           {/* Recent tasks */}
           {tasks && tasks.length > 0 && (
             <div className="studio-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-zinc-800/60">
-                <h3 className="text-sm font-medium text-zinc-300">Recent Tasks</h3>
+              <div className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
+                <h3 className="text-sm font-medium text-[var(--color-fg-secondary)]">Recent Tasks</h3>
               </div>
               <table className="w-full">
                 <tbody className="divide-y divide-zinc-800/60/60">
                   {tasks.map((t) => (
                     <tr key={t.upid} className="px-4">
-                      <td className="px-4 py-2.5 text-xs font-mono text-zinc-400">{t.type}</td>
-                      <td className="px-4 py-2.5 text-xs text-zinc-500">
+                      <td className="px-4 py-2.5 text-xs font-mono text-[var(--color-fg-muted)]">{t.type}</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--color-fg-subtle)]">
                         {new Date(t.starttime * 1000).toLocaleString()}
                       </td>
                       <td className="px-4 py-2.5">
@@ -405,7 +405,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         <div className="space-y-4">
           {configLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : config ? (
             <>
@@ -415,13 +415,13 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                   <h3 className="text-sm font-semibold text-white">General</h3>
                   {!editConfig ? (
                     <button onClick={() => { setConfigDraft({ name: config.name, cores: config.cores, sockets: config.sockets, memory: config.memory, onboot: config.onboot, description: config.description }); setEditConfig(true); }}
-                      className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 rounded-lg transition">
+                      className="text-xs px-3 py-1 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] rounded-lg transition">
                       Edit
                     </button>
                   ) : (
                     <div className="flex gap-2">
                       <button onClick={() => { setEditConfig(false); setConfigDraft({}); }}
-                        className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-400 rounded-lg transition">
+                        className="text-xs px-3 py-1 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-muted)] rounded-lg transition">
                         Cancel
                       </button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
@@ -435,7 +435,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {(['name', 'cores', 'sockets', 'memory', 'onboot', 'description'] as const).map((field) => (
                     <div key={field}>
-                      <label className="text-xs text-zinc-500 capitalize block mb-1">
+                      <label className="text-xs text-[var(--color-fg-subtle)] capitalize block mb-1">
                         {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory (MB)' : field}
                       </label>
                       {editConfig ? (
@@ -452,11 +452,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                               ...d,
                               [field]: ['cores','sockets','memory'].includes(field) ? Number(e.target.value) : e.target.value,
                             }))}
-                            className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+                            className="w-full px-2.5 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
                           />
                         )
                       ) : (
-                        <p className="text-sm text-zinc-200">
+                        <p className="text-sm text-[var(--color-fg-secondary)]">
                           {field === 'onboot'
                             ? (config.onboot ? 'Yes' : 'No')
                             : String(config[field as keyof typeof config] ?? '—')}
@@ -477,11 +477,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                       const [location] = value.split(',');
                       return (
                         <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                          <HardDrive className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
+                          <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-xs font-mono text-zinc-400 mb-0.5">{key}</p>
-                            <p className="text-sm text-zinc-200">{location}</p>
-                            {kv.size && <p className="text-xs text-zinc-500">Size: {kv.size}</p>}
+                            <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">{key}</p>
+                            <p className="text-sm text-[var(--color-fg-secondary)]">{location}</p>
+                            {kv.size && <p className="text-xs text-[var(--color-fg-subtle)]">Size: {kv.size}</p>}
                           </div>
                         </div>
                       );
@@ -499,11 +499,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                       const kv = parseKV(value);
                       return (
                         <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                          <Network className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
+                          <Network className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-xs font-mono text-zinc-400 mb-0.5">{key}</p>
-                            <p className="text-sm text-zinc-200">{kv.bridge ?? '—'}</p>
-                            <p className="text-xs text-zinc-500 font-mono">{kv.virtio ?? kv.e1000 ?? kv.rtl8139 ?? ''}</p>
+                            <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">{key}</p>
+                            <p className="text-sm text-[var(--color-fg-secondary)]">{kv.bridge ?? '—'}</p>
+                            <p className="text-xs text-[var(--color-fg-subtle)] font-mono">{kv.virtio ?? kv.e1000 ?? kv.rtl8139 ?? ''}</p>
                           </div>
                         </div>
                       );

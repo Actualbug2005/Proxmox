@@ -220,7 +220,7 @@ export function CloneWizard({
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Copy className="w-4 h-4 text-zinc-400" />
+            <Copy className="w-4 h-4 text-[var(--color-fg-muted)]" />
             <h3 className="text-sm font-semibold text-white">
               Clone template &ldquo;{sourceName}&rdquo;
             </h3>
@@ -228,7 +228,7 @@ export function CloneWizard({
           <button
             onClick={onClose}
             disabled={inFlight}
-            className="text-zinc-500 hover:text-white p-1 disabled:opacity-40"
+            className="text-[var(--color-fg-subtle)] hover:text-white p-1 disabled:opacity-40"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -254,7 +254,7 @@ export function CloneWizard({
           )}
           {step === 1 && (
             <div>
-              <p className="text-xs text-zinc-500 mb-3">
+              <p className="text-xs text-[var(--color-fg-subtle)] mb-3">
                 Applied after the clone task completes. Empty fields are not sent
                 (the template&apos;s defaults apply). Changes may require a VM restart
                 to take effect.
@@ -297,7 +297,7 @@ export function CloneWizard({
           <button
             onClick={() => (step > 0 ? setStep(((step - 1) as 0 | 1 | 2)) : onClose())}
             disabled={inFlight}
-            className="inline-flex items-center gap-1 px-3 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-3 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
           >
             <ChevronLeft className="w-4 h-4" />
             {step > 0 ? 'Back' : 'Cancel'}
@@ -343,7 +343,7 @@ function StepIndicator({ step }: { step: 0 | 1 | 2 }) {
                 'shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition',
                 done && 'bg-indigo-500 text-white',
                 active && !done && 'bg-zinc-200 text-zinc-900 ring-2 ring-indigo-400 ring-offset-2 ring-offset-zinc-900',
-                !done && !active && 'bg-zinc-800 text-zinc-500',
+                !done && !active && 'bg-[var(--color-overlay)] text-[var(--color-fg-subtle)]',
               )}
             >
               {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
@@ -351,13 +351,13 @@ function StepIndicator({ step }: { step: 0 | 1 | 2 }) {
             <span
               className={cn(
                 'ml-2 text-xs font-medium',
-                active ? 'text-zinc-100' : done ? 'text-zinc-400' : 'text-zinc-600',
+                active ? 'text-[var(--color-fg)]' : done ? 'text-[var(--color-fg-muted)]' : 'text-[var(--color-fg-faint)]',
               )}
             >
               {label}
             </span>
             {i < STEP_LABELS.length - 1 && (
-              <div className={cn('flex-1 h-px mx-3', done ? 'bg-indigo-500/60' : 'bg-zinc-800')} />
+              <div className={cn('flex-1 h-px mx-3', done ? 'bg-indigo-500/60' : 'bg-[var(--color-overlay)]')} />
             )}
           </div>
         );
@@ -392,12 +392,12 @@ function StepClone({
   nodes: Array<ClusterResourcePublic & { type: 'node' }>;
 }) {
   const inputCls =
-    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+    'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-zinc-500 block mb-1">New VM ID</label>
+          <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">New VM ID</label>
           <input
             type="number"
             value={newidRaw}
@@ -407,7 +407,7 @@ function StepClone({
           />
         </div>
         <div>
-          <label className="text-xs text-zinc-500 block mb-1">Name</label>
+          <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -417,9 +417,9 @@ function StepClone({
       </div>
 
       <div>
-        <label className="text-xs text-zinc-500 block mb-1">Target node</label>
+        <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Target node</label>
         <div className="relative">
-          <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+          <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)] pointer-events-none" />
           <select
             value={targetNode}
             onChange={(e) => setTargetNode(e.target.value)}
@@ -434,7 +434,7 @@ function StepClone({
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
         <input
           type="checkbox"
           checked={fullClone}
@@ -477,35 +477,35 @@ function StepReview({
   return (
     <div className="space-y-3">
       <div className="studio-card rounded-lg p-4 space-y-2">
-        <div className="text-xs text-zinc-500 uppercase tracking-widest">Clone</div>
+        <div className="text-xs text-[var(--color-fg-subtle)] uppercase tracking-widest">Clone</div>
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-xs text-zinc-500">From</dt>
-            <dd className="font-mono text-zinc-200">
+            <dt className="text-xs text-[var(--color-fg-subtle)]">From</dt>
+            <dd className="font-mono text-[var(--color-fg-secondary)]">
               {sourceName(sourceNode, sourceVmid)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-zinc-500">New VM</dt>
-            <dd className="font-mono text-zinc-200">{name} ({newid})</dd>
+            <dt className="text-xs text-[var(--color-fg-subtle)]">New VM</dt>
+            <dd className="font-mono text-[var(--color-fg-secondary)]">{name} ({newid})</dd>
           </div>
           <div>
-            <dt className="text-xs text-zinc-500">Target node</dt>
-            <dd className="font-mono text-zinc-200">{targetNode}</dd>
+            <dt className="text-xs text-[var(--color-fg-subtle)]">Target node</dt>
+            <dd className="font-mono text-[var(--color-fg-secondary)]">{targetNode}</dd>
           </div>
           <div>
-            <dt className="text-xs text-zinc-500">Mode</dt>
-            <dd className="text-zinc-200">{fullClone ? 'Full clone' : 'Linked clone'}</dd>
+            <dt className="text-xs text-[var(--color-fg-subtle)]">Mode</dt>
+            <dd className="text-[var(--color-fg-secondary)]">{fullClone ? 'Full clone' : 'Linked clone'}</dd>
           </div>
         </dl>
       </div>
 
       <div className="studio-card rounded-lg p-4 space-y-1">
-        <div className="text-xs text-zinc-500 uppercase tracking-widest mb-1">
+        <div className="text-xs text-[var(--color-fg-subtle)] uppercase tracking-widest mb-1">
           Cloud-Init — {fieldCount} field{fieldCount === 1 ? '' : 's'}
         </div>
         {fieldCount === 0 ? (
-          <p className="text-sm text-zinc-400">No cloud-init fields set; template defaults apply.</p>
+          <p className="text-sm text-[var(--color-fg-muted)]">No cloud-init fields set; template defaults apply.</p>
         ) : (
           <dl className="grid grid-cols-2 gap-2 text-sm">
             {cloud.hostname && <Row label="Hostname (name)" value={cloud.hostname} mono />}
@@ -562,8 +562,8 @@ function StepReview({
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs text-zinc-500">{label}</dt>
-      <dd className={cn('text-zinc-200 truncate', mono && 'font-mono')} title={value}>
+      <dt className="text-xs text-[var(--color-fg-subtle)]">{label}</dt>
+      <dd className={cn('text-[var(--color-fg-secondary)] truncate', mono && 'font-mono')} title={value}>
         {value}
       </dd>
     </div>
@@ -586,9 +586,9 @@ function ProgressStep({
       ) : active ? (
         <Loader2 className="w-3.5 h-3.5 text-indigo-300 animate-spin shrink-0" />
       ) : (
-        <div className="w-3.5 h-3.5 rounded-full border border-zinc-700 shrink-0" />
+        <div className="w-3.5 h-3.5 rounded-full border border-[var(--color-border-strong)] shrink-0" />
       )}
-      <span className={cn(done ? 'text-zinc-400' : active ? 'text-zinc-100' : 'text-zinc-600')}>
+      <span className={cn(done ? 'text-[var(--color-fg-muted)]' : active ? 'text-[var(--color-fg)]' : 'text-[var(--color-fg-faint)]')}>
         {label}
       </span>
     </div>

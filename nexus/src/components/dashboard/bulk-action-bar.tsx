@@ -116,7 +116,7 @@ export function BulkActionBar({
   return (
     <>
       <div className="studio-card rounded-lg p-2 flex items-center gap-2 mb-2">
-        <span className="text-xs font-medium text-zinc-300 px-2 tabular">
+        <span className="text-xs font-medium text-[var(--color-fg-secondary)] px-2 tabular">
           {selected.length} selected
         </span>
         <div className="flex-1 flex items-center gap-1 flex-wrap">
@@ -133,8 +133,8 @@ export function BulkActionBar({
                   enabled
                     ? danger
                       ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30'
-                      : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60'
-                    : 'bg-zinc-900 text-zinc-600 border border-zinc-800/60 cursor-not-allowed',
+                      : 'bg-[var(--color-overlay)] hover:bg-zinc-700 text-[var(--color-fg-secondary)] border border-zinc-700/60'
+                    : 'bg-[var(--color-surface)] text-[var(--color-fg-faint)] border border-[var(--color-border-subtle)] cursor-not-allowed',
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -145,7 +145,7 @@ export function BulkActionBar({
         </div>
         <button
           onClick={onClear}
-          className="p-1 text-zinc-500 hover:text-zinc-200 transition"
+          className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
           aria-label="Clear selection"
           title="Clear selection"
         >
@@ -218,23 +218,23 @@ function SnapshotPrompt({
   const valid = SNAPNAME_RE.test(trimmed);
 
   const inputCls =
-    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+    'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start gap-3 mb-4">
-          <Camera className="w-5 h-5 mt-0.5 shrink-0 text-zinc-300" />
+          <Camera className="w-5 h-5 mt-0.5 shrink-0 text-[var(--color-fg-secondary)]" />
           <div>
             <h3 className="text-sm font-semibold text-white">Snapshot {count} guest{count === 1 ? '' : 's'}</h3>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-sm text-[var(--color-fg-muted)] mt-1">
               The same snapshot name is applied to every selected guest.
             </p>
           </div>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Snapshot name</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Snapshot name</label>
             <input
               value={snapname}
               onChange={(e) => setSnapname(e.target.value)}
@@ -248,14 +248,14 @@ function SnapshotPrompt({
             )}
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Description (optional)</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Description (optional)</label>
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={inputCls}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
             <input
               type="checkbox"
               checked={vmstate}
@@ -268,7 +268,7 @@ function SnapshotPrompt({
         <div className="flex gap-3 justify-end mt-5">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
+            className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
           >
             Cancel
           </button>

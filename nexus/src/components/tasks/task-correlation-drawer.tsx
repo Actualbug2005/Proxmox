@@ -67,13 +67,13 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm font-semibold text-white">
                 {task.type}
-                {task.id ? <span className="text-zinc-500 font-mono ml-2">{task.id}</span> : null}
+                {task.id ? <span className="text-[var(--color-fg-subtle)] font-mono ml-2">{task.id}</span> : null}
               </h3>
               <Badge variant={exitVariant}>
                 {task.exitstatus ?? task.status ?? 'running'}
               </Badge>
             </div>
-            <p className="text-xs text-zinc-500 mt-0.5 font-mono truncate">
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5 font-mono truncate">
               {task.node} · {task.user} ·{' '}
               {new Date(task.starttime * 1000).toLocaleString()}
               {task.endtime ? (
@@ -86,7 +86,7 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-white p-1 shrink-0"
+            className="text-[var(--color-fg-subtle)] hover:text-white p-1 shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -95,7 +95,7 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
 
         {/* Controls */}
         <div className="flex items-center gap-3 mb-3 text-xs">
-          <div className="flex items-center gap-1 bg-zinc-800 p-1 rounded-lg">
+          <div className="flex items-center gap-1 bg-[var(--color-overlay)] p-1 rounded-lg">
             {PAD_CHOICES.map((c) => (
               <button
                 key={c.seconds}
@@ -104,15 +104,15 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
                   'px-2.5 py-1 rounded-md text-xs font-medium transition',
                   padSeconds === c.seconds
                     ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-500 hover:text-zinc-300',
+                    : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
                 )}
               >
                 {c.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1 bg-zinc-800 p-1 rounded-lg">
-            <Filter className="w-3 h-3 text-zinc-500 ml-1" />
+          <div className="flex items-center gap-1 bg-[var(--color-overlay)] p-1 rounded-lg">
+            <Filter className="w-3 h-3 text-[var(--color-fg-subtle)] ml-1" />
             {(['info', 'warning', 'error'] as const).map((p) => (
               <button
                 key={p}
@@ -121,7 +121,7 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
                   'px-2.5 py-1 rounded-md text-xs font-medium transition capitalize',
                   minPriority === p
                     ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-500 hover:text-zinc-300',
+                    : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
                 )}
               >
                 {p === 'info' ? 'All' : `${p}+`}
@@ -134,9 +134,9 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
         <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
           <Pane title="Task log" loading={log.isLoading} error={log.error}>
             {(log.data ?? []).length === 0 ? (
-              <p className="text-xs text-zinc-600 p-4">No task log captured.</p>
+              <p className="text-xs text-[var(--color-fg-faint)] p-4">No task log captured.</p>
             ) : (
-              <pre className="text-xs text-zinc-300 font-mono whitespace-pre-wrap p-3">
+              <pre className="text-xs text-[var(--color-fg-secondary)] font-mono whitespace-pre-wrap p-3">
                 {(log.data ?? []).map((l) => l.t).join('\n')}
               </pre>
             )}
@@ -148,7 +148,7 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
             error={journal.error}
           >
             {filteredJournal.length === 0 ? (
-              <p className="text-xs text-zinc-600 p-4">
+              <p className="text-xs text-[var(--color-fg-faint)] p-4">
                 No entries in window{minPriority !== 'info' ? ' at this priority' : ''}.
               </p>
             ) : (
@@ -163,13 +163,13 @@ export function TaskCorrelationDrawer({ task, onClose }: TaskCorrelationDrawerPr
                     >
                       {entry.priority[0]}
                     </span>
-                    <span className="text-zinc-600 font-mono shrink-0 w-24 truncate" title={entry.time}>
+                    <span className="text-[var(--color-fg-faint)] font-mono shrink-0 w-24 truncate" title={entry.time}>
                       {entry.time}
                     </span>
-                    <span className="text-zinc-400 font-mono shrink-0 w-32 truncate" title={entry.unit}>
+                    <span className="text-[var(--color-fg-muted)] font-mono shrink-0 w-32 truncate" title={entry.unit}>
                       {entry.unit}
                     </span>
-                    <span className="text-zinc-300 min-w-0 break-words">{entry.message}</span>
+                    <span className="text-[var(--color-fg-secondary)] min-w-0 break-words">{entry.message}</span>
                   </li>
                 ))}
               </ul>
@@ -194,9 +194,9 @@ function Pane({
 }) {
   return (
     <section className="studio-card rounded-lg flex flex-col min-h-0">
-      <header className="px-3 py-2 border-b border-zinc-800/60 flex items-center gap-2 shrink-0">
-        <span className="text-[11px] uppercase tracking-widest text-zinc-500">{title}</span>
-        {loading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
+      <header className="px-3 py-2 border-b border-[var(--color-border-subtle)] flex items-center gap-2 shrink-0">
+        <span className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">{title}</span>
+        {loading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </header>
       {error ? (
         <div className="flex items-start gap-2 p-3 text-xs text-red-300">

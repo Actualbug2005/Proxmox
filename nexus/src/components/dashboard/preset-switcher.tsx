@@ -51,7 +51,7 @@ export function PresetSwitcher() {
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
               isActive
                 ? 'bg-zinc-100 text-zinc-900 shadow-sm'
-                : 'text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100',
+                : 'text-[var(--color-fg-muted)] hover:bg-white/[0.04] hover:text-[var(--color-fg)]',
             )}
           >
             <Icon className="h-3.5 w-3.5" />

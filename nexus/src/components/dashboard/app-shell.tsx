@@ -47,8 +47,8 @@ export function AppShell({ username, children }: AppShellProps) {
         className={cn(
           'fixed top-3 left-3 z-50 lg:hidden',
           'h-10 w-10 rounded-full flex items-center justify-center',
-          'bg-zinc-900/80 backdrop-blur border border-white/10 text-zinc-100',
-          'hover:bg-zinc-800 transition',
+          'bg-zinc-900/80 backdrop-blur border border-white/10 text-[var(--color-fg)]',
+          'hover:bg-[var(--color-overlay)] transition',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
         )}
         aria-label={drawerOpen ? 'Close navigation' : 'Open navigation'}

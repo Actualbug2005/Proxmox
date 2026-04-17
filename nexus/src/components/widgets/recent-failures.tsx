@@ -28,15 +28,15 @@ export function RecentFailuresWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           <XCircle className="h-3 w-3" />
           Recent failures
         </h3>
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-xs text-zinc-600">
+        <p className="py-6 text-center text-xs text-[var(--color-fg-faint)]">
           {loading ? 'Checking tasks…' : 'No recent failures.'}
         </p>
       ) : (
@@ -48,15 +48,15 @@ export function RecentFailuresWidget() {
               className="block rounded-md px-2 py-1.5 transition hover:bg-white/[0.03]"
             >
               <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-xs text-zinc-200">
+                <span className="min-w-0 flex-1 truncate text-xs text-[var(--color-fg-secondary)]">
                   {f.type}
-                  {f.id && <span className="ml-1 text-zinc-500">({f.id})</span>}
+                  {f.id && <span className="ml-1 text-[var(--color-fg-subtle)]">({f.id})</span>}
                 </span>
-                <span className="shrink-0 text-[11px] text-zinc-500">{f.node}</span>
+                <span className="shrink-0 text-[11px] text-[var(--color-fg-subtle)]">{f.node}</span>
               </div>
               <div className="mt-0.5 flex items-center gap-2">
                 <span className="truncate text-[11px] text-red-300/80">{f.exitstatus}</span>
-                <span className="ml-auto shrink-0 text-[11px] text-zinc-500">
+                <span className="ml-auto shrink-0 text-[11px] text-[var(--color-fg-subtle)]">
                   {formatTime(f.starttime)}
                 </span>
               </div>

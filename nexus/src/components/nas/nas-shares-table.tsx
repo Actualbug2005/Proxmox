@@ -90,38 +90,38 @@ export function NasSharesTable({ node }: Props) {
       )}
 
       <div className="studio-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-          <Share2 className="w-4 h-4 text-zinc-500" />
-          <span className="text-sm font-medium text-zinc-300">
+        <div className="px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center gap-2">
+          <Share2 className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+          <span className="text-sm font-medium text-[var(--color-fg-secondary)]">
             Shares {sorted.length > 0 && `(${sorted.length})`}
           </span>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center h-24">
-            <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
           </div>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-zinc-600 py-10 text-center">
+          <p className="text-sm text-[var(--color-fg-faint)] py-10 text-center">
             No shares on {node} yet.
           </p>
         ) : (
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-zinc-800/60">
-                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Name</th>
-                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Path</th>
-                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Protocols</th>
-                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Access</th>
-                <th className="text-left px-4 py-3 text-zinc-500 font-medium">Status</th>
-                <th className="text-right px-4 py-3 text-zinc-500 font-medium w-24">Actions</th>
+              <tr className="border-b border-[var(--color-border-subtle)]">
+                <th className="text-left px-4 py-3 text-[var(--color-fg-subtle)] font-medium">Name</th>
+                <th className="text-left px-4 py-3 text-[var(--color-fg-subtle)] font-medium">Path</th>
+                <th className="text-left px-4 py-3 text-[var(--color-fg-subtle)] font-medium">Protocols</th>
+                <th className="text-left px-4 py-3 text-[var(--color-fg-subtle)] font-medium">Access</th>
+                <th className="text-left px-4 py-3 text-[var(--color-fg-subtle)] font-medium">Status</th>
+                <th className="text-right px-4 py-3 text-[var(--color-fg-subtle)] font-medium w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((s) => (
                 <tr key={s.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/30">
-                  <td className="px-4 py-3 text-zinc-200 font-medium">{s.name}</td>
-                  <td className="px-4 py-3 font-mono text-zinc-400 break-all">{s.path}</td>
+                  <td className="px-4 py-3 text-[var(--color-fg-secondary)] font-medium">{s.name}</td>
+                  <td className="px-4 py-3 font-mono text-[var(--color-fg-muted)] break-all">{s.path}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 flex-wrap">
                       {s.protocols.map((p) => (
@@ -135,7 +135,7 @@ export function NasSharesTable({ node }: Props) {
                     <span
                       className={cn(
                         'inline-flex items-center gap-1 text-xs',
-                        s.readOnly ? 'text-zinc-400' : 'text-emerald-400',
+                        s.readOnly ? 'text-[var(--color-fg-muted)]' : 'text-emerald-400',
                       )}
                     >
                       {s.readOnly ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
@@ -150,7 +150,7 @@ export function NasSharesTable({ node }: Props) {
                       <button
                         onClick={() => setActiveBrowse(s)}
                         aria-label={`Browse ${s.name}`}
-                        className="p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-white/5 rounded-md transition"
+                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 rounded-md transition"
                       >
                         <FolderOpen className="w-4 h-4" />
                       </button>
@@ -158,7 +158,7 @@ export function NasSharesTable({ node }: Props) {
                         onClick={() => setPendingDelete(s)}
                         disabled={deleteM.isPending}
                         aria-label={`Delete ${s.name}`}
-                        className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
+                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

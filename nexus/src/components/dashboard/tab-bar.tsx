@@ -24,7 +24,7 @@ export function TabBar<Id extends string>({ tabs, value, onChange, className }: 
     // that there's more to the right; reset at sm+.
     <div
       className={cn(
-        'flex gap-1 border-b border-zinc-800/60 overflow-x-auto',
+        'flex gap-1 border-b border-[var(--color-border-subtle)] overflow-x-auto',
         '-mx-4 px-4 sm:mx-0 sm:px-0',
         '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         className,
@@ -42,13 +42,13 @@ export function TabBar<Id extends string>({ tabs, value, onChange, className }: 
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px whitespace-nowrap',
               active
                 ? 'border-zinc-200 text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300',
+                : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
               t.disabled && 'opacity-40 cursor-not-allowed',
             )}
           >
             {t.label}
             {typeof t.count === 'number' && (
-              <span className={cn('ml-2 text-xs tabular-nums', active ? 'text-indigo-300' : 'text-zinc-600')}>
+              <span className={cn('ml-2 text-xs tabular-nums', active ? 'text-indigo-300' : 'text-[var(--color-fg-faint)]')}>
                 {t.count}
               </span>
             )}

@@ -45,7 +45,7 @@ interface ScheduleJobEditorProps {
 }
 
 const inputCls =
-  'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -128,14 +128,14 @@ export function ScheduleJobEditor({
       <div className="studio-card p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-zinc-400" />
+            <Clock className="w-4 h-4 text-[var(--color-fg-muted)]" />
             <h3 className="text-sm font-semibold text-white">
               {isEdit ? 'Edit schedule' : 'Schedule this script'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-white p-1"
+            className="text-[var(--color-fg-subtle)] hover:text-white p-1"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -144,19 +144,19 @@ export function ScheduleJobEditor({
 
         <div className="space-y-4">
           {scriptName && (
-            <div className="rounded-lg bg-zinc-800/40 border border-zinc-800/60 px-3 py-2 text-sm">
-              <div className="text-zinc-200">{scriptName}</div>
-              {slug && <div className="text-xs text-zinc-500 font-mono mt-0.5">{slug}</div>}
+            <div className="rounded-lg bg-zinc-800/40 border border-[var(--color-border-subtle)] px-3 py-2 text-sm">
+              <div className="text-[var(--color-fg-secondary)]">{scriptName}</div>
+              {slug && <div className="text-xs text-[var(--color-fg-subtle)] font-mono mt-0.5">{slug}</div>}
             </div>
           )}
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Schedule</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Schedule</label>
             <CronInput value={schedule} onChange={setSchedule} />
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Node</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Node</label>
             <select
               value={node}
               onChange={(e) => setNodeOverride(e.target.value)}
@@ -171,7 +171,7 @@ export function ScheduleJobEditor({
             </select>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
             <input
               type="checkbox"
               checked={enabled}
@@ -186,7 +186,7 @@ export function ScheduleJobEditor({
           <button
             onClick={onClose}
             disabled={busy}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40"
+            className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
           >
             Cancel
           </button>

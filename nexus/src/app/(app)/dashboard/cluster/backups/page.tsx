@@ -145,7 +145,7 @@ export default function BackupsPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-white">Backups</h1>
-        <p className="text-sm text-zinc-500">Backup archive and scheduled jobs across the cluster</p>
+        <p className="text-sm text-[var(--color-fg-subtle)]">Backup archive and scheduled jobs across the cluster</p>
       </div>
 
       {deleteTarget && (
@@ -194,7 +194,7 @@ export default function BackupsPage() {
 
       {tab === 'archive' && (
         loadingArchive ? (
-          <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+          <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
         ) : files.length === 0 ? (
           <EmptyState
             icon={Archive}
@@ -205,28 +205,28 @@ export default function BackupsPage() {
           <div className="studio-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-800/60">
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Archive</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">VMID</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Node</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Storage</th>
-                  <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium">Size</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Created</th>
-                  <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Flags</th>
-                  <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
+                <tr className="border-b border-[var(--color-border-subtle)]">
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Archive</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">VMID</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Node</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Storage</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Size</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Created</th>
+                  <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Flags</th>
+                  <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
                 </tr>
               </thead>
               <tbody>
                 {files.map((f) => (
                   <tr key={f.volid + f._node} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-200 break-all max-w-xs" title={f.volid}>
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-secondary)] break-all max-w-xs" title={f.volid}>
                       {volidName(f.volid)}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-400">{f.vmid ?? '—'}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{f._node}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{volidStorage(f.volid)}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-400 text-right tabular-nums">{f.size ? formatBytes(f.size) : '—'}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">{formatTime(f.ctime)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{f.vmid ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] font-mono">{f._node}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] font-mono">{volidStorage(f.volid)}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] text-right tabular-nums">{f.size ? formatBytes(f.size) : '—'}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{formatTime(f.ctime)}</td>
                     <td className="px-4 py-3 space-x-1">
                       {f.protected ? <Badge variant="warning" className="text-xs inline-flex items-center gap-1"><Lock className="w-3 h-3" /> protected</Badge> : null}
                       {f.verification?.state === 'ok' && <Badge variant="success" className="text-xs">verified</Badge>}
@@ -236,7 +236,7 @@ export default function BackupsPage() {
                       <div className="flex gap-1 justify-end">
                         <button
                           onClick={() => setRestoreTarget(f)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-blue-400 hover:text-blue-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                           title="Restore"
                         >
                           <Undo2 className="w-3 h-3" /> Restore
@@ -244,7 +244,7 @@ export default function BackupsPage() {
                         <button
                           onClick={() => protectM.mutate({ f, next: !f.protected })}
                           disabled={protectM.isPending}
-                          className={cn('p-1 text-xs bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40', f.protected ? 'text-yellow-400' : 'text-zinc-400')}
+                          className={cn('p-1 text-xs bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40', f.protected ? 'text-yellow-400' : 'text-[var(--color-fg-muted)]')}
                           title={f.protected ? 'Unprotect' : 'Protect'}
                         >
                           <Lock className="w-3 h-3" />
@@ -252,7 +252,7 @@ export default function BackupsPage() {
                         <button
                           onClick={() => setDeleteTarget(f)}
                           disabled={!!f.protected || deleteFileM.isPending}
-                          className="p-1 text-xs text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
+                          className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                           title={f.protected ? 'Unprotect before delete' : 'Delete'}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -280,7 +280,7 @@ export default function BackupsPage() {
           </div>
 
           {loadingJobs ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : !jobs || jobs.length === 0 ? (
             <EmptyState
               icon={CalendarClock}
@@ -291,27 +291,27 @@ export default function BackupsPage() {
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">ID</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Schedule</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Target</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Storage</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Mode</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Status</th>
-                    <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
+                  <tr className="border-b border-[var(--color-border-subtle)]">
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">ID</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Schedule</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Target</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Storage</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Mode</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Status</th>
+                    <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((j) => (
                     <tr key={j.id} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-200">{j.id}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{j.schedule}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-400">
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-secondary)]">{j.id}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{j.schedule}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)]">
                         {j.all ? 'All guests' : j.vmid ? `VMIDs: ${j.vmid}` : j.pool ? `pool ${j.pool}` : '—'}
-                        {j.node && <span className="text-zinc-600"> on {j.node}</span>}
+                        {j.node && <span className="text-[var(--color-fg-faint)]"> on {j.node}</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-zinc-400 font-mono">{j.storage}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-400">{j.mode}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] font-mono">{j.storage}</td>
+                      <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)]">{j.mode}</td>
                       <td className="px-4 py-3">
                         {j.enabled === false ? (
                           <Badge variant="outline" className="text-xs">disabled</Badge>
@@ -323,14 +323,14 @@ export default function BackupsPage() {
                         <div className="flex gap-1 justify-end">
                           <button
                             onClick={() => setEditJob(j)}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                             title="Edit"
                           >
                             <Pencil className="w-3 h-3" /> Edit
                           </button>
                           <button
                             onClick={() => setDeleteJob(j)}
-                            className="p-1 text-xs text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                            className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                             title="Delete"
                           >
                             <Trash2 className="w-3 h-3" />

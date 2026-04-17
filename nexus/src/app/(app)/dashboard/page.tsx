@@ -41,14 +41,14 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">{preset.label}</h1>
-          <p className="text-sm text-zinc-500">{preset.description}</p>
+          <h1 className="text-xl font-semibold text-[var(--color-fg)]">{preset.label}</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">{preset.description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <PresetSwitcher />
           <button
             onClick={refreshAll}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-800/60 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-800"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-1.5 text-xs text-[var(--color-fg-secondary)] transition hover:bg-[var(--color-overlay)]"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh

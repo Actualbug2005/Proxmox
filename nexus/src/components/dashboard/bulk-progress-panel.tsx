@@ -48,9 +48,9 @@ function itemIcon(status: BulkBatchDto['items'][number]['status']) {
     case 'failed':
       return <XCircle className="w-3.5 h-3.5 text-red-400" />;
     case 'skipped':
-      return <SkipForward className="w-3.5 h-3.5 text-zinc-500" />;
+      return <SkipForward className="w-3.5 h-3.5 text-[var(--color-fg-subtle)]" />;
     default:
-      return <Circle className="w-3.5 h-3.5 text-zinc-600" />;
+      return <Circle className="w-3.5 h-3.5 text-[var(--color-fg-faint)]" />;
   }
 }
 
@@ -93,9 +93,9 @@ export function BulkProgressPanel() {
     <div className="fixed bottom-4 right-4 z-40 w-96 max-w-[calc(100vw-2rem)]">
       <div className="studio-card rounded-lg shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border-subtle)]">
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-zinc-100 truncate">
+            <div className="text-sm font-medium text-[var(--color-fg)] truncate">
               Bulk {OP_LABELS[primary.op].toLowerCase()} ·{' '}
               <span className="tabular font-mono">
                 {summary.done}/{summary.total}
@@ -111,21 +111,21 @@ export function BulkProgressPanel() {
               )}
             </div>
             {primary.op === 'snapshot' && primary.snapshot && (
-              <div className="text-xs text-zinc-500 font-mono truncate">
+              <div className="text-xs text-[var(--color-fg-subtle)] font-mono truncate">
                 {primary.snapshot.snapname}
               </div>
             )}
           </div>
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="p-1 text-zinc-500 hover:text-zinc-200 transition"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
             aria-label={collapsed ? 'Expand' : 'Collapse'}
           >
             {collapsed ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           <button
             onClick={() => setDismissedIds((prev) => new Set(prev).add(primary.id))}
-            className="p-1 text-zinc-500 hover:text-zinc-200 transition"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
             aria-label="Dismiss"
             title="Dismiss"
           >
@@ -145,11 +145,11 @@ export function BulkProgressPanel() {
                 )}
               >
                 {itemIcon(item.status)}
-                <span className="flex-1 truncate text-zinc-300">
-                  <span className="text-zinc-500 font-mono">{item.guestType}</span>{' '}
+                <span className="flex-1 truncate text-[var(--color-fg-secondary)]">
+                  <span className="text-[var(--color-fg-subtle)] font-mono">{item.guestType}</span>{' '}
                   <span className="font-mono tabular">{item.vmid}</span>
-                  {item.name && <span className="text-zinc-400 ml-1">· {item.name}</span>}
-                  <span className="text-zinc-600 ml-1">· {item.node}</span>
+                  {item.name && <span className="text-[var(--color-fg-muted)] ml-1">· {item.name}</span>}
+                  <span className="text-[var(--color-fg-faint)] ml-1">· {item.node}</span>
                 </span>
                 {item.error && (
                   <span
@@ -166,11 +166,11 @@ export function BulkProgressPanel() {
 
         {/* Footer */}
         {canCancel && (
-          <div className="px-3 py-2 border-t border-zinc-800/60 flex justify-end">
+          <div className="px-3 py-2 border-t border-[var(--color-border-subtle)] flex justify-end">
             <button
               onClick={() => cancel.mutate(primary.id)}
               disabled={cancel.isPending}
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition disabled:opacity-40"
+              className="text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)] transition disabled:opacity-40"
             >
               Cancel pending items
             </button>

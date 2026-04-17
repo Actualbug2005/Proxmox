@@ -31,15 +31,15 @@ export function ClusterSummaryWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           Cluster Summary
         </h3>
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
       <div className="grid grid-cols-2 gap-3">
         {tiles.map(({ label, value, color }) => (
           <div key={label}>
-            <p className="mb-1 text-[11px] text-zinc-500">{label}</p>
+            <p className="mb-1 text-[11px] text-[var(--color-fg-subtle)]">{label}</p>
             <p className={cn('text-2xl font-semibold tabular', color)}>{value}</p>
           </div>
         ))}

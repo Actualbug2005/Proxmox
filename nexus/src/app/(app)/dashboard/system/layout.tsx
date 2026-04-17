@@ -19,14 +19,14 @@ export default function SystemLayout({ children }: { children: React.ReactNode }
       <div className="p-6 space-y-6">
         {/* Node selector header */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-500 shrink-0">Node:</span>
+          <span className="text-xs text-[var(--color-fg-subtle)] shrink-0">Node:</span>
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-[var(--color-fg-muted)]" />
           ) : (
             <select
               value={node}
               onChange={(e) => setNode(e.target.value)}
-              className="px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+              className="px-3 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
             >
               {nodes?.map((n) => {
                 const name = n.node ?? n.id ?? '';

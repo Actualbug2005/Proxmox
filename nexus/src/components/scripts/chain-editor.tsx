@@ -53,7 +53,7 @@ interface DraftStep {
 }
 
 const inputCls =
-  'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
 function makeStep(defaults?: Partial<DraftStep>): DraftStep {
   return {
@@ -194,14 +194,14 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
       <div className="studio-card p-6 w-full max-w-2xl shadow-2xl">
         <div className="mb-4 flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-zinc-400" />
+            <Zap className="h-4 w-4 text-[var(--color-fg-muted)]" />
             <h3 className="text-sm font-semibold text-white">
               {isEdit ? 'Edit chain' : 'New script chain'}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-zinc-500 hover:text-white"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-white"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -210,7 +210,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Name</label>
+            <label className="mb-1 block text-xs text-[var(--color-fg-subtle)]">Name</label>
             <input
               type="text"
               value={name}
@@ -221,7 +221,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">Description (optional)</label>
+            <label className="mb-1 block text-xs text-[var(--color-fg-subtle)]">Description (optional)</label>
             <input
               type="text"
               value={description}
@@ -232,7 +232,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-zinc-500">On step failure</label>
+            <label className="mb-1 block text-xs text-[var(--color-fg-subtle)]">On step failure</label>
             <div className="flex gap-2">
               <PolicyPill
                 active={policy === 'halt-on-failure'}
@@ -249,8 +249,8 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-xs text-zinc-500">Schedule (optional)</label>
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-400">
+              <label className="text-xs text-[var(--color-fg-subtle)]">Schedule (optional)</label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-[var(--color-fg-muted)]">
                 <input
                   type="checkbox"
                   checked={scheduleOn}
@@ -263,7 +263,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
             {scheduleOn && <CronInput value={schedule} onChange={setSchedule} />}
           </div>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--color-fg-secondary)]">
             <input
               type="checkbox"
               checked={enabled}
@@ -276,11 +276,11 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
           {/* Steps */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-xs text-zinc-500">Steps</label>
+              <label className="text-xs text-[var(--color-fg-subtle)]">Steps</label>
               <button
                 type="button"
                 onClick={addStep}
-                className="flex items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                className="flex items-center gap-1 rounded-md bg-[var(--color-overlay)] px-2 py-1 text-xs text-[var(--color-fg-secondary)] hover:bg-zinc-700"
               >
                 <Plus className="h-3 w-3" />
                 Add step
@@ -290,18 +290,18 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
               {steps.map((step, i) => (
                 <div
                   key={step.key}
-                  className="rounded-lg border border-zinc-800/60 bg-zinc-900/50 p-3"
+                  className="rounded-lg border border-[var(--color-border-subtle)] bg-zinc-900/50 p-3"
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-[11px] font-medium text-zinc-300">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-overlay)] text-[11px] font-medium text-[var(--color-fg-secondary)]">
                       {i + 1}
                     </span>
-                    <span className="flex-1 text-xs text-zinc-500">Step</span>
+                    <span className="flex-1 text-xs text-[var(--color-fg-subtle)]">Step</span>
                     <button
                       type="button"
                       onClick={() => moveStep(i, -1)}
                       disabled={i === 0}
-                      className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-30"
+                      className="rounded p-1 text-[var(--color-fg-subtle)] hover:bg-[var(--color-overlay)] hover:text-[var(--color-fg-secondary)] disabled:opacity-30"
                       aria-label="Move up"
                     >
                       <ArrowUp className="h-3.5 w-3.5" />
@@ -310,7 +310,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
                       type="button"
                       onClick={() => moveStep(i, 1)}
                       disabled={i === steps.length - 1}
-                      className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-30"
+                      className="rounded p-1 text-[var(--color-fg-subtle)] hover:bg-[var(--color-overlay)] hover:text-[var(--color-fg-secondary)] disabled:opacity-30"
                       aria-label="Move down"
                     >
                       <ArrowDown className="h-3.5 w-3.5" />
@@ -319,7 +319,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
                       type="button"
                       onClick={() => removeStep(i)}
                       disabled={steps.length <= 1}
-                      className="rounded p-1 text-zinc-500 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-30"
+                      className="rounded p-1 text-[var(--color-fg-subtle)] hover:bg-red-500/20 hover:text-red-300 disabled:opacity-30"
                       aria-label="Remove"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -354,7 +354,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
           <button
             onClick={onClose}
             disabled={busy}
-            className="rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-400 transition hover:text-white disabled:opacity-40"
+            className="rounded-lg bg-[var(--color-overlay)] px-4 py-2 text-sm text-[var(--color-fg-muted)] transition hover:text-white disabled:opacity-40"
           >
             Cancel
           </button>
@@ -392,7 +392,7 @@ function PolicyPill({
         'rounded-full px-3 py-1 text-xs transition',
         active
           ? 'bg-zinc-100 text-zinc-900'
-          : 'border border-zinc-800/60 bg-zinc-800/40 text-zinc-400 hover:text-zinc-200',
+          : 'border border-[var(--color-border-subtle)] bg-zinc-800/40 text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)]',
       )}
     >
       {label}

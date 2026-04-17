@@ -64,8 +64,8 @@ export default function HealthPage() {
         <div className="flex items-center gap-3">
           <HeartPulse className="w-6 h-6 text-indigo-300" />
           <div>
-            <h1 className="text-xl font-semibold text-zinc-50">Cluster Health</h1>
-            <p className="text-sm text-zinc-500">Live pressure signals and recent failures.</p>
+            <h1 className="text-xl font-semibold text-[var(--color-fg)]">Cluster Health</h1>
+            <p className="text-sm text-[var(--color-fg-subtle)]">Live pressure signals and recent failures.</p>
           </div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function HealthPage() {
       )}
 
       {loading && !pressure && (
-        <div className="flex items-center justify-center h-48 text-zinc-400">
+        <div className="flex items-center justify-center h-48 text-[var(--color-fg-muted)]">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           Gathering pressure signals…
         </div>
@@ -114,7 +114,7 @@ export default function HealthPage() {
           </div>
 
           {pressure.peakLoadavgPerCore !== undefined && (
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-[var(--color-fg-subtle)]">
               Peak load-per-core across online nodes:{' '}
               <span
                 className={cn(
@@ -123,7 +123,7 @@ export default function HealthPage() {
                     ? 'text-red-400'
                     : pressure.peakLoadavgPerCore > 0.75
                       ? 'text-amber-400'
-                      : 'text-zinc-300',
+                      : 'text-[var(--color-fg-secondary)]',
                 )}
               >
                 {pressure.peakLoadavgPerCore.toFixed(2)}
@@ -178,9 +178,9 @@ function OffenderPanel({
 }) {
   return (
     <section className="studio-card rounded-lg p-4">
-      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">{title}</p>
+      <p className="text-[11px] font-semibold text-[var(--color-fg-subtle)] uppercase tracking-widest mb-3">{title}</p>
       {guests.length === 0 ? (
-        <p className="text-xs text-zinc-600 py-4 text-center">{emptyMsg}</p>
+        <p className="text-xs text-[var(--color-fg-faint)] py-4 text-center">{emptyMsg}</p>
       ) : (
         <ul className="space-y-2">
           {guests.map((g) => (
@@ -194,16 +194,16 @@ function OffenderPanel({
                 </Badge>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-zinc-100 truncate">{g.name ?? g.id}</span>
-                    {g.vmid && <span className="text-xs text-zinc-500 font-mono">({g.vmid})</span>}
+                    <span className="text-sm text-[var(--color-fg)] truncate">{g.name ?? g.id}</span>
+                    {g.vmid && <span className="text-xs text-[var(--color-fg-subtle)] font-mono">({g.vmid})</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <ProgressBar value={Math.round(g.value * 100)} className="flex-1" />
-                    <span className="text-xs text-zinc-400 tabular font-mono shrink-0 w-10 text-right">
+                    <span className="text-xs text-[var(--color-fg-muted)] tabular font-mono shrink-0 w-10 text-right">
                       {formatValue(g.value)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-600 mt-0.5 font-mono truncate">{g.node}</p>
+                  <p className="text-[11px] text-[var(--color-fg-faint)] mt-0.5 font-mono truncate">{g.node}</p>
                 </div>
               </Link>
             </li>
@@ -227,15 +227,15 @@ function StorageExhaustionPanel({ storage }: { storage: StorageHealthRow[] }) {
 
   return (
     <section className="studio-card rounded-lg p-4">
-      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">
+      <p className="text-[11px] font-semibold text-[var(--color-fg-subtle)] uppercase tracking-widest mb-3">
         Storage exhaustion
       </p>
       {rows.length === 0 ? (
-        <p className="text-xs text-zinc-600 py-4 text-center">No storage pools reporting capacity.</p>
+        <p className="text-xs text-[var(--color-fg-faint)] py-4 text-center">No storage pools reporting capacity.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-[11px] uppercase text-zinc-500">
+            <thead className="text-[11px] uppercase text-[var(--color-fg-subtle)]">
               <tr>
                 <th className="text-left font-medium py-1.5">Storage</th>
                 <th className="text-left font-medium py-1.5">Node</th>
@@ -249,17 +249,17 @@ function StorageExhaustionPanel({ storage }: { storage: StorageHealthRow[] }) {
                 const badge = exhaustionBadge(row);
                 return (
                   <tr key={`${row.node}:${row.storage}`} className="border-t border-zinc-800/40">
-                    <td className="py-2 font-mono text-zinc-200">{row.storage}</td>
-                    <td className="py-2 font-mono text-zinc-500">{row.node}</td>
+                    <td className="py-2 font-mono text-[var(--color-fg-secondary)]">{row.storage}</td>
+                    <td className="py-2 font-mono text-[var(--color-fg-subtle)]">{row.node}</td>
                     <td className="py-2">
                       <div className="flex items-center gap-2">
                         <ProgressBar value={Math.round(row.usedFraction * 100)} className="flex-1" />
-                        <span className="text-xs text-zinc-400 tabular font-mono w-10 text-right">
+                        <span className="text-xs text-[var(--color-fg-muted)] tabular font-mono w-10 text-right">
                           {Math.round(row.usedFraction * 100)}%
                         </span>
                       </div>
                     </td>
-                    <td className="py-2 text-right text-xs text-zinc-400 tabular">
+                    <td className="py-2 text-right text-xs text-[var(--color-fg-muted)] tabular">
                       {formatBytes(row.used)} / {formatBytes(row.total)}
                     </td>
                     <td className="py-2 text-right">
@@ -291,11 +291,11 @@ function RecentFailuresPanel({
 }) {
   return (
     <section className="studio-card rounded-lg p-4">
-      <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">
+      <p className="text-[11px] font-semibold text-[var(--color-fg-subtle)] uppercase tracking-widest mb-3">
         Recent failures
       </p>
       {failures.length === 0 ? (
-        <p className="text-xs text-zinc-600 py-4 text-center flex items-center justify-center gap-2">
+        <p className="text-xs text-[var(--color-fg-faint)] py-4 text-center flex items-center justify-center gap-2">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> No recent task failures.
         </p>
       ) : (
@@ -321,11 +321,11 @@ function RecentFailuresPanel({
                 <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-zinc-100">{f.type}</span>
-                    {f.id && <span className="text-xs text-zinc-500 font-mono">{f.id}</span>}
+                    <span className="text-sm text-[var(--color-fg)]">{f.type}</span>
+                    {f.id && <span className="text-xs text-[var(--color-fg-subtle)] font-mono">{f.id}</span>}
                     <Badge variant="danger">{f.exitstatus}</Badge>
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5 font-mono truncate">
+                  <p className="text-xs text-[var(--color-fg-subtle)] mt-0.5 font-mono truncate">
                     {f.node} · {f.user} · {new Date(f.starttime * 1000).toLocaleString()}
                   </p>
                 </div>

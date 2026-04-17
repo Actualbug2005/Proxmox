@@ -21,7 +21,7 @@ export function ClusterStatusPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-24">
-        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
       </div>
     );
   }
@@ -30,8 +30,8 @@ export function ClusterStatusPanel() {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="studio-card p-5">
         <div className="flex items-center gap-2 mb-3">
-          <HeartPulse className="w-4 h-4 text-zinc-500" />
-          <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Cluster</span>
+          <HeartPulse className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+          <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">Cluster</span>
         </div>
         <p className="text-lg font-medium text-white">{clusterEntry?.name ?? 'standalone'}</p>
         <div className="mt-2 flex items-center gap-2">
@@ -40,14 +40,14 @@ export function ClusterStatusPanel() {
           ) : (
             <Badge variant="danger" className="inline-flex items-center gap-1"><ShieldAlert className="w-3 h-3" /> not quorate</Badge>
           )}
-          {clusterEntry?.version ? <span className="text-xs text-zinc-600">v{clusterEntry.version}</span> : null}
+          {clusterEntry?.version ? <span className="text-xs text-[var(--color-fg-faint)]">v{clusterEntry.version}</span> : null}
         </div>
       </div>
 
       <div className="studio-card p-5 sm:col-span-2">
         <div className="flex items-center gap-2 mb-3">
-          <Server className="w-4 h-4 text-zinc-500" />
-          <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">
+          <Server className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+          <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">
             Nodes {online}/{nodeEntries.length} online
           </span>
         </div>
@@ -62,7 +62,7 @@ export function ClusterStatusPanel() {
             >
               <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-emerald-400' : 'bg-red-400')} />
               <span className="font-mono">{n.name}</span>
-              {n.ip && <span className="text-zinc-600 font-mono">{n.ip}</span>}
+              {n.ip && <span className="text-[var(--color-fg-faint)] font-mono">{n.ip}</span>}
               {(n.local ?? false) ? <span className="text-indigo-400">(this node)</span> : null}
             </div>
           ))}

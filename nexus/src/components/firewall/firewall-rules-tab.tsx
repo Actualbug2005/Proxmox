@@ -83,7 +83,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+        <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
       ) : sorted.length === 0 ? (
         <EmptyState
           icon={Shield}
@@ -94,23 +94,23 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
         <div className="studio-card overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800/60">
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium w-16">#</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Type</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Action</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Source</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Dest</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Proto</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Port</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Macro</th>
-                <th className="text-left px-3 py-3 text-xs text-zinc-500 font-medium">Comment</th>
-                <th className="text-right px-3 py-3 text-xs text-zinc-500 font-medium"></th>
+              <tr className="border-b border-[var(--color-border-subtle)]">
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium w-16">#</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Type</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Action</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Source</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Dest</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Proto</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Port</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Macro</th>
+                <th className="text-left px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Comment</th>
+                <th className="text-right px-3 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((r, idx) => (
                 <tr key={r.pos} className={r.enable === false ? 'opacity-50 border-b border-zinc-800/40' : 'border-b border-zinc-800/40 hover:bg-zinc-800/20'}>
-                  <td className="px-3 py-3 font-mono text-xs text-zinc-500">{r.pos}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-[var(--color-fg-subtle)]">{r.pos}</td>
                   <td className="px-3 py-3">
                     <Badge variant={r.type === 'in' ? 'success' : r.type === 'out' ? 'warning' : 'outline'} className="text-xs">
                       {r.type}
@@ -121,18 +121,18 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
                       {r.action}
                     </Badge>
                   </td>
-                  <td className="px-3 py-3 font-mono text-xs text-zinc-400">{r.source ?? '—'}</td>
-                  <td className="px-3 py-3 font-mono text-xs text-zinc-400">{r.dest ?? '—'}</td>
-                  <td className="px-3 py-3 text-xs text-zinc-400">{r.proto ?? '—'}</td>
-                  <td className="px-3 py-3 text-xs text-zinc-400">{r.dport ?? '—'}</td>
-                  <td className="px-3 py-3 text-xs text-zinc-400">{r.macro ?? '—'}</td>
-                  <td className="px-3 py-3 text-xs text-zinc-500 truncate max-w-[12rem]" title={r.comment}>{r.comment ?? ''}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{r.source ?? '—'}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{r.dest ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-[var(--color-fg-muted)]">{r.proto ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-[var(--color-fg-muted)]">{r.dport ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-[var(--color-fg-muted)]">{r.macro ?? '—'}</td>
+                  <td className="px-3 py-3 text-xs text-[var(--color-fg-subtle)] truncate max-w-[12rem]" title={r.comment}>{r.comment ?? ''}</td>
                   <td className="px-3 py-3 text-right">
                     <div className="flex gap-0.5 justify-end">
                       <button
                         onClick={() => moveM.mutate({ r, delta: -1 })}
                         disabled={idx === 0 || moveM.isPending}
-                        className="p-1 text-zinc-500 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30"
+                        className="p-1 text-[var(--color-fg-subtle)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30"
                         title="Move up"
                       >
                         <ArrowUp className="w-3 h-3" />
@@ -140,21 +140,21 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
                       <button
                         onClick={() => moveM.mutate({ r, delta: 1 })}
                         disabled={idx === sorted.length - 1 || moveM.isPending}
-                        className="p-1 text-zinc-500 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition disabled:opacity-30"
+                        className="p-1 text-[var(--color-fg-subtle)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30"
                         title="Move down"
                       >
                         <ArrowDown className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => setEditRule(r)}
-                        className="p-1 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                        className="p-1 text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                         title="Edit"
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => setDeleteTarget(r)}
-                        className="p-1 text-red-400 hover:text-red-300 bg-zinc-800 hover:bg-zinc-800 rounded-lg transition"
+                        className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                         title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />

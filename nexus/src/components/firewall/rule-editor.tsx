@@ -62,20 +62,20 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
     saveM.mutate(params);
   };
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-lg shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? `Edit rule #${initial.pos}` : 'New firewall rule'}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-[var(--color-fg-subtle)] hover:text-white p-1"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Direction</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Direction</label>
               <select value={type} onChange={(e) => setType(e.target.value as FirewallRuleType)} className={inputCls}>
                 <option value="in">inbound</option>
                 <option value="out">outbound</option>
@@ -83,7 +83,7 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Action</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Action</label>
               <select value={action} onChange={(e) => setAction(e.target.value)} className={inputCls}>
                 {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
               </select>
@@ -91,44 +91,44 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Macro (optional)</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Macro (optional)</label>
             <input value={macro} onChange={(e) => setMacro(e.target.value)} placeholder="SSH, HTTP, HTTPS…" className={inputCls} />
-            <p className="text-xs text-zinc-600 mt-1">PVE macros pre-fill proto/dport. See pve-firewall docs for full list.</p>
+            <p className="text-xs text-[var(--color-fg-faint)] mt-1">PVE macros pre-fill proto/dport. See pve-firewall docs for full list.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Source (CIDR or alias)</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Source (CIDR or alias)</label>
               <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="0.0.0.0/0 or alias-name" className={inputCls + ' font-mono'} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Destination</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Destination</label>
               <input value={dest} onChange={(e) => setDest(e.target.value)} placeholder="CIDR or alias" className={inputCls + ' font-mono'} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Protocol</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Protocol</label>
               <input value={proto} onChange={(e) => setProto(e.target.value)} placeholder="tcp, udp, icmp…" className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Source port</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Source port</label>
               <input value={sport} onChange={(e) => setSport(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Dest port</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Dest port</label>
               <input value={dport} onChange={(e) => setDport(e.target.value)} placeholder="22, 80, 443" className={inputCls} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Interface (optional)</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Interface (optional)</label>
               <input value={iface} onChange={(e) => setIface(e.target.value)} placeholder="vmbr0, net0" className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Log level</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Log level</label>
               <select value={log} onChange={(e) => setLog(e.target.value as typeof log)} className={inputCls}>
                 <option value="nolog">no log</option>
                 <option value="info">info</option>
@@ -143,18 +143,18 @@ export function RuleEditor({ scope, initial, onClose, onSaved }: RuleEditorProps
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Comment</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Comment</label>
             <input value={comment} onChange={(e) => setComment(e.target.value)} className={inputCls} />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
             <input type="checkbox" checked={enable} onChange={(e) => setEnable(e.target.checked)} className="rounded border-gray-600" />
             Enabled
           </label>
         </div>
 
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40">Cancel</button>
+          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40">Cancel</button>
           <button
             onClick={submit}
             disabled={saveM.isPending || !action}

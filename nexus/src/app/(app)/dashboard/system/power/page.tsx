@@ -35,7 +35,7 @@ export default function PowerPage() {
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-48 text-zinc-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-[var(--color-fg-subtle)] text-sm">
         Select a node to manage power.
       </div>
     );
@@ -59,27 +59,27 @@ export default function PowerPage() {
 
       <div>
         <h1 className="text-xl font-semibold text-white">Power</h1>
-        <p className="text-sm text-zinc-500">Reboot or shut down node {node}</p>
+        <p className="text-sm text-[var(--color-fg-subtle)]">Reboot or shut down node {node}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
         <div className="studio-card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-zinc-500" />
-            <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Uptime</span>
+            <Clock className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+            <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">Uptime</span>
           </div>
           <p className="text-lg font-mono text-white">
             {status ? formatUptime(status.uptime ?? 0) : '—'}
           </p>
-          <p className="text-xs text-zinc-600 mt-1">{status?.pveversion ?? ''}</p>
+          <p className="text-xs text-[var(--color-fg-faint)] mt-1">{status?.pveversion ?? ''}</p>
         </div>
 
         <div className="studio-card p-5">
           <div className="flex items-center gap-2 mb-3">
             <RotateCcw className="w-4 h-4 text-blue-400" />
-            <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Reboot</span>
+            <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">Reboot</span>
           </div>
-          <p className="text-xs text-zinc-500 mb-4">Restart the node OS. VMs will be suspended or stopped depending on guest agent support.</p>
+          <p className="text-xs text-[var(--color-fg-subtle)] mb-4">Restart the node OS. VMs will be suspended or stopped depending on guest agent support.</p>
           <button
             onClick={() => setPending('reboot')}
             disabled={powerM.isPending}
@@ -94,12 +94,12 @@ export default function PowerPage() {
           </button>
         </div>
 
-        <div className="bg-zinc-900 border border-red-900/30 rounded-lg p-5">
+        <div className="bg-[var(--color-surface)] border border-red-900/30 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
             <PowerOff className="w-4 h-4 text-red-400" />
-            <span className="text-xs text-zinc-500 font-medium uppercase tracking-widest">Shutdown</span>
+            <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">Shutdown</span>
           </div>
-          <p className="text-xs text-zinc-500 mb-4">Power off the node completely. Requires physical or IPMI access to bring it back online.</p>
+          <p className="text-xs text-[var(--color-fg-subtle)] mb-4">Power off the node completely. Requires physical or IPMI access to bring it back online.</p>
           <button
             onClick={() => setPending('shutdown')}
             disabled={powerM.isPending}

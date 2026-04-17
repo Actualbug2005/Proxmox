@@ -25,11 +25,11 @@ export function GuestTroubleWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           <AlertTriangle className="h-3 w-3" />
           Guests needing attention
         </h3>
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {trouble.length === 0 ? (
@@ -48,10 +48,10 @@ export function GuestTroubleWidget() {
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition hover:bg-white/[0.03]"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                <span className="min-w-0 flex-1 truncate text-zinc-200">
+                <span className="min-w-0 flex-1 truncate text-[var(--color-fg-secondary)]">
                   {g.name ?? `${g.type}/${g.vmid}`}
                 </span>
-                <span className="shrink-0 font-mono text-[11px] uppercase text-zinc-500">
+                <span className="shrink-0 font-mono text-[11px] uppercase text-[var(--color-fg-subtle)]">
                   {g.type}
                 </span>
                 <span className="shrink-0 text-[11px] text-amber-300">{g.status}</span>

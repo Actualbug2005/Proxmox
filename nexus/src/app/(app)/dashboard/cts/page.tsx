@@ -43,7 +43,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
           onClick={(e) => { e.stopPropagation(); start.mutate(); }}
           disabled={pending}
           title="Start"
-          className="p-1.5 rounded-md text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
+          className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
         >
           {start.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
         </button>
@@ -54,7 +54,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); shutdown.mutate(); }}
             disabled={pending}
             title="Shutdown"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
           >
             {shutdown.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
           </button>
@@ -62,7 +62,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); reboot.mutate(); }}
             disabled={pending}
             title="Reboot"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-blue-400 hover:bg-blue-500/10 transition disabled:opacity-40"
           >
             {reboot.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
           </button>
@@ -70,7 +70,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); stop.mutate(); }}
             disabled={pending}
             title="Force Stop"
-            className="p-1.5 rounded-md text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
           >
             {stop.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}
           </button>
@@ -129,7 +129,7 @@ export default function CTsPage() {
         className={cn(
           'px-3 py-3 text-[11px] font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap',
           align === 'right' ? 'text-right' : 'text-left',
-          active ? 'text-zinc-200' : 'text-zinc-500 hover:text-zinc-300',
+          active ? 'text-[var(--color-fg-secondary)]' : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
         )}
       >
         {label}
@@ -145,8 +145,8 @@ export default function CTsPage() {
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">Containers</h1>
-          <p className="text-sm text-zinc-500 mt-0.5 tabular">
+          <h1 className="text-xl font-semibold text-[var(--color-fg)]">Containers</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5 tabular">
             {cts.length} total · {runningCount} running · {stoppedCount} stopped
           </p>
         </div>
@@ -160,39 +160,39 @@ export default function CTsPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)]" />
         <input
           type="text"
           placeholder="Search by name, ID, node, status…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 studio-card text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
+          className="w-full pl-9 pr-4 py-2 studio-card text-sm text-[var(--color-fg-secondary)] placeholder-zinc-600 focus:outline-none focus:border-zinc-300/50 focus:ring-1 focus:ring-zinc-300/20"
         />
       </div>
 
       <div className="studio-card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
           </div>
         ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-zinc-600">
+          <div className="flex flex-col items-center justify-center h-48 text-[var(--color-fg-faint)]">
             <Box className="w-8 h-8 mb-2 opacity-40" />
             <p className="text-sm">{search ? 'No containers match your search' : 'No containers found'}</p>
           </div>
         ) : (
           <table className="w-full">
-            <thead className="border-b border-zinc-800/60 bg-zinc-900">
+            <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
               <tr>
                 <SortTh label="ID" k="vmid" align="right" />
                 <SortTh label="Name" k="name" />
                 <SortTh label="Status" k="status" />
                 <SortTh label="Node" k="node" />
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">CPU</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Memory</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Disk</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Uptime</th>
-                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Actions</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">CPU</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Memory</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Disk</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Uptime</th>
+                <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/60">
@@ -206,50 +206,50 @@ export default function CTsPage() {
                     onClick={() => router.push(`/dashboard/cts/${ct.node}/${ct.vmid}`)}
                     className="hover:bg-zinc-800/40 cursor-pointer transition group"
                   >
-                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-500">{ct.vmid}</td>
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-[var(--color-fg-subtle)]">{ct.vmid}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <StatusDot status={ct.status} size="sm" />
-                        <span className="text-sm font-medium text-zinc-100 group-hover:text-white transition">
+                        <span className="text-sm font-medium text-[var(--color-fg)] group-hover:text-white transition">
                           {ct.name ?? `CT ${ct.vmid}`}
                         </span>
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-sm text-zinc-300 capitalize">
+                      <span className="text-sm text-[var(--color-fg-secondary)] capitalize">
                         {ct.status ?? 'unknown'}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-zinc-400">{ct.node}</td>
+                    <td className="px-3 py-3 text-sm text-[var(--color-fg-muted)]">{ct.node}</td>
                     <td className="px-3 py-3 w-32">
                       {ct.status === 'running' ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200">{cpu.toFixed(1)}%</span>
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)]">{cpu.toFixed(1)}%</span>
                           <Gauge value={cpu} label="CPU usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
                     <td className="px-3 py-3 w-40">
                       {ct.status === 'running' && ct.maxmem ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
-                            {formatBytes(ct.mem ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(ct.maxmem)}
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)] whitespace-nowrap">
+                            {formatBytes(ct.mem ?? 0)} <span className="text-[var(--color-fg-faint)]">/</span> {formatBytes(ct.maxmem)}
                           </span>
                           <Gauge value={mem} label="Memory usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
                     <td className="px-3 py-3 w-40">
                       {ct.maxdisk ? (
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-sm tabular font-mono text-zinc-200 whitespace-nowrap">
-                            {formatBytes(ct.disk ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(ct.maxdisk)}
+                          <span className="text-sm tabular font-mono text-[var(--color-fg-secondary)] whitespace-nowrap">
+                            {formatBytes(ct.disk ?? 0)} <span className="text-[var(--color-fg-faint)]">/</span> {formatBytes(ct.maxdisk)}
                           </span>
                           <Gauge value={disk} label="Disk usage" />
                         </div>
-                      ) : <div className="text-xs text-right text-zinc-600">—</div>}
+                      ) : <div className="text-xs text-right text-[var(--color-fg-faint)]">—</div>}
                     </td>
-                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-zinc-400">
+                    <td className="px-3 py-3 text-sm tabular font-mono text-right text-[var(--color-fg-muted)]">
                       {ct.uptime ? formatUptime(ct.uptime) : '—'}
                     </td>
                     <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>

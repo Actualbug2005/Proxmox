@@ -86,11 +86,11 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="studio-card p-3 text-xs shadow-lg">
-      <p className="text-zinc-400 mb-2">{label}</p>
+      <p className="text-[var(--color-fg-muted)] mb-2">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-zinc-400">{p.name}:</span>
+          <span className="text-[var(--color-fg-muted)]">{p.name}:</span>
           <span className="text-white font-mono">
             {p.name === 'CPU' ? `${(p.value * 100).toFixed(1)}%` : formatBytes(p.value)}
           </span>
@@ -124,7 +124,7 @@ export function RRDChart({
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold text-white">{title}</h3>
-          <p className="text-xs text-zinc-500">{subtitle}</p>
+          <p className="text-xs text-[var(--color-fg-subtle)]">{subtitle}</p>
         </div>
         <div className="flex gap-1">
           {(['hour', 'day', 'week'] as Timeframe[]).map((tf) => (
@@ -134,7 +134,7 @@ export function RRDChart({
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                 timeframe === tf
                   ? 'bg-white/10 text-indigo-400'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]'
               }`}
             >
               {tf === 'hour' ? '1h' : tf === 'day' ? '24h' : '7d'}
@@ -145,7 +145,7 @@ export function RRDChart({
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
         </div>
       ) : (
         <div className="space-y-4">
@@ -155,7 +155,7 @@ export function RRDChart({
             const formatter = s.formatter ?? (isCpu ? (v: number) => `${(v * 100).toFixed(0)}%` : (v: number) => formatBytes(v));
             return (
               <div key={s.label}>
-                <p className="text-xs text-zinc-500 mb-2">{s.label}</p>
+                <p className="text-xs text-[var(--color-fg-subtle)] mb-2">{s.label}</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <defs>

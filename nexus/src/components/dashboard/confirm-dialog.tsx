@@ -19,13 +19,13 @@ export function ConfirmDialog({ title, message, danger, onConfirm, onCancel }: C
           <AlertTriangle className={cn('w-5 h-5 mt-0.5 shrink-0', danger ? 'text-red-400' : 'text-yellow-400')} />
           <div>
             <h3 className="text-sm font-semibold text-white">{title}</h3>
-            <p className="text-sm text-zinc-400 mt-1">{message}</p>
+            <p className="text-sm text-[var(--color-fg-muted)] mt-1">{message}</p>
           </div>
         </div>
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
+            className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
           >
             Cancel
           </button>

@@ -46,29 +46,29 @@ function StorageRow({
         'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset',
         active ? 'bg-emerald-500/10 ring-emerald-500/20' : 'bg-zinc-800/60 ring-white/5',
       )}>
-        <HardDrive className={cn('w-3.5 h-3.5', active ? 'text-emerald-400' : 'text-zinc-600')} />
+        <HardDrive className={cn('w-3.5 h-3.5', active ? 'text-emerald-400' : 'text-[var(--color-fg-faint)]')} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <StatusDot status={active ? 'running' : 'stopped'} size="sm" aria-label={active ? 'active' : 'inactive'} />
-          <p className="text-data font-medium text-zinc-100">{storage.storage}</p>
+          <p className="text-data font-medium text-[var(--color-fg)]">{storage.storage}</p>
           <Badge variant="outline">{storage.type}</Badge>
           {(storage.shared ?? false) && <Badge variant="info">shared</Badge>}
         </div>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-[var(--color-fg-subtle)]">
           {storage.node} · {storage.content?.split(',').join(', ')}
         </p>
       </div>
       <div className="text-right shrink-0 min-w-32">
         {storage.total ? (
           <div className="flex flex-col gap-1 items-end">
-            <p className="text-data tabular font-mono text-zinc-300">
-              {formatBytes(storage.used ?? 0)} <span className="text-zinc-600">/</span> {formatBytes(storage.total)}
+            <p className="text-data tabular font-mono text-[var(--color-fg-secondary)]">
+              {formatBytes(storage.used ?? 0)} <span className="text-[var(--color-fg-faint)]">/</span> {formatBytes(storage.total)}
             </p>
             <Gauge value={usedPct} className="w-28" label={`${storage.storage} usage`} />
           </div>
         ) : (
-          <p className="text-xs text-zinc-600">—</p>
+          <p className="text-xs text-[var(--color-fg-faint)]">—</p>
         )}
       </div>
       {/* Actions — stopPropagation+preventDefault so the parent <Link> doesn't
@@ -82,7 +82,7 @@ function StorageRow({
             onEdit(storage.storage);
           }}
           disabled={editLoading}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-wait"
+          className="p-1.5 rounded-lg text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 transition disabled:opacity-50 disabled:cursor-wait"
           aria-label={`Edit ${storage.storage}`}
           title="Edit storage"
         >
@@ -99,7 +99,7 @@ function StorageRow({
             e.stopPropagation();
             onDelete(storage.storage);
           }}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-white/5 transition"
+          className="p-1.5 rounded-lg text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-white/5 transition"
           aria-label={`Delete ${storage.storage}`}
           title="Delete storage"
         >
@@ -189,8 +189,8 @@ export default function StoragePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-50">Storage</h1>
-        <p className="text-sm text-zinc-500 tabular">
+        <h1 className="text-xl font-semibold text-[var(--color-fg)]">Storage</h1>
+        <p className="text-sm text-[var(--color-fg-subtle)] tabular">
           {tab === 'pools'
             ? `${unique.length} storage pool${unique.length !== 1 ? 's' : ''} · ${formatBytes(totalUsed)} used of ${formatBytes(totalCapacity)}`
             : 'Per-node physical disks and S.M.A.R.T. health'}
@@ -198,7 +198,7 @@ export default function StoragePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-zinc-800/60">
+      <div className="flex gap-1 border-b border-[var(--color-border-subtle)]">
         {(
           [
             ['pools', 'Storage Pools', Database],
@@ -213,7 +213,7 @@ export default function StoragePage() {
               'flex items-center gap-2 px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === id
                 ? 'border-zinc-200 text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300',
+                : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
             )}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -274,12 +274,12 @@ export default function StoragePage() {
 
           {totalCapacity > 0 && (
             <div className="studio-card p-4">
-              <div className="flex justify-between text-xs text-zinc-500 mb-2">
+              <div className="flex justify-between text-xs text-[var(--color-fg-subtle)] mb-2">
                 <span className="uppercase tracking-[0.1em] font-semibold text-[11px]">Total cluster storage</span>
-                <span className="tabular font-mono text-data text-zinc-300">{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
+                <span className="tabular font-mono text-data text-[var(--color-fg-secondary)]">{memPercent(totalUsed, totalCapacity).toFixed(1)}% used</span>
               </div>
               <ProgressBar value={memPercent(totalUsed, totalCapacity)} />
-              <div className="flex justify-between text-xs text-zinc-500 mt-2 tabular font-mono">
+              <div className="flex justify-between text-xs text-[var(--color-fg-subtle)] mt-2 tabular font-mono">
                 <span>{formatBytes(totalUsed)} used</span>
                 <span>{formatBytes(totalCapacity - totalUsed)} free</span>
               </div>
@@ -288,19 +288,19 @@ export default function StoragePage() {
 
           {isLoading && (
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           )}
 
           {!isLoading && (
             <div className="studio-card overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
-                <Database className="w-4 h-4 text-zinc-500" />
-                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">Storage Pools</span>
+              <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] flex items-center gap-2">
+                <Database className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-fg-muted)]">Storage Pools</span>
               </div>
               <div className="divide-y divide-zinc-800/60 p-2">
                 {unique.length === 0 ? (
-                  <p className="text-sm text-zinc-600 py-8 text-center">No storage found</p>
+                  <p className="text-sm text-[var(--color-fg-faint)] py-8 text-center">No storage found</p>
                 ) : (
                   unique.map((s) => (
                     <StorageRow
@@ -346,7 +346,7 @@ export default function StoragePage() {
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                     nasNode === n
                       ? 'bg-white/10 text-indigo-300 ring-1 ring-inset ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                      : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
+                      : 'text-[var(--color-fg-subtle)] bg-[var(--color-surface)] ring-1 ring-inset ring-white/[0.06] hover:text-[var(--color-fg-secondary)] hover:bg-zinc-800/40',
                   )}
                 >
                   {n}
@@ -357,7 +357,7 @@ export default function StoragePage() {
 
           {!nasNode ? (
             <div className="flex items-center justify-center h-24">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : (
             <>

@@ -23,33 +23,33 @@ export function PressureSummaryWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           Cluster Pressure
         </h3>
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {!pressure ? (
-        <p className="py-6 text-center text-xs text-zinc-600">
+        <p className="py-6 text-center text-xs text-[var(--color-fg-faint)]">
           {loading ? 'Gathering signals…' : 'No data.'}
         </p>
       ) : (
         <div className="space-y-4">
           <Row
-            icon={<Cpu className="h-3.5 w-3.5 text-zinc-400" />}
+            icon={<Cpu className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />}
             label="CPU"
             percent={pct(pressure.avgCpu)}
             detail={`${pressure.nodesOnline}/${pressure.nodesTotal} nodes online`}
           />
           <Row
-            icon={<MemoryStick className="h-3.5 w-3.5 text-zinc-400" />}
+            icon={<MemoryStick className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />}
             label="Memory"
             percent={pct(pressure.avgMemory)}
             detail={`${pressure.runningGuests}/${pressure.totalGuests} guests running`}
           />
           {pressure.peakLoadavgPerCore !== undefined && (
             <Row
-              icon={<Activity className="h-3.5 w-3.5 text-zinc-400" />}
+              icon={<Activity className="h-3.5 w-3.5 text-[var(--color-fg-muted)]" />}
               label="Peak load / core"
               percent={Math.min(100, Math.round(pressure.peakLoadavgPerCore * 100))}
               detail={pressure.peakLoadavgPerCore.toFixed(2)}
@@ -76,11 +76,11 @@ function Row({
     <div>
       <div className="mb-1.5 flex items-center gap-1.5">
         {icon}
-        <span className="text-xs text-zinc-400">{label}</span>
-        <span className="ml-auto text-xs tabular text-zinc-300">{percent}%</span>
+        <span className="text-xs text-[var(--color-fg-muted)]">{label}</span>
+        <span className="ml-auto text-xs tabular text-[var(--color-fg-secondary)]">{percent}%</span>
       </div>
       <ProgressBar value={percent} />
-      <p className="mt-1 text-[11px] text-zinc-500">{detail}</p>
+      <p className="mt-1 text-[11px] text-[var(--color-fg-subtle)]">{detail}</p>
     </div>
   );
 }

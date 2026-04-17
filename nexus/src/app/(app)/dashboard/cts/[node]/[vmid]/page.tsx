@@ -56,18 +56,18 @@ function CloneDialog({ currentName, onConfirm, onCancel, isLoading }: {
         <h3 className="text-sm font-semibold text-white mb-4">Clone Container</h3>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">New CT ID</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">New CT ID</label>
             <input type="number" placeholder={String(nextid ?? '...')} value={newid} onChange={(e) => setNewid(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50" />
+              className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50" />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Hostname</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Hostname</label>
             <input type="text" value={hostname} onChange={(e) => setHostname(e.target.value)}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50" />
+              className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50" />
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onCancel} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition">Cancel</button>
+          <button onClick={onCancel} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">Cancel</button>
           <button onClick={() => onConfirm(Number(newid) || (nextid ?? 0), hostname)} disabled={isLoading}
             className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Clone'}
@@ -162,25 +162,25 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center gap-2 text-sm">
-        <Link href="/dashboard/cts" className="flex items-center gap-1 text-zinc-500 hover:text-zinc-300 transition">
+        <Link href="/dashboard/cts" className="flex items-center gap-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition">
           <ChevronLeft className="w-3.5 h-3.5" />
           Containers
         </Link>
         <span className="text-zinc-700">/</span>
-        <span className="text-zinc-300">{ctName}</span>
+        <span className="text-[var(--color-fg-secondary)]">{ctName}</span>
       </div>
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', isRunning ? 'bg-emerald-500/10' : 'bg-zinc-800')}>
-            <Box className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-zinc-500')} />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', isRunning ? 'bg-emerald-500/10' : 'bg-[var(--color-overlay)]')}>
+            <Box className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-[var(--color-fg-subtle)]')} />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold text-white">{ctName}</h1>
               <Badge variant={statusVariant(status?.status)}>{status?.status ?? 'unknown'}</Badge>
             </div>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <p className="text-sm text-[var(--color-fg-subtle)] mt-0.5">
               CT {vmid} · <span className="inline-flex items-center gap-1"><Server className="w-3 h-3" />{node}</span>
               {config?.ostype && <> · {config.ostype}</>}
             </p>
@@ -215,7 +215,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             </>
           )}
           <Link href={`/console?node=${node}&vmid=${vmid}&type=lxc`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition">
             <Terminal className="w-4 h-4" />
             Console
           </Link>
@@ -223,19 +223,19 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             href={`/console/vnc?node=${encodeURIComponent(node)}&vmid=${vmid}&type=lxc`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 border border-zinc-800/60 text-zinc-300 text-sm rounded-lg transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition"
             title="Open graphical console in a new tab"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Graphical Console
           </a>
           <button onClick={() => setShowClone(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition">
             <Copy className="w-4 h-4" />
             Clone
           </button>
           <button onClick={() => setShowMigrate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition">
             <MoveRight className="w-4 h-4" />
             Migrate
           </button>
@@ -247,11 +247,11 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
         </div>
       </div>
 
-      <div className="flex gap-1 border-b border-zinc-800/60">
+      <div className="flex gap-1 border-b border-[var(--color-border-subtle)]">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn('px-4 py-2 text-sm font-medium border-b-2 transition -mb-px',
-              tab === t.id ? 'border-zinc-200 text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-300')}>
+              tab === t.id ? 'border-zinc-200 text-indigo-400' : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]')}>
             {t.label}
           </button>
         ))}
@@ -260,47 +260,47 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
       {tab === 'summary' && (
         <div className="space-y-4">
           {statusLoading ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : status ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="studio-card p-4">
-                <div className="flex items-center gap-2 mb-3"><Cpu className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">CPU</span></div>
+                <div className="flex items-center gap-2 mb-3"><Cpu className="w-4 h-4 text-[var(--color-fg-subtle)]" /><span className="text-xs font-medium text-[var(--color-fg-muted)]">CPU</span></div>
                 <p className="text-2xl font-semibold text-white tabular-nums">{cpu.toFixed(1)}%</p>
                 <ProgressBar value={cpu} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">{status.cpus ?? status.maxcpu ?? '?'} cores</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">{status.cpus ?? status.maxcpu ?? '?'} cores</p>
               </div>
               <div className="studio-card p-4">
-                <div className="flex items-center gap-2 mb-3"><MemoryStick className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Memory</span></div>
+                <div className="flex items-center gap-2 mb-3"><MemoryStick className="w-4 h-4 text-[var(--color-fg-subtle)]" /><span className="text-xs font-medium text-[var(--color-fg-muted)]">Memory</span></div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.mem ?? 0)}</p>
                 <ProgressBar value={mem} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">of {formatBytes(status.maxmem ?? 0)}</p>
               </div>
               <div className="studio-card p-4">
-                <div className="flex items-center gap-2 mb-3"><HardDrive className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Disk</span></div>
+                <div className="flex items-center gap-2 mb-3"><HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" /><span className="text-xs font-medium text-[var(--color-fg-muted)]">Disk</span></div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.disk ?? 0)}</p>
                 <ProgressBar value={disk} className="mt-2" />
-                <p className="text-xs text-zinc-600 mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
+                <p className="text-xs text-[var(--color-fg-faint)] mt-1">of {formatBytes(status.maxdisk ?? 0)}</p>
               </div>
               <div className="studio-card p-4">
-                <div className="flex items-center gap-2 mb-3"><Network className="w-4 h-4 text-zinc-500" /><span className="text-xs font-medium text-zinc-400">Network I/O</span></div>
+                <div className="flex items-center gap-2 mb-3"><Network className="w-4 h-4 text-[var(--color-fg-subtle)]" /><span className="text-xs font-medium text-[var(--color-fg-muted)]">Network I/O</span></div>
                 <p className="text-sm font-medium text-white">↑ {formatBytes(status.netout ?? 0)}</p>
                 <p className="text-sm font-medium text-white mt-1">↓ {formatBytes(status.netin ?? 0)}</p>
-                {status.uptime != null && <p className="text-xs text-zinc-600 mt-2">Up {formatUptime(status.uptime)}</p>}
+                {status.uptime != null && <p className="text-xs text-[var(--color-fg-faint)] mt-2">Up {formatUptime(status.uptime)}</p>}
               </div>
             </div>
           ) : null}
 
           {tasks && tasks.length > 0 && (
             <div className="studio-card overflow-hidden">
-              <div className="px-4 py-3 border-b border-zinc-800/60">
-                <h3 className="text-sm font-medium text-zinc-300">Recent Tasks</h3>
+              <div className="px-4 py-3 border-b border-[var(--color-border-subtle)]">
+                <h3 className="text-sm font-medium text-[var(--color-fg-secondary)]">Recent Tasks</h3>
               </div>
               <table className="w-full">
                 <tbody className="divide-y divide-zinc-800/60/60">
                   {tasks.map((t) => (
                     <tr key={t.upid}>
-                      <td className="px-4 py-2.5 text-xs font-mono text-zinc-400">{t.type}</td>
-                      <td className="px-4 py-2.5 text-xs text-zinc-500">{new Date(t.starttime * 1000).toLocaleString()}</td>
+                      <td className="px-4 py-2.5 text-xs font-mono text-[var(--color-fg-muted)]">{t.type}</td>
+                      <td className="px-4 py-2.5 text-xs text-[var(--color-fg-subtle)]">{new Date(t.starttime * 1000).toLocaleString()}</td>
                       <td className="px-4 py-2.5">
                         <Badge variant={t.exitstatus === 'OK' ? 'success' : t.exitstatus ? 'danger' : 'info'}>{t.exitstatus ?? 'running'}</Badge>
                       </td>
@@ -316,7 +316,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
       {tab === 'hardware' && (
         <div className="space-y-4">
           {configLoading ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : config ? (
             <>
               <div className="studio-card p-5">
@@ -324,10 +324,10 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                   <h3 className="text-sm font-semibold text-white">General</h3>
                   {!editConfig ? (
                     <button onClick={() => { setConfigDraft({ hostname: config.hostname, cores: config.cores, memory: config.memory, swap: config.swap, onboot: config.onboot, description: config.description }); setEditConfig(true); }}
-                      className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 rounded-lg transition">Edit</button>
+                      className="text-xs px-3 py-1 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] rounded-lg transition">Edit</button>
                   ) : (
                     <div className="flex gap-2">
-                      <button onClick={() => { setEditConfig(false); setConfigDraft({}); }} className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-800 text-zinc-400 rounded-lg transition">Cancel</button>
+                      <button onClick={() => { setEditConfig(false); setConfigDraft({}); }} className="text-xs px-3 py-1 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-muted)] rounded-lg transition">Cancel</button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
                         className="flex items-center gap-1.5 text-xs px-3 py-1 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
                         {saveConfigM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
@@ -339,7 +339,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {(['hostname', 'cores', 'memory', 'swap', 'onboot', 'description'] as const).map((field) => (
                     <div key={field}>
-                      <label className="text-xs text-zinc-500 capitalize block mb-1">
+                      <label className="text-xs text-[var(--color-fg-subtle)] capitalize block mb-1">
                         {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory (MB)' : field === 'swap' ? 'Swap (MB)' : field}
                       </label>
                       {editConfig ? (
@@ -355,11 +355,11 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                               ...d,
                               [field]: ['cores','memory','swap'].includes(field) ? Number(e.target.value) : e.target.value,
                             }))}
-                            className="w-full px-2.5 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+                            className="w-full px-2.5 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
                           />
                         )
                       ) : (
-                        <p className="text-sm text-zinc-200">
+                        <p className="text-sm text-[var(--color-fg-secondary)]">
                           {field === 'onboot' ? (config.onboot ? 'Yes' : 'No') : String(config[field as keyof typeof config] ?? '—')}
                         </p>
                       )}
@@ -372,11 +372,11 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Root Filesystem</h3>
                   <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                    <HardDrive className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
+                    <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-xs font-mono text-zinc-400 mb-0.5">rootfs</p>
-                      <p className="text-sm text-zinc-200">{config.rootfs.split(',')[0]}</p>
-                      {(() => { const kv = parseKV(config.rootfs); return kv.size ? <p className="text-xs text-zinc-500">Size: {kv.size}</p> : null; })()}
+                      <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">rootfs</p>
+                      <p className="text-sm text-[var(--color-fg-secondary)]">{config.rootfs.split(',')[0]}</p>
+                      {(() => { const kv = parseKV(config.rootfs); return kv.size ? <p className="text-xs text-[var(--color-fg-subtle)]">Size: {kv.size}</p> : null; })()}
                     </div>
                   </div>
                 </div>
@@ -390,11 +390,11 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                       const kv = parseKV(value);
                       return (
                         <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                          <Network className="w-4 h-4 text-zinc-500 mt-0.5 shrink-0" />
+                          <Network className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
                           <div>
-                            <p className="text-xs font-mono text-zinc-400 mb-0.5">{key}</p>
-                            <p className="text-sm text-zinc-200">{kv.bridge ?? '—'}</p>
-                            <p className="text-xs text-zinc-500">{kv.ip ?? kv.ip6 ?? 'dhcp'}</p>
+                            <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">{key}</p>
+                            <p className="text-sm text-[var(--color-fg-secondary)]">{kv.bridge ?? '—'}</p>
+                            <p className="text-xs text-[var(--color-fg-subtle)]">{kv.ip ?? kv.ip6 ?? 'dhcp'}</p>
                           </div>
                         </div>
                       );

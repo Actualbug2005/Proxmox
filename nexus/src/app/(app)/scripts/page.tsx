@@ -231,30 +231,30 @@ function Sidebar({
   }
 
   return (
-    <aside className="flex flex-col min-h-0 w-full lg:w-80 lg:shrink-0 border-r border-zinc-800/60 bg-zinc-950">
-      <div className="p-3 border-b border-zinc-800/60 space-y-2">
+    <aside className="flex flex-col min-h-0 w-full lg:w-80 lg:shrink-0 border-r border-[var(--color-border-subtle)] bg-[var(--color-canvas)]">
+      <div className="p-3 border-b border-[var(--color-border-subtle)] space-y-2">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)]" />
           <input
             type="text"
             placeholder="Search scripts…"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-9 pr-8 py-1.5 bg-zinc-900 border border-zinc-800/60 rounded-lg
-                       text-sm text-zinc-100 placeholder-zinc-600
+            className="w-full pl-9 pr-8 py-1.5 bg-[var(--color-surface)] border border-[var(--color-border-subtle)] rounded-lg
+                       text-sm text-[var(--color-fg)] placeholder-zinc-600
                        focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
           />
           {search && (
             <button
               onClick={() => onSearchChange('')}
               aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-zinc-500 hover:text-zinc-200 rounded"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] rounded"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
-        <p className="text-[11px] uppercase tracking-widest text-zinc-500">
+        <p className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">
           {loading
             ? 'Loading…'
             : q
@@ -281,7 +281,7 @@ function Sidebar({
           </ul>
         )}
         {!loading && !error && filtered.length === 0 && (
-          <p className="p-4 text-xs text-zinc-500 italic">No scripts match this query.</p>
+          <p className="p-4 text-xs text-[var(--color-fg-subtle)] italic">No scripts match this query.</p>
         )}
         {!loading && !error && filtered.map((cat) => {
           // When searching, keep everything expanded; otherwise respect
@@ -294,18 +294,18 @@ function Sidebar({
                 disabled={Boolean(q)}
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 text-left',
-                  'text-xs font-medium text-zinc-300 hover:bg-zinc-900/60',
+                  'text-xs font-medium text-[var(--color-fg-secondary)] hover:bg-zinc-900/60',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
                   q && 'cursor-default',
                 )}
               >
                 {open ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[var(--color-fg-subtle)] shrink-0" />
                 ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-[var(--color-fg-subtle)] shrink-0" />
                 )}
                 <span className="truncate flex-1">{cat.name}</span>
-                <span className="tabular font-mono text-[11px] text-zinc-500">{cat.scripts.length}</span>
+                <span className="tabular font-mono text-[11px] text-[var(--color-fg-subtle)]">{cat.scripts.length}</span>
               </button>
               {open && (
                 <ul className="pb-1">
@@ -320,7 +320,7 @@ function Sidebar({
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
                             selected
                               ? 'bg-indigo-500/10 text-indigo-200 border-l-2 border-indigo-400 pl-[30px]'
-                              : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200',
+                              : 'text-[var(--color-fg-muted)] hover:bg-zinc-900/60 hover:text-[var(--color-fg-secondary)]',
                           )}
                         >
                           <ScriptLogo script={s} size={18} />
@@ -365,8 +365,8 @@ function EmptyDetail() {
         <div className="inline-flex items-center justify-center h-12 w-12 rounded-lg bg-white/5 text-indigo-400 mb-4">
           <Code2 className="w-5 h-5" />
         </div>
-        <h2 className="text-sm font-semibold text-zinc-200 mb-1">Pick a script</h2>
-        <p className="text-xs text-zinc-500 leading-relaxed">
+        <h2 className="text-sm font-semibold text-[var(--color-fg-secondary)] mb-1">Pick a script</h2>
+        <p className="text-xs text-[var(--color-fg-subtle)] leading-relaxed">
           Browse the categories on the left or search above. Each entry comes with install methods,
           resource requirements, and a one-click run button for any online node in your cluster.
         </p>
@@ -491,13 +491,13 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
           <ScriptLogo script={manifest} size={56} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-semibold text-zinc-50 truncate">{manifest.name}</h1>
+              <h1 className="text-xl font-semibold text-[var(--color-fg)] truncate">{manifest.name}</h1>
               <Badge variant={TYPE_VARIANT[manifest.type]}>{manifest.type.toUpperCase()}</Badge>
               {manifest.updateable && <Badge variant="success">Updateable</Badge>}
               {manifest.privileged && <Badge variant="warning">Privileged</Badge>}
               {manifest.has_arm && <Badge variant="outline">ARM64</Badge>}
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-[var(--color-fg-subtle)] mt-1">
               <span className="font-mono">{manifest.slug}</span>
               {manifest.category && <> · {manifest.category}</>}
               {manifest.date_created && <> · created {manifest.date_created.slice(0, 10)}</>}
@@ -521,14 +521,14 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
         </header>
 
         {manifest.description && (
-          <p className="text-sm text-zinc-300 leading-relaxed">{manifest.description}</p>
+          <p className="text-sm text-[var(--color-fg-secondary)] leading-relaxed">{manifest.description}</p>
         )}
 
         {/* Run execution card */}
         <section className="studio-card rounded-lg p-4 space-y-3">
           {methods.length > 1 && (
             <div>
-              <h3 className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Install method</h3>
+              <h3 className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)] mb-2">Install method</h3>
               <div className="flex flex-wrap gap-1.5">
                 {methods.map((m, i) => (
                   <button
@@ -539,7 +539,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
                       i === methodIdx
                         ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
-                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200',
+                        : 'bg-[var(--color-surface)] border-[var(--color-border-subtle)] text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)]',
                     )}
                   >
                     {prettyMethodName(m.type)}
@@ -577,9 +577,9 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
             <button
               onClick={() => setScheduleOpen(true)}
               disabled={!selectedNode}
-              className="h-9 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700
+              className="h-9 px-4 rounded-lg bg-[var(--color-overlay)] hover:bg-zinc-700
                          disabled:bg-zinc-800/40 disabled:cursor-not-allowed
-                         text-zinc-200 text-sm font-medium transition
+                         text-[var(--color-fg-secondary)] text-sm font-medium transition
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500
                          inline-flex items-center gap-1.5 shrink-0"
               title="Schedule this script to run on a cadence"
@@ -621,10 +621,10 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
         {/* Install command */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[11px] uppercase tracking-widest text-zinc-500">Install command</h3>
+            <h3 className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">Install command</h3>
             <button
               onClick={handleCopy}
-              className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200
+              className="inline-flex items-center gap-1 text-[11px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)]
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
             >
               {copyState === 'copied' ? (
@@ -640,8 +640,8 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
               )}
             </button>
           </div>
-          <pre className="bg-zinc-950 border border-zinc-800/60 rounded-lg p-3 overflow-x-auto
-                          text-xs text-zinc-300 font-mono whitespace-pre-wrap break-all">
+          <pre className="bg-[var(--color-canvas)] border border-[var(--color-border-subtle)] rounded-lg p-3 overflow-x-auto
+                          text-xs text-[var(--color-fg-secondary)] font-mono whitespace-pre-wrap break-all">
 {`bash -c "$(curl -fsSL ${scriptUrl})"`}
           </pre>
         </section>
@@ -666,9 +666,9 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
 
         {/* Service access */}
         {manifest.port && (
-          <section className="rounded-lg border border-zinc-800/60 p-3">
-            <p className="text-[11px] uppercase tracking-widest text-zinc-500 mb-1">Web UI</p>
-            <p className="text-sm text-zinc-300">
+          <section className="rounded-lg border border-[var(--color-border-subtle)] p-3">
+            <p className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)] mb-1">Web UI</p>
+            <p className="text-sm text-[var(--color-fg-secondary)]">
               Reachable on port <span className="font-mono text-indigo-300">{manifest.port}</span>
               {' '}after install (e.g. <span className="font-mono">http://&lt;ip&gt;:{manifest.port}</span>).
             </p>
@@ -678,7 +678,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
         {/* Notes */}
         {manifest.notes && manifest.notes.length > 0 && (
           <section className="space-y-2">
-            <h3 className="text-[11px] uppercase tracking-widest text-zinc-500">Notes</h3>
+            <h3 className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">Notes</h3>
             <ul className="space-y-2">
               {manifest.notes.map((n, i) => (
                 <li key={i}>
@@ -722,7 +722,7 @@ function ExternalIconLink({
       rel="noopener noreferrer"
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-white/5
+      className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] hover:bg-white/5
                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
     >
       <Icon className="w-4 h-4" />
@@ -740,7 +740,7 @@ function ResourceGrid({ method }: { method: InstallMethod }) {
   const { resources } = method;
   return (
     <div>
-      <h3 className="text-[11px] uppercase tracking-widest text-zinc-500 mb-2">Resources</h3>
+      <h3 className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)] mb-2">Resources</h3>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Stat icon={Cpu} label="CPU" value={`${resources.cpu} ${resources.cpu === 1 ? 'core' : 'cores'}`} />
         <Stat icon={MemoryStick} label="RAM" value={`${resources.ram} MB`} />
@@ -765,12 +765,12 @@ function Stat({
   value: string;
 }) {
   return (
-    <div className="rounded-md border border-zinc-800/60 bg-zinc-950 p-2.5">
-      <div className="flex items-center gap-1.5 text-zinc-500">
+    <div className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-canvas)] p-2.5">
+      <div className="flex items-center gap-1.5 text-[var(--color-fg-subtle)]">
         <Icon className="w-3 h-3" />
         <span className="text-[10px] uppercase tracking-widest">{label}</span>
       </div>
-      <p className="text-sm text-zinc-200 mt-0.5 tabular font-mono truncate">{value}</p>
+      <p className="text-sm text-[var(--color-fg-secondary)] mt-0.5 tabular font-mono truncate">{value}</p>
     </div>
   );
 }
@@ -786,17 +786,17 @@ function NodePicker({
 }) {
   return (
     <div className="flex-1 min-w-0">
-      <label htmlFor="target-node" className="block text-[11px] uppercase tracking-widest text-zinc-500 mb-1">
+      <label htmlFor="target-node" className="block text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)] mb-1">
         Target node
       </label>
       <div className="relative">
-        <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)]" />
         <select
           id="target-node"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-9 bg-zinc-900 border border-zinc-800/60 rounded-lg pl-9 pr-8
-                     text-sm text-zinc-100 appearance-none
+          className="w-full h-9 bg-[var(--color-surface)] border border-[var(--color-border-subtle)] rounded-lg pl-9 pr-8
+                     text-sm text-[var(--color-fg)] appearance-none
                      focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
         >
           {nodes.length === 0 && <option value="">No nodes online</option>}
@@ -806,7 +806,7 @@ function NodePicker({
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-fg-subtle)] pointer-events-none" />
       </div>
     </div>
   );
@@ -872,12 +872,12 @@ function AdvancedConfigPanel({
 }) {
   const count = Object.values(values).filter((v) => v.trim() !== '').length;
   return (
-    <div className="border-t border-zinc-800/60 pt-3">
+    <div className="border-t border-[var(--color-border-subtle)] pt-3">
       <button
         onClick={onToggle}
         aria-expanded={open}
-        className="w-full flex items-center gap-2 text-left text-[11px] uppercase tracking-widest text-zinc-500
-                   hover:text-zinc-300
+        className="w-full flex items-center gap-2 text-left text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]
+                   hover:text-[var(--color-fg-secondary)]
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
       >
         {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -888,7 +888,7 @@ function AdvancedConfigPanel({
       </button>
       {open && (
         <div className="mt-3 space-y-3">
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
+          <p className="text-[11px] text-[var(--color-fg-subtle)] leading-relaxed">
             These env vars are forwarded to the script. Individual scripts may ignore overrides —
             leave a field blank to accept the script&apos;s built-in default.
           </p>
@@ -897,10 +897,10 @@ function AdvancedConfigPanel({
               <div key={f.key} className={f.width === 'full' ? 'col-span-2' : 'col-span-1'}>
                 <label
                   htmlFor={`adv-${f.key}`}
-                  className="block text-[11px] uppercase tracking-widest text-zinc-500 mb-1"
+                  className="block text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)] mb-1"
                 >
                   {f.label}
-                  <span className="ml-1 text-zinc-600 font-mono normal-case tracking-normal">
+                  <span className="ml-1 text-[var(--color-fg-faint)] font-mono normal-case tracking-normal">
                     {f.key}
                   </span>
                 </label>
@@ -911,11 +911,11 @@ function AdvancedConfigPanel({
                   onChange={(e) => onChange(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   autoComplete={f.key === 'PW' ? 'new-password' : 'off'}
-                  className="w-full h-8 bg-zinc-900 border border-zinc-800/60 rounded-md px-2
-                             text-xs text-zinc-100 placeholder-zinc-600
+                  className="w-full h-8 bg-[var(--color-surface)] border border-[var(--color-border-subtle)] rounded-md px-2
+                             text-xs text-[var(--color-fg)] placeholder-zinc-600
                              focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-zinc-300"
                 />
-                {f.hint && <p className="text-[10px] text-zinc-600 mt-0.5 leading-snug">{f.hint}</p>}
+                {f.hint && <p className="text-[10px] text-[var(--color-fg-faint)] mt-0.5 leading-snug">{f.hint}</p>}
               </div>
             ))}
           </div>
@@ -973,13 +973,13 @@ export default function ScriptsPage() {
 
   return (
     <div className="h-[calc(100dvh-theme(spacing.16))] flex flex-col">
-      <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center gap-3">
+      <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-white/5 text-indigo-400 flex items-center justify-center">
           <Code2 className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-base font-semibold text-zinc-50">Community Scripts</h1>
-          <p className="text-xs text-zinc-500">
+          <h1 className="text-base font-semibold text-[var(--color-fg)]">Community Scripts</h1>
+          <p className="text-xs text-[var(--color-fg-subtle)]">
             {isLoading
               ? 'Loading catalogue from community-scripts.org…'
               : data

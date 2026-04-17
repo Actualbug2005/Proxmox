@@ -50,19 +50,19 @@ export function HAResourceEditor({ initial, onClose, onSaved }: HAResourceEditor
     });
   };
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-y-auto sm:py-8">
       <div className="studio-card p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-sm font-semibold text-white">{isEdit ? 'Edit HA resource' : 'Add HA resource'}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white p-1" aria-label="Close"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="text-[var(--color-fg-subtle)] hover:text-white p-1" aria-label="Close"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Resource (SID)</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Resource (SID)</label>
             {isEdit ? (
               <input value={sid} disabled className={inputCls + ' opacity-60'} />
             ) : (
@@ -82,7 +82,7 @@ export function HAResourceEditor({ initial, onClose, onSaved }: HAResourceEditor
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Desired state</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Desired state</label>
             <select value={state} onChange={(e) => setState(e.target.value as HAState)} className={inputCls}>
               <option value="started">started — keep running (restart on failure)</option>
               <option value="stopped">stopped — shut down and keep off</option>
@@ -90,13 +90,13 @@ export function HAResourceEditor({ initial, onClose, onSaved }: HAResourceEditor
               <option value="disabled">disabled — ignore (don&apos;t act on failures)</option>
               <option value="ignored">ignored — same as disabled</option>
             </select>
-            <p className="text-xs text-zinc-600 mt-1">
+            <p className="text-xs text-[var(--color-fg-faint)] mt-1">
               &quot;started&quot; keeps the guest running even across node failures. &quot;stopped&quot; actively powers it down.
             </p>
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Group (optional)</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Group (optional)</label>
             <select value={group} onChange={(e) => setGroup(e.target.value)} className={inputCls}>
               <option value="">(none)</option>
               {(groups ?? []).map((g) => (
@@ -107,23 +107,23 @@ export function HAResourceEditor({ initial, onClose, onSaved }: HAResourceEditor
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Max restart</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Max restart</label>
               <input type="number" min={0} value={maxRestart} onChange={(e) => setMaxRestart(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Max relocate</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Max relocate</label>
               <input type="number" min={0} value={maxRelocate} onChange={(e) => setMaxRelocate(e.target.value)} className={inputCls} />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Comment</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Comment</label>
             <input value={comment} onChange={(e) => setComment(e.target.value)} className={inputCls} />
           </div>
         </div>
 
         <div className="flex gap-3 justify-end mt-5">
-          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition disabled:opacity-40">Cancel</button>
+          <button onClick={onClose} disabled={saveM.isPending} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40">Cancel</button>
           <button
             onClick={submit}
             disabled={!sid || saveM.isPending}

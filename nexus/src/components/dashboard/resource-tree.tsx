@@ -65,18 +65,18 @@ function ResourceRow({
   const inner = (
     <>
       <StatusDot status={dotStatus} size="sm" />
-      <Icon className="w-3.5 h-3.5 shrink-0 text-zinc-500 group-hover:text-zinc-300" />
-      <span className="flex-1 text-sm font-medium truncate text-zinc-200">
+      <Icon className="w-3.5 h-3.5 shrink-0 text-[var(--color-fg-subtle)] group-hover:text-[var(--color-fg-secondary)]" />
+      <span className="flex-1 text-sm font-medium truncate text-[var(--color-fg-secondary)]">
         {resource.name ?? resource.id}
         {resource.vmid ? (
-          <span className="text-zinc-600 text-xs ml-1 tabular font-mono">({resource.vmid})</span>
+          <span className="text-[var(--color-fg-faint)] text-xs ml-1 tabular font-mono">({resource.vmid})</span>
         ) : null}
       </span>
       {resource.status === 'running' && resource.cpu !== undefined && (
-        <span className="text-xs text-zinc-500 tabular font-mono">{cpu.toFixed(0)}%</span>
+        <span className="text-xs text-[var(--color-fg-subtle)] tabular font-mono">{cpu.toFixed(0)}%</span>
       )}
       {resource.status === 'running' && resource.mem !== undefined && resource.maxmem && (
-        <span className="text-xs text-zinc-500 tabular font-mono">
+        <span className="text-xs text-[var(--color-fg-subtle)] tabular font-mono">
           {formatBytes(resource.mem)}
         </span>
       )}
@@ -85,7 +85,7 @@ function ResourceRow({
 
   const linkCls = cn(
     'flex-1 flex items-center gap-2 px-2 py-2 rounded-lg text-left transition group min-w-0',
-    selected ? 'bg-zinc-800 text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300',
+    selected ? 'bg-[var(--color-overlay)] text-[var(--color-fg)]' : 'hover:bg-zinc-800/50 text-[var(--color-fg-secondary)]',
   );
 
   const rowCls = cn(
@@ -183,7 +183,7 @@ export function ResourceTree({
             <div className="flex items-center">
               <button
                 onClick={() => toggle(nodeName)}
-                className="p-1 text-zinc-500 hover:text-zinc-300 transition"
+                className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
                 aria-label={isCollapsed ? 'Expand' : 'Collapse'}
               >
                 {isCollapsed ? (
@@ -210,14 +210,14 @@ export function ResourceTree({
                   />
                 </div>
               ) : (
-                <span className="flex-1 text-sm font-medium text-zinc-300 px-2 py-1">
+                <span className="flex-1 text-sm font-medium text-[var(--color-fg-secondary)] px-2 py-1">
                   {nodeName}
                 </span>
               )}
             </div>
 
             {!isCollapsed && children.length > 0 && (
-              <div className="ml-2 border-l border-zinc-800/60 pl-1 space-y-0.5 mt-0.5">
+              <div className="ml-2 border-l border-[var(--color-border-subtle)] pl-1 space-y-0.5 mt-0.5">
                 {children.map((r) => (
                   <ResourceRow
                     key={r.id}

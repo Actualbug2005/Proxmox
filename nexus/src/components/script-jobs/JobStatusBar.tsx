@@ -91,18 +91,18 @@ export function JobStatusBar() {
         <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/95 backdrop-blur shadow-xl overflow-hidden">
           <button
             onClick={() => setOpen((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60
+            className="w-full flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border-subtle)]
                        text-left hover:bg-zinc-900/60
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
             aria-expanded={open}
           >
             <Terminal className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-            <span className="text-xs font-medium text-zinc-200">
+            <span className="text-xs font-medium text-[var(--color-fg-secondary)]">
               {running.length > 0
                 ? `${running.length} script${running.length === 1 ? '' : 's'} running`
                 : `${recent.length} recent`}
             </span>
-            <span className="ml-auto text-zinc-500">
+            <span className="ml-auto text-[var(--color-fg-subtle)]">
               {open ? (
                 <ChevronDown className="w-3.5 h-3.5" />
               ) : (
@@ -123,8 +123,8 @@ export function JobStatusBar() {
                   >
                     <StatusDot status={job.status} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-zinc-200 truncate">{job.scriptName}</p>
-                      <p className="text-[11px] text-zinc-500 truncate">
+                      <p className="text-[var(--color-fg-secondary)] truncate">{job.scriptName}</p>
+                      <p className="text-[11px] text-[var(--color-fg-subtle)] truncate">
                         {job.node}
                         {job.method && job.method !== 'default' && <> · {job.method}</>}
                         {' · '}

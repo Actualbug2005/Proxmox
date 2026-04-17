@@ -97,7 +97,7 @@ export function PhysicalDisksTable() {
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                 nodeFilter === n
                   ? 'bg-white/10 text-indigo-300 ring-1 ring-inset ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                  : 'text-zinc-500 bg-zinc-900 ring-1 ring-inset ring-white/[0.06] hover:text-zinc-300 hover:bg-zinc-800/40',
+                  : 'text-[var(--color-fg-subtle)] bg-[var(--color-surface)] ring-1 ring-inset ring-white/[0.06] hover:text-[var(--color-fg-secondary)] hover:bg-zinc-800/40',
               )}
             >
               {n === 'all' ? 'All nodes' : n}
@@ -108,7 +108,7 @@ export function PhysicalDisksTable() {
 
       {isLoading && (
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
         </div>
       )}
 
@@ -120,26 +120,26 @@ export function PhysicalDisksTable() {
 
       {!isLoading && !error && (
         <div className="studio-card overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-zinc-500" />
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-400">
-              Physical Disks {sorted.length > 0 && <span className="tabular font-mono text-zinc-600">({sorted.length})</span>}
+          <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" />
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-fg-muted)]">
+              Physical Disks {sorted.length > 0 && <span className="tabular font-mono text-[var(--color-fg-faint)]">({sorted.length})</span>}
             </span>
           </div>
 
           {sorted.length === 0 ? (
-            <p className="text-sm text-zinc-600 py-10 text-center">No disks found</p>
+            <p className="text-sm text-[var(--color-fg-faint)] py-10 text-center">No disks found</p>
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-zinc-800/60">
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Device</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Node</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Vendor / Model</th>
-                  <th className="text-right px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Size</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Type</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Used By</th>
-                  <th className="text-left px-3 py-2 text-zinc-500 text-[11px] font-semibold uppercase tracking-[0.1em]">Health</th>
+                <tr className="border-b border-[var(--color-border-subtle)]">
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Device</th>
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Node</th>
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Vendor / Model</th>
+                  <th className="text-right px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Size</th>
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Type</th>
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Used By</th>
+                  <th className="text-left px-3 py-2 text-[var(--color-fg-subtle)] text-[11px] font-semibold uppercase tracking-[0.1em]">Health</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,19 +151,19 @@ export function PhysicalDisksTable() {
                       onClick={() => setSelected(d)}
                       className="border-b border-white/[0.03] hover:bg-zinc-800/40 cursor-pointer transition"
                     >
-                      <td className="px-3 py-2 tabular font-mono text-data text-zinc-200">{d.devpath}</td>
-                      <td className="px-3 py-2 text-data text-zinc-400">{d.node}</td>
-                      <td className="px-3 py-2 text-data text-zinc-300">
-                        {d.vendor ? <span className="text-zinc-500">{d.vendor} </span> : null}
+                      <td className="px-3 py-2 tabular font-mono text-data text-[var(--color-fg-secondary)]">{d.devpath}</td>
+                      <td className="px-3 py-2 text-data text-[var(--color-fg-muted)]">{d.node}</td>
+                      <td className="px-3 py-2 text-data text-[var(--color-fg-secondary)]">
+                        {d.vendor ? <span className="text-[var(--color-fg-subtle)]">{d.vendor} </span> : null}
                         {d.model ?? '—'}
                       </td>
-                      <td className="px-3 py-2 text-right tabular font-mono text-data text-zinc-300">
+                      <td className="px-3 py-2 text-right tabular font-mono text-data text-[var(--color-fg-secondary)]">
                         {d.size ? formatBytes(d.size) : '—'}
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={diskTypeBadge(d.type)}>{d.type.toUpperCase()}</Badge>
                       </td>
-                      <td className="px-3 py-2 text-data text-zinc-400">{d.used || <span className="text-zinc-600">free</span>}</td>
+                      <td className="px-3 py-2 text-data text-[var(--color-fg-muted)]">{d.used || <span className="text-[var(--color-fg-faint)]">free</span>}</td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <StatusDot status={HEALTH_DOT[health]} size="sm" aria-label={`SMART ${health}`} />

@@ -59,7 +59,7 @@ export function StorageContentTable({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
       </div>
     );
   }
@@ -89,36 +89,36 @@ export function StorageContentTable({
       <div className="studio-card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-800/60">
-              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Name</th>
-              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Type</th>
-              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Format</th>
-              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">VMID</th>
-              <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium">Size</th>
-              <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Created</th>
-              <th className="text-right px-4 py-3 text-xs text-zinc-500 font-medium"></th>
+            <tr className="border-b border-[var(--color-border-subtle)]">
+              <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Name</th>
+              <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Type</th>
+              <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Format</th>
+              <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">VMID</th>
+              <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Size</th>
+              <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Created</th>
+              <th className="text-right px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.volid} className="border-b border-zinc-800/40 hover:bg-zinc-800/20">
-                <td className="px-4 py-3 font-mono text-zinc-200 text-xs break-all max-w-xs" title={item.volid}>
+                <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)] text-xs break-all max-w-xs" title={item.volid}>
                   {volidName(item.volid)}
                 </td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className="text-xs">{item.content}</Badge>
                 </td>
-                <td className="px-4 py-3 text-xs text-zinc-500">{item.format ?? '—'}</td>
-                <td className="px-4 py-3 text-xs text-zinc-500 font-mono">{item.vmid ?? '—'}</td>
-                <td className="px-4 py-3 text-xs text-zinc-400 text-right tabular-nums">
+                <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{item.format ?? '—'}</td>
+                <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-mono">{item.vmid ?? '—'}</td>
+                <td className="px-4 py-3 text-xs text-[var(--color-fg-muted)] text-right tabular-nums">
                   {item.size ? formatBytes(item.size) : '—'}
                 </td>
-                <td className="px-4 py-3 text-xs text-zinc-500">{formatTime(item.ctime)}</td>
+                <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{formatTime(item.ctime)}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => setDeleteTarget(item.volid)}
                     disabled={deleteM.isPending}
-                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
+                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                     title="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

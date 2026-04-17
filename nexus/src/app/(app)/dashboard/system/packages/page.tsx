@@ -81,7 +81,7 @@ export default function PackagesPage() {
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-48 text-zinc-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-[var(--color-fg-subtle)] text-sm">
         Select a node to manage packages.
       </div>
     );
@@ -92,12 +92,12 @@ export default function PackagesPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Packages</h1>
-          <p className="text-sm text-zinc-500">Manage apt packages on {node}</p>
+          <p className="text-sm text-[var(--color-fg-subtle)]">Manage apt packages on {node}</p>
         </div>
         <button
           onClick={() => refreshM.mutate()}
           disabled={refreshM.isPending}
-          className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-sm rounded-lg transition disabled:opacity-40"
+          className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-sm rounded-lg transition disabled:opacity-40"
         >
           {refreshM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           Refresh Cache
@@ -110,7 +110,7 @@ export default function PackagesPage() {
         </div>
       )}
 
-      <div className="flex gap-1 border-b border-zinc-800/60 mt-2">
+      <div className="flex gap-1 border-b border-[var(--color-border-subtle)] mt-2">
         {(['pve', 'system'] as Tab[]).map((t) => (
           <button
             key={t}
@@ -119,7 +119,7 @@ export default function PackagesPage() {
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
               tab === t
                 ? 'border-zinc-200 text-indigo-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300',
+                : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
             )}
           >
             {t === 'pve' ? 'PVE Packages' : 'System Packages'}
@@ -130,7 +130,7 @@ export default function PackagesPage() {
       {tab === 'pve' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-[var(--color-fg-muted)]">
               {(() => {
                 const count = (pvePackages ?? []).filter((p) => newVersionByPkg.has(p.Package)).length;
                 return count > 0
@@ -150,16 +150,16 @@ export default function PackagesPage() {
 
           {pveLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : (
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Available</th>
+                  <tr className="border-b border-[var(--color-border-subtle)]">
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Package</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Current</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Available</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,8 +167,8 @@ export default function PackagesPage() {
                     const newVersion = newVersionByPkg.get(pkg.Package);
                     return (
                       <tr key={pkg.Package} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
-                        <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
-                        <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.Version}</td>
+                        <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">{pkg.Package}</td>
+                        <td className="px-4 py-3 font-mono text-[var(--color-fg-subtle)] text-xs">{pkg.Version}</td>
                         <td className="px-4 py-3">
                           {newVersion ? (
                             <Badge variant="warning" className="font-mono text-xs">{newVersion}</Badge>
@@ -193,7 +193,7 @@ export default function PackagesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search packages…"
-              className="flex-1 px-3 py-1.5 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+              className="flex-1 px-3 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
             />
             <div className="flex gap-2">
               <button
@@ -216,10 +216,10 @@ export default function PackagesPage() {
 
           {sysLoading ? (
             <div className="flex items-center justify-center h-32">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : filteredSystem.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-zinc-500 gap-2">
+            <div className="flex flex-col items-center justify-center h-32 text-[var(--color-fg-subtle)] gap-2">
               <Package className="w-6 h-6" />
               <p className="text-sm">{search ? 'No matching packages' : 'All system packages up to date'}</p>
             </div>
@@ -227,12 +227,12 @@ export default function PackagesPage() {
             <div className="studio-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-800/60">
+                  <tr className="border-b border-[var(--color-border-subtle)]">
                     <th className="px-4 py-3 w-8" />
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Package</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Current</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Available</th>
-                    <th className="text-left px-4 py-3 text-xs text-zinc-500 font-medium">Section</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Package</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Current</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Available</th>
+                    <th className="text-left px-4 py-3 text-xs text-[var(--color-fg-subtle)] font-medium">Section</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,10 +246,10 @@ export default function PackagesPage() {
                           className="rounded border-gray-600"
                         />
                       </td>
-                      <td className="px-4 py-3 font-mono text-zinc-200">{pkg.Package}</td>
-                      <td className="px-4 py-3 font-mono text-zinc-500 text-xs">{pkg.OldVersion}</td>
+                      <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">{pkg.Package}</td>
+                      <td className="px-4 py-3 font-mono text-[var(--color-fg-subtle)] text-xs">{pkg.OldVersion}</td>
                       <td className="px-4 py-3 font-mono text-amber-400 text-xs">{pkg.Version}</td>
-                      <td className="px-4 py-3 text-zinc-500 text-xs">{pkg.Section ?? '—'}</td>
+                      <td className="px-4 py-3 text-[var(--color-fg-subtle)] text-xs">{pkg.Section ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

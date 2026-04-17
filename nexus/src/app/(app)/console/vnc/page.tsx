@@ -44,7 +44,7 @@ export default function VncConsolePage() {
           <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
           <div>
             <h1 className="text-sm font-semibold text-red-300 mb-1">Cannot open graphical console</h1>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-[var(--color-fg-muted)] leading-relaxed">
               Missing or invalid <span className="font-mono">node</span>,{' '}
               <span className="font-mono">vmid</span>, or <span className="font-mono">type</span>{' '}
               (must be <span className="font-mono">qemu</span> or{' '}
@@ -70,7 +70,7 @@ export default function VncConsolePage() {
       <header className="flex items-center gap-2">
         <Link
           href={`/dashboard/${type === 'qemu' ? 'vms' : 'cts'}/${node}/${vmid}`}
-          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)]
                      rounded-md hover:bg-zinc-800/60
                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
         >
@@ -78,10 +78,10 @@ export default function VncConsolePage() {
           Back
         </Link>
         <div className="min-w-0">
-          <h1 className="text-sm font-semibold text-zinc-100 truncate">
+          <h1 className="text-sm font-semibold text-[var(--color-fg)] truncate">
             Graphical console · <span className="font-mono">{type === 'qemu' ? 'VM' : 'CT'} {vmid}</span>
           </h1>
-          <p className="text-[11px] text-zinc-500 font-mono truncate">node: {node}</p>
+          <p className="text-[11px] text-[var(--color-fg-subtle)] font-mono truncate">node: {node}</p>
         </div>
       </header>
 

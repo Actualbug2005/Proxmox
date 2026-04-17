@@ -154,7 +154,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
     <div className="studio-card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-zinc-400" />
+          <Terminal className="w-4 h-4 text-[var(--color-fg-muted)]" />
           <h3 className="text-sm font-semibold text-white">{provider.name}</h3>
         </div>
         <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
           </button>
         )}
         {installed && !configured && (
-          <p className="text-xs text-zinc-500 w-full">
+          <p className="text-xs text-[var(--color-fg-subtle)] w-full">
             Binary installed. Use the Configure form below to register a token — this creates the systemd service.
           </p>
         )}
@@ -186,14 +186,14 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
             <button
               onClick={() => execM.mutate(`systemctl ${active ? 'stop' : 'start'} ${provider.service}`)}
               disabled={execM.isPending}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg transition disabled:opacity-40"
+              className="px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-xs rounded-lg transition disabled:opacity-40"
             >
               {active ? 'Stop' : 'Start'}
             </button>
             <button
               onClick={() => execM.mutate(`systemctl ${active ? 'disable' : 'enable'} ${provider.service}`)}
               disabled={execM.isPending}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg transition disabled:opacity-40"
+              className="px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-xs rounded-lg transition disabled:opacity-40"
             >
               {active ? 'Disable autostart' : 'Enable autostart'}
             </button>
@@ -203,7 +203,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
           <>
             <button
               onClick={() => setShowConfig(!showConfig)}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-800 text-zinc-300 text-xs rounded-lg transition"
+              className="px-3 py-1.5 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)] text-xs rounded-lg transition"
             >
               Configure
             </button>
@@ -212,15 +212,15 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
       </div>
 
       {showConfig && (
-        <div className="space-y-2 pt-2 border-t border-zinc-800/60">
+        <div className="space-y-2 pt-2 border-t border-[var(--color-border-subtle)]">
           {provider.configFields.map((field) => (
             <div key={field.key}>
-              <label className="text-xs text-zinc-500 block mb-1">{field.label}</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">{field.label}</label>
               <input
                 value={configVals[field.key] ?? ''}
                 onChange={(e) => setConfigVals((p) => ({ ...p, [field.key]: e.target.value }))}
                 placeholder={field.placeholder}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50"
+                className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
               />
             </div>
           ))}
@@ -236,7 +236,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
       )}
 
       {output && (
-        <pre className="bg-gray-950 border border-zinc-800/60 rounded-lg p-3 text-xs text-zinc-400 font-mono overflow-x-auto whitespace-pre-wrap max-h-32">
+        <pre className="bg-gray-950 border border-[var(--color-border-subtle)] rounded-lg p-3 text-xs text-[var(--color-fg-muted)] font-mono overflow-x-auto whitespace-pre-wrap max-h-32">
           {output}
         </pre>
       )}
@@ -341,13 +341,13 @@ export default function CertificatesPage() {
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-48 text-zinc-500 text-sm">
+      <div className="flex items-center justify-center h-48 text-[var(--color-fg-subtle)] text-sm">
         Select a node to manage certificates.
       </div>
     );
   }
 
-  const inputCls = 'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50';
+  const inputCls = 'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50';
 
   return (
     <>
@@ -363,7 +363,7 @@ export default function CertificatesPage() {
 
       <div>
         <h1 className="text-xl font-semibold text-white">Certificates</h1>
-        <p className="text-sm text-zinc-500">TLS certificates and tunnel providers for {node}</p>
+        <p className="text-sm text-[var(--color-fg-subtle)]">TLS certificates and tunnel providers for {node}</p>
       </div>
 
       {taskUpid && (
@@ -372,14 +372,14 @@ export default function CertificatesPage() {
         </div>
       )}
 
-      <div className="flex gap-1 border-b border-zinc-800/60">
+      <div className="flex gap-1 border-b border-[var(--color-border-subtle)]">
         {([['current', 'Current Cert'], ['acme', 'ACME / Let\'s Encrypt'], ['tunnels', 'Tunnel Providers']] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
               'px-4 py-2 text-sm font-medium transition border-b-2 -mb-px',
-              tab === t ? 'border-zinc-200 text-indigo-400' : 'border-transparent text-zinc-500 hover:text-zinc-300',
+              tab === t ? 'border-zinc-200 text-indigo-400' : 'border-transparent text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
             )}
           >
             {label}
@@ -390,7 +390,7 @@ export default function CertificatesPage() {
       {tab === 'current' && (
         <div className="space-y-5">
           {isLoading ? (
-            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
+            <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" /></div>
           ) : activeCert ? (
             <div className="studio-card p-5 space-y-3">
               <div className="flex items-center gap-3">
@@ -407,8 +407,8 @@ export default function CertificatesPage() {
                   ['Valid Until', activeCert.notafter ? new Date(activeCert.notafter * 1000).toLocaleDateString() : '—'],
                 ].map(([label, val]) => (
                   <div key={label}>
-                    <dt className="text-xs text-zinc-500">{label}</dt>
-                    <dd className="text-zinc-300 font-mono text-xs mt-0.5 break-all">{val ?? '—'}</dd>
+                    <dt className="text-xs text-[var(--color-fg-subtle)]">{label}</dt>
+                    <dd className="text-[var(--color-fg-secondary)] font-mono text-xs mt-0.5 break-all">{val ?? '—'}</dd>
                   </div>
                 ))}
               </dl>
@@ -420,7 +420,7 @@ export default function CertificatesPage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-zinc-500 text-sm">
+            <div className="flex items-center gap-2 text-[var(--color-fg-subtle)] text-sm">
               <AlertTriangle className="w-4 h-4" />
               No certificate info available.
             </div>
@@ -429,7 +429,7 @@ export default function CertificatesPage() {
           <div className="studio-card p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Upload Custom Certificate</h3>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Certificate (PEM)</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Certificate (PEM)</label>
               <textarea
                 value={certPem}
                 onChange={(e) => setCertPem(e.target.value)}
@@ -439,7 +439,7 @@ export default function CertificatesPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Private Key (PEM)</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Private Key (PEM)</label>
               <textarea
                 value={keyPem}
                 onChange={(e) => setKeyPem(e.target.value)}
@@ -469,15 +469,15 @@ export default function CertificatesPage() {
                 {acmeAccounts.map((a) => (
                   <div key={a.name} className="flex items-center gap-3">
                     <Badge variant="success">Registered</Badge>
-                    <span className="text-sm text-zinc-300 font-mono">{a.contact?.join(', ')}</span>
+                    <span className="text-sm text-[var(--color-fg-secondary)] font-mono">{a.contact?.join(', ')}</span>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-zinc-500">No ACME account registered. Register one to enable Let&apos;s Encrypt.</p>
+                <p className="text-xs text-[var(--color-fg-subtle)]">No ACME account registered. Register one to enable Let&apos;s Encrypt.</p>
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Email</label>
+                  <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Email</label>
                   <input value={acmeEmail} onChange={(e) => setAcmeEmail(e.target.value)} placeholder="admin@example.com" className={inputCls} />
                 </div>
                 <button
@@ -495,7 +495,7 @@ export default function CertificatesPage() {
           <div className="studio-card p-5 space-y-3">
             <h3 className="text-sm font-semibold text-white">Order Certificate</h3>
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Domain (must resolve to this node&apos;s IP)</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Domain (must resolve to this node&apos;s IP)</label>
               <input value={acmeDomain} onChange={(e) => setAcmeDomain(e.target.value)} placeholder="pve.example.com" className={inputCls} />
             </div>
             <button
@@ -506,17 +506,17 @@ export default function CertificatesPage() {
               {orderCertM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Order Certificate
             </button>
-            <p className="text-xs text-zinc-600">The domain must be configured on the node first via the Proxmox ACME domain config before ordering.</p>
+            <p className="text-xs text-[var(--color-fg-faint)]">The domain must be configured on the node first via the Proxmox ACME domain config before ordering.</p>
           </div>
         </div>
       )}
 
       {tab === 'tunnels' && (
         <div className="space-y-4">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[var(--color-fg-subtle)]">
             Install and manage reverse tunnel agents on {node}. Status requires{' '}
-            <span className="font-mono text-zinc-400">Sys.Audit</span>; install / start / stop
-            actions require <span className="font-mono text-zinc-400">Sys.Modify</span>.
+            <span className="font-mono text-[var(--color-fg-muted)]">Sys.Audit</span>; install / start / stop
+            actions require <span className="font-mono text-[var(--color-fg-muted)]">Sys.Modify</span>.
           </p>
 
           {tunnelStatusError instanceof ProxmoxAPIError && tunnelStatusError.status === 403 && (
@@ -528,7 +528,7 @@ export default function CertificatesPage() {
 
           {tunnelStatusLoading && !tunnelStatus ? (
             <div className="flex items-center justify-center h-24">
-              <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{tunnelCards}</div>

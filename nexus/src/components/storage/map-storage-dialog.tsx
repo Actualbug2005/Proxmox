@@ -232,7 +232,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
   });
 
   const inputCls =
-    'w-full px-3 py-2 bg-zinc-800 border border-zinc-800/60 rounded-lg text-sm text-zinc-200 focus:outline-none focus:border-zinc-300/50 font-mono disabled:opacity-50 disabled:cursor-not-allowed';
+    'w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50 font-mono disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <div
@@ -244,21 +244,21 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-subtle)] shrink-0">
           <div className="flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-zinc-500" />
+            <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" />
             <div>
               <h2 className="text-sm font-semibold text-white">
                 {isEdit ? 'Edit storage' : 'Map storage'}
               </h2>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-[var(--color-fg-subtle)]">
                 {isEdit ? 'Update an existing pool' : 'Add a cluster-wide storage pool'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-zinc-500 hover:text-zinc-300 transition"
+            className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -269,7 +269,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* Storage ID */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Storage ID</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Storage ID</label>
             <input
               value={storageId}
               onChange={(e) => setStorageId(e.target.value.toLowerCase())}
@@ -291,7 +291,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
 
           {/* Type */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-1">Type</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Type</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as StorageBackendType)}
@@ -308,12 +308,12 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
 
           {/* Content */}
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">Content</label>
+            <label className="text-xs text-[var(--color-fg-subtle)] block mb-2">Content</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {CONTENT_OPTIONS.map((c) => (
                 <label
                   key={c.id}
-                  className="flex items-start gap-2 p-2 bg-gray-950/40 border border-zinc-800/60 rounded-lg cursor-pointer hover:border-zinc-800/60 transition"
+                  className="flex items-start gap-2 p-2 bg-gray-950/40 border border-[var(--color-border-subtle)] rounded-lg cursor-pointer hover:border-[var(--color-border-subtle)] transition"
                 >
                   <input
                     type="checkbox"
@@ -322,8 +322,8 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                     className="w-4 h-4 accent-zinc-100 mt-0.5 shrink-0"
                   />
                   <div className="min-w-0">
-                    <p className="text-xs text-zinc-200">{c.label}</p>
-                    <p className="text-[10px] text-zinc-500">{c.hint}</p>
+                    <p className="text-xs text-[var(--color-fg-secondary)]">{c.label}</p>
+                    <p className="text-[10px] text-[var(--color-fg-subtle)]">{c.hint}</p>
                   </div>
                 </label>
               ))}
@@ -339,9 +339,9 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           {/* Node restriction */}
           {nodeNames.length > 0 && (
             <div>
-              <label className="text-xs text-zinc-500 block mb-2">
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-2">
                 Restrict to nodes{' '}
-                <span className="text-zinc-600">
+                <span className="text-[var(--color-fg-faint)]">
                   (leave empty or tick all for cluster-wide)
                 </span>
               </label>
@@ -349,7 +349,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                 {nodeNames.map((n) => (
                   <label
                     key={n}
-                    className="flex items-center gap-2 p-2 bg-gray-950/40 border border-zinc-800/60 rounded-lg cursor-pointer hover:border-zinc-800/60 transition"
+                    className="flex items-center gap-2 p-2 bg-gray-950/40 border border-[var(--color-border-subtle)] rounded-lg cursor-pointer hover:border-[var(--color-border-subtle)] transition"
                   >
                     <input
                       type="checkbox"
@@ -357,7 +357,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                       onChange={() => toggleNode(n)}
                       className="w-4 h-4 accent-zinc-100 shrink-0"
                     />
-                    <span className="text-xs text-zinc-200 font-mono truncate">{n}</span>
+                    <span className="text-xs text-[var(--color-fg-secondary)] font-mono truncate">{n}</span>
                   </label>
                 ))}
               </div>
@@ -368,7 +368,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           {type === 'nfs' && (
             <>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Server</label>
+                <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Server</label>
                 <input
                   value={server}
                   onChange={(e) => setServer(e.target.value)}
@@ -387,7 +387,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                 )}
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Export path</label>
+                <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Export path</label>
                 <input
                   value={exportPath}
                   onChange={(e) => setExportPath(e.target.value)}
@@ -412,7 +412,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           {type === 'cifs' && (
             <>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Server</label>
+                <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Server</label>
                 <input
                   value={server}
                   onChange={(e) => setServer(e.target.value)}
@@ -425,7 +425,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1">Share name</label>
+                <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Share name</label>
                 <input
                   value={share}
                   onChange={(e) => setShare(e.target.value)}
@@ -439,7 +439,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Username (optional)</label>
+                  <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Username (optional)</label>
                   <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -448,7 +448,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Password (optional)</label>
+                  <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Password (optional)</label>
                   <input
                     type="password"
                     value={password}
@@ -464,7 +464,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           {/* Dynamic — Directory */}
           {type === 'dir' && (
             <div>
-              <label className="text-xs text-zinc-500 block mb-1">Local path</label>
+              <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Local path</label>
               <input
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
@@ -481,7 +481,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   {validation.errors.path}
                 </p>
               )}
-              <p className="text-[11px] text-zinc-600 mt-1">
+              <p className="text-[11px] text-[var(--color-fg-faint)] mt-1">
                 The path must already exist on every node in the cluster.
               </p>
             </div>
@@ -491,23 +491,23 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
           <details
             open={advancedOpen}
             onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
-            className="border border-zinc-800/60 rounded-lg bg-gray-950/40 overflow-hidden group"
+            className="border border-[var(--color-border-subtle)] rounded-lg bg-gray-950/40 overflow-hidden group"
           >
-            <summary className="flex items-center justify-between px-3 py-2 cursor-pointer text-xs text-zinc-400 hover:text-zinc-200 transition select-none">
+            <summary className="flex items-center justify-between px-3 py-2 cursor-pointer text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)] transition select-none">
               <span>Advanced options</span>
               <ChevronDown className="w-3.5 h-3.5 transition group-open:rotate-180" />
             </summary>
             <div className="px-3 pb-3 pt-1 space-y-3">
               {type === 'nfs' && (
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Mount options</label>
+                  <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Mount options</label>
                   <input
                     value={mountOptions}
                     onChange={(e) => setMountOptions(e.target.value)}
                     placeholder="vers=4.2,soft"
                     className={inputCls}
                   />
-                  <p className="text-[11px] text-zinc-600 mt-1">
+                  <p className="text-[11px] text-[var(--color-fg-faint)] mt-1">
                     Comma-separated mount(8) flags forwarded to the NFS client.
                   </p>
                 </div>
@@ -515,7 +515,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
 
               {type === 'cifs' && (
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">SMB version</label>
+                  <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">SMB version</label>
                   <select
                     value={smbVersion}
                     onChange={(e) => setSmbVersion(e.target.value)}
@@ -539,8 +539,8 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                     className="w-4 h-4 accent-zinc-100 mt-0.5 shrink-0"
                   />
                   <div className="min-w-0">
-                    <p className="text-xs text-zinc-200">Create subdirectories</p>
-                    <p className="text-[10px] text-zinc-500">
+                    <p className="text-xs text-[var(--color-fg-secondary)]">Create subdirectories</p>
+                    <p className="text-[10px] text-[var(--color-fg-subtle)]">
                       Auto-create content-type folders (images/, iso/, …) under the path.
                     </p>
                   </div>
@@ -548,17 +548,17 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
               )}
 
               {type !== 'nfs' && type !== 'cifs' && type !== 'dir' && (
-                <p className="text-xs text-zinc-600">No advanced options for this backend.</p>
+                <p className="text-xs text-[var(--color-fg-faint)]">No advanced options for this backend.</p>
               )}
             </div>
           </details>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 justify-end px-5 py-4 border-t border-zinc-800/60 shrink-0">
+        <div className="flex gap-3 justify-end px-5 py-4 border-t border-[var(--color-border-subtle)] shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white bg-zinc-800 rounded-lg transition"
+            className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition"
           >
             Cancel
           </button>

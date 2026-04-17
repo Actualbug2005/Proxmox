@@ -39,15 +39,15 @@ export function StorageExhaustionWidget() {
   return (
     <div className="studio-card h-full rounded-lg p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+        <h3 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">
           <HardDrive className="h-3 w-3" />
           Storage exhaustion
         </h3>
-        {loading && <Loader2 className="h-3 w-3 animate-spin text-zinc-500" />}
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </div>
 
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-xs text-zinc-600">
+        <p className="py-6 text-center text-xs text-[var(--color-fg-faint)]">
           {loading ? 'Projecting…' : 'No datastores.'}
         </p>
       ) : (
@@ -62,14 +62,14 @@ export function StorageExhaustionWidget() {
                 className="block rounded-md p-2 transition hover:bg-white/[0.03]"
               >
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="truncate text-xs text-zinc-200">{row.storage}</span>
-                  <span className="text-[11px] text-zinc-500">· {row.node}</span>
+                  <span className="truncate text-xs text-[var(--color-fg-secondary)]">{row.storage}</span>
+                  <span className="text-[11px] text-[var(--color-fg-subtle)]">· {row.node}</span>
                   <span className="ml-auto shrink-0">
                     <Badge variant={badge.variant}>{badge.label}</Badge>
                   </span>
                 </div>
                 <ProgressBar value={pct} />
-                <p className="mt-1 text-[11px] tabular text-zinc-500">
+                <p className="mt-1 text-[11px] tabular text-[var(--color-fg-subtle)]">
                   {formatBytes(row.used)} / {formatBytes(row.total)} · {pct}%
                 </p>
               </Link>

@@ -139,21 +139,21 @@ export function JobDrawer({
       onClick={onClose}
     >
       <aside
-        className="w-full max-w-2xl h-full bg-zinc-950 border-l border-zinc-800/80
+        className="w-full max-w-2xl h-full bg-[var(--color-canvas)] border-l border-zinc-800/80
                    flex flex-col animate-modal-content"
         onClick={(e) => e.stopPropagation()}
         aria-label="Script job details"
       >
-        <header className="flex items-start justify-between gap-3 px-5 py-4 border-b border-zinc-800/60">
+        <header className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--color-border-subtle)]">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <Terminal className="w-4 h-4 text-indigo-400 shrink-0" />
-              <h2 className="text-sm font-semibold text-zinc-50 truncate">
+              <h2 className="text-sm font-semibold text-[var(--color-fg)] truncate">
                 {job?.scriptName ?? 'Loading…'}
               </h2>
               {job && <StatusBadge status={job.status} exitCode={job.exitCode} />}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1 font-mono truncate">
+            <p className="text-[11px] text-[var(--color-fg-subtle)] mt-1 font-mono truncate">
               {job
                 ? `${job.node}${job.method && job.method !== 'default' ? ` · ${job.method}` : ''} · ${formatDuration(duration)}`
                 : jobId}
@@ -177,7 +177,7 @@ export function JobDrawer({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="p-1.5 text-zinc-500 hover:text-zinc-200 rounded-md
+              className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] rounded-md
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
             >
               <X className="w-4 h-4" />
@@ -194,13 +194,13 @@ export function JobDrawer({
         )}
 
         {job && (
-          <div className="px-5 py-3 border-b border-zinc-800/60 space-y-1 text-[11px]">
+          <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] space-y-1 text-[11px]">
             <Row label="Script URL">
-              <span className="font-mono text-zinc-300 break-all">{job.scriptUrl}</span>
+              <span className="font-mono text-[var(--color-fg-secondary)] break-all">{job.scriptUrl}</span>
             </Row>
             {job.env && Object.keys(job.env).length > 0 && (
               <Row label="Env overrides">
-                <span className="font-mono text-zinc-400">
+                <span className="font-mono text-[var(--color-fg-muted)]">
                   {Object.entries(job.env)
                     .map(([k, v]) => `${k}=${v}`)
                     .join(' ')}
@@ -210,12 +210,12 @@ export function JobDrawer({
           </div>
         )}
 
-        <div className="flex items-center justify-between px-5 py-2 border-b border-zinc-800/60">
-          <h3 className="text-[11px] uppercase tracking-widest text-zinc-500">Log</h3>
+        <div className="flex items-center justify-between px-5 py-2 border-b border-[var(--color-border-subtle)]">
+          <h3 className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">Log</h3>
           <button
             onClick={handleCopy}
             disabled={!logText}
-            className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200
+            className="inline-flex items-center gap-1 text-[11px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg-secondary)]
                        disabled:opacity-50
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 rounded"
           >
@@ -236,12 +236,12 @@ export function JobDrawer({
         <pre
           ref={logRef}
           onScroll={onLogScroll}
-          className="flex-1 min-h-0 overflow-y-auto px-5 py-3 bg-zinc-950
-                     text-[11px] font-mono text-zinc-300 whitespace-pre-wrap
+          className="flex-1 min-h-0 overflow-y-auto px-5 py-3 bg-[var(--color-canvas)]
+                     text-[11px] font-mono text-[var(--color-fg-secondary)] whitespace-pre-wrap
                      leading-relaxed selection:bg-indigo-500/30"
         >
           {logText || (
-            <span className="text-zinc-600 italic">
+            <span className="text-[var(--color-fg-faint)] italic">
               {job?.status === 'running'
                 ? 'Waiting for output…'
                 : 'No output captured.'}
@@ -256,7 +256,7 @@ export function JobDrawer({
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="text-[10px] uppercase tracking-widest text-zinc-500 w-24 shrink-0 pt-0.5">
+      <span className="text-[10px] uppercase tracking-widest text-[var(--color-fg-subtle)] w-24 shrink-0 pt-0.5">
         {label}
       </span>
       <div className="min-w-0 flex-1">{children}</div>

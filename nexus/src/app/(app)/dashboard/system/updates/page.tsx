@@ -78,7 +78,7 @@ export default function UpdatesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-500">
+      <div className="flex items-center justify-center py-16 text-[var(--color-fg-subtle)]">
         <Loader2 className="h-5 w-5 animate-spin" />
       </div>
     );
@@ -86,8 +86,8 @@ export default function UpdatesPage() {
 
   if (!version) {
     return (
-      <div className="studio-card p-6 text-sm text-zinc-400">
-        Could not read version info. Is <code className="text-zinc-200">/opt/nexus/current/VERSION</code> present?
+      <div className="studio-card p-6 text-sm text-[var(--color-fg-muted)]">
+        Could not read version info. Is <code className="text-[var(--color-fg-secondary)]">/opt/nexus/current/VERSION</code> present?
       </div>
     );
   }
@@ -98,17 +98,17 @@ export default function UpdatesPage() {
     <div className="flex flex-col gap-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100">Updates</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-fg)]">Updates</h1>
+          <p className="text-sm text-[var(--color-fg-subtle)]">
             Manage the Nexus release channel. Updates download from GitHub and
-            swap atomically via the <code className="text-zinc-400">nexus-update</code> helper.
+            swap atomically via the <code className="text-[var(--color-fg-muted)]">nexus-update</code> helper.
           </p>
         </div>
         <button
           type="button"
           onClick={() => refetch()}
           disabled={isRefetching}
-          className="inline-flex items-center gap-2 rounded-md border border-zinc-800/60 bg-white/5 px-3 py-2 text-sm text-zinc-200 hover:bg-white/10 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-white/5 px-3 py-2 text-sm text-[var(--color-fg-secondary)] hover:bg-white/10 disabled:opacity-50"
         >
           <RefreshCw className={cn('h-4 w-4', isRefetching && 'animate-spin')} />
           Check again
@@ -118,16 +118,16 @@ export default function UpdatesPage() {
       <section className="studio-card p-6">
         <div className="flex items-start justify-between gap-6">
           <div className="flex-1">
-            <div className="text-xs uppercase tracking-wider text-zinc-500">Installed</div>
-            <div className="mt-1 font-mono text-2xl text-zinc-100">{current}</div>
+            <div className="text-xs uppercase tracking-wider text-[var(--color-fg-subtle)]">Installed</div>
+            <div className="mt-1 font-mono text-2xl text-[var(--color-fg)]">{current}</div>
           </div>
           <div className="flex-1">
-            <div className="text-xs uppercase tracking-wider text-zinc-500">Latest</div>
-            <div className="mt-1 font-mono text-2xl text-zinc-100">
-              {latest ?? <span className="text-zinc-600">unavailable</span>}
+            <div className="text-xs uppercase tracking-wider text-[var(--color-fg-subtle)]">Latest</div>
+            <div className="mt-1 font-mono text-2xl text-[var(--color-fg)]">
+              {latest ?? <span className="text-[var(--color-fg-faint)]">unavailable</span>}
             </div>
             {publishedAt && (
-              <div className="mt-1 text-xs text-zinc-500">
+              <div className="mt-1 text-xs text-[var(--color-fg-subtle)]">
                 Published {new Date(publishedAt).toLocaleString()}
               </div>
             )}
@@ -148,7 +148,7 @@ export default function UpdatesPage() {
                 {pollingAfterUpdate ? 'Waiting for restart…' : `Install ${latest}`}
               </button>
             ) : (
-              <div className="inline-flex items-center gap-2 rounded-md bg-white/5 px-4 py-2 text-sm text-zinc-300">
+              <div className="inline-flex items-center gap-2 rounded-md bg-white/5 px-4 py-2 text-sm text-[var(--color-fg-secondary)]">
                 <CheckCircle2 className="h-4 w-4 text-indigo-400" />
                 Up to date
               </div>
@@ -160,7 +160,7 @@ export default function UpdatesPage() {
       {releaseNotes && (
         <section className="studio-card p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold tracking-wide text-zinc-200">
+            <h2 className="text-sm font-semibold tracking-wide text-[var(--color-fg-secondary)]">
               Release notes — {latest}
             </h2>
             {releaseUrl && (
@@ -168,42 +168,42 @@ export default function UpdatesPage() {
                 href={releaseUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-200"
+                className="inline-flex items-center gap-1 text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]"
               >
                 View on GitHub
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
           </div>
-          <div className="mt-3 text-sm leading-relaxed text-zinc-300">
+          <div className="mt-3 text-sm leading-relaxed text-[var(--color-fg-secondary)]">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h1: (props) => <h1 className="mt-6 mb-2 text-base font-semibold text-zinc-100 first:mt-0" {...props} />,
-                h2: (props) => <h2 className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-200 first:mt-0" {...props} />,
-                h3: (props) => <h3 className="mt-4 mb-2 text-sm font-semibold text-zinc-200 first:mt-0" {...props} />,
-                p: (props) => <p className="my-2 text-zinc-300" {...props} />,
-                ul: (props) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-zinc-600" {...props} />,
-                ol: (props) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:text-zinc-600" {...props} />,
-                li: (props) => <li className="text-zinc-300" {...props} />,
+                h1: (props) => <h1 className="mt-6 mb-2 text-base font-semibold text-[var(--color-fg)] first:mt-0" {...props} />,
+                h2: (props) => <h2 className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--color-fg-secondary)] first:mt-0" {...props} />,
+                h3: (props) => <h3 className="mt-4 mb-2 text-sm font-semibold text-[var(--color-fg-secondary)] first:mt-0" {...props} />,
+                p: (props) => <p className="my-2 text-[var(--color-fg-secondary)]" {...props} />,
+                ul: (props) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-[var(--color-fg-faint)]" {...props} />,
+                ol: (props) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:text-[var(--color-fg-faint)]" {...props} />,
+                li: (props) => <li className="text-[var(--color-fg-secondary)]" {...props} />,
                 a: (props) => <a className="text-indigo-400 underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-                strong: (props) => <strong className="font-semibold text-zinc-100" {...props} />,
-                em: (props) => <em className="italic text-zinc-200" {...props} />,
+                strong: (props) => <strong className="font-semibold text-[var(--color-fg)]" {...props} />,
+                em: (props) => <em className="italic text-[var(--color-fg-secondary)]" {...props} />,
                 code: ({ className, children, ...props }) => {
                   const isBlock = /\bhljs\b|^language-/.test(className ?? '');
                   return isBlock ? (
-                    <code className="block w-full whitespace-pre overflow-x-auto rounded-md border border-zinc-800/60 bg-zinc-900/60 p-3 font-mono text-xs text-zinc-200" {...props}>{children}</code>
+                    <code className="block w-full whitespace-pre overflow-x-auto rounded-md border border-[var(--color-border-subtle)] bg-zinc-900/60 p-3 font-mono text-xs text-[var(--color-fg-secondary)]" {...props}>{children}</code>
                   ) : (
-                    <code className="rounded bg-zinc-800/60 px-1.5 py-0.5 font-mono text-[0.8125rem] text-zinc-200" {...props}>{children}</code>
+                    <code className="rounded bg-zinc-800/60 px-1.5 py-0.5 font-mono text-[0.8125rem] text-[var(--color-fg-secondary)]" {...props}>{children}</code>
                   );
                 },
                 pre: (props) => <pre className="my-3 overflow-x-auto" {...props} />,
-                blockquote: (props) => <blockquote className="my-3 border-l-2 border-zinc-700 pl-3 text-zinc-400 italic" {...props} />,
-                hr: () => <hr className="my-4 border-zinc-800/60" />,
+                blockquote: (props) => <blockquote className="my-3 border-l-2 border-[var(--color-border-strong)] pl-3 text-[var(--color-fg-muted)] italic" {...props} />,
+                hr: () => <hr className="my-4 border-[var(--color-border-subtle)]" />,
                 table: (props) => <table className="my-3 w-full border-collapse text-xs" {...props} />,
-                thead: (props) => <thead className="border-b border-zinc-800/60 text-zinc-400" {...props} />,
+                thead: (props) => <thead className="border-b border-[var(--color-border-subtle)] text-[var(--color-fg-muted)]" {...props} />,
                 th: (props) => <th className="px-2 py-1.5 text-left font-medium" {...props} />,
-                td: (props) => <td className="border-b border-zinc-800/40 px-2 py-1.5 text-zinc-300" {...props} />,
+                td: (props) => <td className="border-b border-zinc-800/40 px-2 py-1.5 text-[var(--color-fg-secondary)]" {...props} />,
               }}
             >
               {releaseNotes}
@@ -213,7 +213,7 @@ export default function UpdatesPage() {
       )}
 
       {pollingAfterUpdate && (
-        <div className="studio-card flex items-center gap-3 p-4 text-sm text-zinc-400">
+        <div className="studio-card flex items-center gap-3 p-4 text-sm text-[var(--color-fg-muted)]">
           <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
           Service is restarting. This page will reconnect automatically once the new version is live (≈10 seconds).
         </div>
