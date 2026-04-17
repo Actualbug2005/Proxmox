@@ -6,4 +6,8 @@
 # Editor / per-user tool config
 .vscode/
 .serena/
-.claude/settings.local.json
+.claude/
+
+# Per-clone agent guidance (not shared)
+CLAUDE.md
+AGENTS.md
