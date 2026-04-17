@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { MigrateWizard } from '@/components/migrate/migrate-wizard';
+import { CloneWizard } from '@/components/clone/clone-wizard';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
@@ -546,12 +547,24 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
         />
       )}
       {showClone && (
-        <CloneDialog
-          currentName={vmName}
-          isLoading={cloneM.isPending}
-          onConfirm={(newid, name, full) => cloneM.mutate({ newid, name, full })}
-          onCancel={() => setShowClone(false)}
-        />
+        config?.template ? (
+          <CloneWizard
+            sourceNode={node}
+            sourceVmid={vmid}
+            sourceName={vmName}
+            onClose={() => setShowClone(false)}
+            onSuccess={(newid, target) => {
+              router.push(`/dashboard/vms/${target}/${newid}`);
+            }}
+          />
+        ) : (
+          <CloneDialog
+            currentName={vmName}
+            isLoading={cloneM.isPending}
+            onConfirm={(newid, name, full) => cloneM.mutate({ newid, name, full })}
+            onCancel={() => setShowClone(false)}
+          />
+        )
       )}
       {showMigrate && (
         <MigrateWizard
