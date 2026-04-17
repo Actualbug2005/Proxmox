@@ -1,5 +1,32 @@
 # Nexus deployment templates
 
+## Quick path (recommended)
+
+One command wraps the whole Phase-2 stack — CrowdSec parser + scenarios +
+firewall bouncer, self-signed TLS cert + Caddy reverse proxy with security
+headers, asymmetric-hybrid audit keypair, LAN allowlist auto-detected from
+`ip route`:
+
+```bash
+cd /opt/nexus/deploy    # or wherever you cloned the repo
+./install-hardening.sh
+```
+
+Check status any time (read-only):
+
+```bash
+./nexus-doctor.sh
+```
+
+That's enough for a single-node homelab reachable via LAN or fronted by
+Cloudflare WARP / Tailscale / etc. Read on only if you want a non-Caddy
+ingress (nginx / Traefik) or a ZTNA template (Authelia / Cloudflare Access
+with forward-auth).
+
+---
+
+## Manual per-stack templates
+
 Pick the stack that matches your homelab. Every template here assumes Nexus
 itself is built from `../nexus/` and running on `:3000` behind a reverse
 proxy — the proxy terminates TLS and injects the Phase-2 hardening headers.

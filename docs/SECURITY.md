@@ -8,6 +8,13 @@ current state of each audit finding.
 If you're deploying Nexus, read the **Operator responsibilities** and
 **Secrets that must live off the running host** sections first.
 
+> **Quick path:** on a fresh install, run
+> [`./deploy/install-hardening.sh`](../deploy/install-hardening.sh) once —
+> it sets up CrowdSec + Caddy + self-signed HTTPS + audit keypair in one
+> shot. Then [`./deploy/nexus-doctor.sh`](../deploy/nexus-doctor.sh) gives
+> you a health report any time. The sections below explain what each layer
+> does and how to tune it; the installer makes the defaults work.
+
 ---
 
 ## Attacker model
