@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
 import { useStartScriptJob } from '@/hooks/use-script-jobs';
+import { ScheduleJobEditor } from '@/components/scripts/schedule-job-editor';
 import type {
   CommunityScript,
   InstallMethod,
@@ -445,6 +446,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
   // Kept locally so the "Started" banner shows until the user triggers a
   // new run; the bottom-right status bar takes over from there.
   const [justStartedId, setJustStartedId] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   async function handleCopy() {
     try {
@@ -572,6 +574,19 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
                 </>
               )}
             </button>
+            <button
+              onClick={() => setScheduleOpen(true)}
+              disabled={!selectedNode}
+              className="h-9 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700
+                         disabled:bg-zinc-800/40 disabled:cursor-not-allowed
+                         text-zinc-200 text-sm font-medium transition
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500
+                         inline-flex items-center gap-1.5 shrink-0"
+              title="Schedule this script to run on a cadence"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Schedule
+            </button>
           </div>
 
           {/* Advanced configuration (env overrides) */}
@@ -674,6 +689,19 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
           </section>
         )}
       </div>
+
+      {scheduleOpen && (
+        <ScheduleJobEditor
+          onClose={() => setScheduleOpen(false)}
+          preset={{
+            slug: manifest.slug,
+            scriptUrl,
+            scriptName: manifest.name,
+            method: activeMethod?.type,
+            node: selectedNode || undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
