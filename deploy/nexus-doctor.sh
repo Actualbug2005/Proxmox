@@ -84,8 +84,11 @@ else
   esac
 
   if cscli allowlists inspect nexus-homelab &>/dev/null; then
+    # grep -c prints "0" AND exits 1 when there are no matches; `|| true`
+    # keeps the pipeline alive without appending a second "0" via echo.
     allowlist_size=$(cscli allowlists inspect nexus-homelab 2>/dev/null \
-                     | grep -cE '^\s*[0-9a-f:.]+/[0-9]+|^\s*[0-9a-f:.]+\s+' || echo 0)
+                     | grep -cE '^\s*[0-9a-f:.]+/[0-9]+|^\s*[0-9a-f:.]+\s+' || true)
+    allowlist_size=${allowlist_size:-0}
     if [[ "$allowlist_size" -ge 1 ]]; then
       ok "Allowlist nexus-homelab has $allowlist_size entries"
     else
@@ -96,11 +99,13 @@ else
     hint "cscli allowlists create nexus-homelab"
   fi
 
-  active_bans=$(cscli decisions list 2>/dev/null | grep -c '^|' || echo 0)
-  if [[ "$active_bans" -gt 0 ]]; then
-    info_bans=$((active_bans - 2))
-    [[ $info_bans -lt 0 ]] && info_bans=0
-    ok "$info_bans active decision(s) — 'cscli decisions list' to inspect"
+  active_bans=$(cscli decisions list 2>/dev/null | grep -c '^|' || true)
+  active_bans=${active_bans:-0}
+  if [[ "$active_bans" -gt 2 ]]; then
+    # `cscli decisions list` wraps rows in 2 header lines of pipes; subtract
+    # them for an accurate count.
+    real_bans=$((active_bans - 2))
+    ok "$real_bans active decision(s) — 'cscli decisions list' to inspect"
   fi
 fi
 

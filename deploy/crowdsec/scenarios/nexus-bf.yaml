@@ -56,16 +56,18 @@ labels:
 # ── 3. Credential stuffing (one IP, many usernames) ─────────────────────────
 # If a single IP tries 3+ *distinct* usernames and fails, that's not a
 # legitimate forgetful admin — it's credential stuffing from a leaked list.
-type: trigger
+# A leaky bucket with `distinct` only counts unique usernames into the
+# bucket, so 3 distinct misses → ban, regardless of how many times any one
+# username gets retried.
+type: leaky
 name: nexus/credential-stuffing
 description: "Detect credential stuffing: one IP, many usernames"
 filter: |
   evt.Meta.log_type == 'nexus_login' && evt.Meta.outcome == 'fail'
 groupby: evt.Meta.source_ip
 distinct: evt.Meta.username
-# Trigger scenarios fire as soon as `distinct` exceeds `capacity`.
 capacity: 3
-leakspeed: 30m          # distinct-username counter decays over 30 min
+leakspeed: 30m          # distinct-username bucket decays over 30 min
 blackhole: 12h          # long ban — credential stuffers come back
 labels:
   service: nexus
