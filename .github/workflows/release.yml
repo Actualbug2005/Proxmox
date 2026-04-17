@@ -1,16 +1,17 @@
 name: Release
 
 on:
+  # Releases are manual: push a SemVer tag (`v0.2.0`, `v1.0.0-rc.1`, etc.)
+  # and CI builds+publishes it. No more auto-tag-on-every-main-push.
   push:
-    branches: [main]
-    paths:
-      # Skip release builds for pure-docs pushes. Any code change re-triggers.
-      - 'nexus/**'
-      - 'install.sh'
-      - 'bin/**'
-      - 'deploy/**'
-      - '.github/workflows/release.yml'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build (e.g. v0.2.0)'
+        required: true
 
 # One release per commit SHA; cancel superseded in-flight runs.
 concurrency:
