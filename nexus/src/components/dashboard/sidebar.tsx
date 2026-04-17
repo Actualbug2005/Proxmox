@@ -24,6 +24,7 @@ import {
   FolderTree,
   Archive,
   RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -47,6 +48,7 @@ const sections: NavSection[] = [
       { href: '/dashboard/tasks', label: 'Tasks', icon: Activity },
       { href: '/console', label: 'Console', icon: Terminal },
       { href: '/scripts', label: 'Community Scripts', icon: Code2 },
+      { href: '/dashboard/schedules', label: 'Scheduled Jobs', icon: Clock },
     ],
   },
   {
