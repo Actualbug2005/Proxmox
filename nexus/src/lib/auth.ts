@@ -139,11 +139,28 @@ function newSessionId(): string {
 export async function startSession(
   data: PVEAuthSession,
 ): Promise<{ sessionId: string; csrfToken: string }> {
+  const cookieStore = await cookies();
+
+  // M2 — session rotation. If the client already had a nexus_session cookie
+  // (e.g. from a previous login, a planted cookie in a fixation attack, or a
+  // pre-auth anonymous session), invalidate that sessionId in the store
+  // BEFORE issuing the new one. The browser will then only hold the fresh
+  // sessionId we set below, and any stolen-or-planted old ID can no longer
+  // be used to look up a valid session.
+  const previousSessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  if (previousSessionId) {
+    try {
+      await deleteStoredSession(previousSessionId);
+    } catch {
+      // Best-effort: a store error shouldn't block a legitimate login. The
+      // old session will expire via TTL regardless.
+    }
+  }
+
   const sessionId = newSessionId();
   await putSession(sessionId, data);
   const csrfToken = deriveCsrfToken(sessionId);
 
-  const cookieStore = await cookies();
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
 
   // Secure flag policy:

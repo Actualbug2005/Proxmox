@@ -60,6 +60,7 @@ function pipeScriptToRemoteBash(
   node: string,
   address: string,
   scriptUrl: string,
+  timeoutMs: number,
 ): Promise<{ upid: string }> {
   const isLocal = node === hostname();
   const file = isLocal ? 'bash' : 'ssh';
@@ -74,15 +75,59 @@ function pipeScriptToRemoteBash(
       ];
 
   return new Promise((resolve, reject) => {
-    const child = spawn(file, args, { stdio: ['pipe', 'ignore', 'pipe'] });
+    // H8 — timeout enforcement.
+    // AbortController ties the timer to the child: when the signal aborts,
+    // Node sends SIGTERM to the child. We keep a separate hard-kill timer
+    // that escalates to SIGKILL 5s later in case the remote hangs in a
+    // state where SIGTERM doesn't free the process (e.g., stuck SSH handshake).
+    const controller = new AbortController();
+    const softKillTimer = setTimeout(() => controller.abort(), timeoutMs);
+    let hardKillTimer: NodeJS.Timeout | null = null;
+
+    const child = spawn(file, args, {
+      stdio: ['pipe', 'ignore', 'pipe'],
+      signal: controller.signal,
+    });
+
     let stderr = '';
+    let timedOut = false;
+
     child.stderr.on('data', (d: Buffer) => {
       stderr += d.toString('utf8');
     });
-    child.on('error', reject);
+
+    controller.signal.addEventListener('abort', () => {
+      timedOut = true;
+      hardKillTimer = setTimeout(() => {
+        if (!child.killed) child.kill('SIGKILL');
+      }, 5_000);
+    });
+
+    const cleanup = () => {
+      clearTimeout(softKillTimer);
+      if (hardKillTimer) clearTimeout(hardKillTimer);
+    };
+
+    child.on('error', (err) => {
+      cleanup();
+      // AbortError fires when we kill the child via the controller. Surface
+      // it as a user-meaningful timeout rather than a generic error.
+      if (timedOut) {
+        reject(new Error(`Script timed out after ${timeoutMs}ms`));
+      } else {
+        reject(err);
+      }
+    });
+
     child.on('close', (code) => {
-      if (code === 0) resolve({ upid: `nexus-script:${Date.now()}` });
-      else reject(new Error(`script failed (exit ${code}): ${stderr.slice(0, 500)}`));
+      cleanup();
+      if (timedOut) {
+        reject(new Error(`Script timed out after ${timeoutMs}ms`));
+      } else if (code === 0) {
+        resolve({ upid: `nexus-script:${Date.now()}` });
+      } else {
+        reject(new Error(`script failed (exit ${code}): ${stderr.slice(0, 500)}`));
+      }
     });
 
     // The URL is passed to bash via stdin — it never touches an argv slot or
@@ -97,12 +142,14 @@ function pipeScriptToRemoteBash(
     //   --max-redirs 3           cap redirect chain so an attacker-controlled
     //                            mirror can't chain through metadata services
     //                            or loop the request into a timing oracle
-    //   -f -s -S -L              fail on HTTP errors, silent progress, show
-    //                            errors, follow ≤3 redirects
+    //   --max-time in curl itself is also bounded via timeoutMs above as a
+    //   belt-and-braces second layer — the AbortController covers the parent
+    //   process side, curl's own timeout covers the network side.
+    const curlMaxTimeSec = Math.ceil(timeoutMs / 1000);
     child.stdin.end(
       `set -euo pipefail\n` +
       `SCRIPT_URL=${JSON.stringify(scriptUrl)}\n` +
-      `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 -- "$SCRIPT_URL" | bash\n`,
+      `curl -fsSL --proto '=https' --proto-redir '=https' --max-redirs 3 --max-time ${curlMaxTimeSec} -- "$SCRIPT_URL" | bash\n`,
     );
   });
 }
@@ -116,10 +163,11 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { node, scriptUrl, scriptName } = (await req.json()) as {
+  const { node, scriptUrl, scriptName, timeoutMs: rawTimeoutMs } = (await req.json()) as {
     node?: string;
     scriptUrl?: string;
     scriptName?: string;
+    timeoutMs?: number;
   };
 
   if (!node || !scriptUrl || typeof node !== 'string' || typeof scriptUrl !== 'string') {
@@ -128,6 +176,15 @@ export async function POST(req: NextRequest) {
   if (!NODE_RE.test(node)) {
     return NextResponse.json({ error: 'Invalid node name' }, { status: 400 });
   }
+
+  // H8 — clamp caller-provided timeout to the policy ceiling. Default 15 min
+  // is enough for every community script we've seen; ceiling at 45 min
+  // matches EXEC_LIMITS.maxTimeoutMs for operational parity with /api/exec.
+  const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
+  const timeoutMs =
+    typeof rawTimeoutMs === 'number' && Number.isFinite(rawTimeoutMs) && rawTimeoutMs > 0
+      ? Math.min(rawTimeoutMs, EXEC_LIMITS.maxTimeoutMs)
+      : DEFAULT_TIMEOUT_MS;
 
   let parsed: URL;
   try {
@@ -180,7 +237,7 @@ export async function POST(req: NextRequest) {
   let exitCode: number | null = null;
   try {
     const address = await resolveNodeAddress(node);
-    const { upid } = await pipeScriptToRemoteBash(node, address, parsed.toString());
+    const { upid } = await pipeScriptToRemoteBash(node, address, parsed.toString(), timeoutMs);
     exitCode = 0;
     return NextResponse.json({ upid, node, scriptName: scriptName ?? null });
   } catch (err) {

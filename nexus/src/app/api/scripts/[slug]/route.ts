@@ -18,12 +18,12 @@ import {
 } from '@/lib/community-scripts';
 import { getSession } from '@/lib/auth';
 
-// Slug must match the upstream filename convention exactly: lowercase
-// letters/digits, plus dot/underscore/hyphen. No slashes — that would
-// let the request escape the json/ directory. The library already does
-// this validation; duplicating it here lets us 400 before making any
-// upstream call, saving latency on bad requests.
-const SLUG_RE = /^[a-z0-9][a-z0-9._-]*$/i;
+// Slug must match the upstream filename convention. The community-scripts
+// repo uses strict lowercase kebab-case (e.g. `adguard-home`, `ubuntu-22-04`),
+// so the regex doesn't need to allow dots, underscores, or uppercase.
+// Length capped at 63 (one DNS label) to prevent pathological inputs that
+// could bloat logs or downstream error messages.
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
 interface Ctx {
   params: Promise<{ slug: string }>;

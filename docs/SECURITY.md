@@ -273,9 +273,9 @@ mitigated via infrastructure (requires deployment from
 | H3 | Login error passthrough + SSRF-lite via host | ✓ | Host field removed; generic errors; commit `90bdd06` |
 | H4 | Proxy path segments not validated | ✓ | `invalidSegment()` in `proxmox/[...path]/route.ts` |
 | H5 | WS ticket ACL + session rebind | – | Phase 3 |
-| H6 | Zero security headers | ◐ | [`deploy/*/`](../deploy) ingress configs; must deploy to enforce |
+| H6 | Zero security headers | ✓ | Now set by Nexus itself via [`next.config.ts`](../nexus/next.config.ts) |
 | H7 | TOFU ssh host-key acceptance | – | Phase 3 (needs operator runbook for known_hosts seeding) |
-| H8 | `/api/scripts/run` no timeout / AbortSignal | – | Phase 3 |
+| H8 | `/api/scripts/run` no timeout / AbortSignal | ✓ | `AbortController` + SIGTERM→SIGKILL escalation + `curl --max-time` in [`scripts/run/route.ts`](../nexus/src/app/api/scripts/run/route.ts) |
 | H9 | No concurrency cap on run/exec | ✓ | `RATE_LIMITS.{exec,scriptsRun}.maxConcurrent`, commit `58c4ea1` |
 | H10 | Local-exec pipeline duplicated | – | Phase 3 |
 | H11 | `userHasPrivilege` fails open on transport err | ✓ | try/catch in [`permissions.ts`](../nexus/src/lib/permissions.ts), commit `2014cc4` |
@@ -285,17 +285,20 @@ mitigated via infrastructure (requires deployment from
 | # | Finding | Status |
 |---|---|---|
 | M1 | Session / PVE ticket TTL mismatch | ✓ Proactive refresh at 90 min, commit `b17920c` |
+| M2 | Session ID not rotated on login | ✓ `startSession()` deletes the pre-login sessionId from the store before issuing the new cookie |
 | M4 | `Content-Type` echoed without allow-list | ✓ commit `90bdd06` |
 | M5 | No body size cap on proxy | ✓ 10 MB, commit `90bdd06` |
 | M6 | No `Cache-Control: no-store` on responses | ✓ commit `90bdd06` |
+| M10 | ISO upload hardening | – | Phase 3 |
+| M11 | Script slug regex too permissive | ✓ Tightened to strict lowercase kebab-case, 63-char cap |
+| M12 | NUL byte in proxy path segments | ✓ Already covered by the `< 0x20` control-char check in `invalidSegment()` |
 
 ### Deferred to Phase 3
 
 - H5 (WS ticket ACL + session rebind on upgrade)
 - H7 (SSH `known_hosts` pinning, `StrictHostKeyChecking=yes`)
-- H8 (run-route timeout + AbortSignal — move through `runViaStdin`)
 - H10 (unify local + ssh exec pipelines)
-- M2, M10, M11, M12 (session rotation, ISO upload hardening, slug regex, NUL in path guards)
+- M10 (ISO upload hardening — MIME check, magic bytes, per-storage size cap)
 
 ---
 
@@ -317,3 +320,4 @@ triaged and a fix plan exists.
 | 2 docs (this file) | — | 2025-04-16 |
 | 2.1 one-shot installer + `nexus doctor` | — | 2026-04-17 |
 | 2.2 security headers → `next.config.ts`; Caddy now optional | — | 2026-04-17 |
+| 2.3 quick-win bundle: H8 timeout, M2 rotation, M11 slug, M12 verified | — | 2026-04-17 |
