@@ -239,15 +239,53 @@ fi
 # ──────────────────────────────────────────────────────────────────────────────
 step "HTTPS — Caddy reverse proxy on :443"
 
+# Auto-detect tunnels that already handle edge TLS. If any are running, the
+# default suggestion is "skip Caddy" since edge TLS + loopback HTTP is the
+# right topology for that deployment.
+tunnel_detected=""
+if pgrep -x cloudflared &>/dev/null; then
+  tunnel_detected="cloudflared (Cloudflare Tunnel / Access)"
+elif pgrep -x tailscaled &>/dev/null; then
+  tunnel_detected="tailscaled (Tailscale — can use Funnel/Serve for HTTPS)"
+fi
+
+if [[ -n "$tunnel_detected" ]]; then
+  echo "  ${DIM}Detected: ${tunnel_detected}${RESET}"
+  echo "  Your tunnel already terminates TLS at the edge. Caddy on this host"
+  echo "  would be redundant. Security headers are now applied by Nexus itself"
+  echo "  via next.config.ts, so the app is covered without a reverse proxy."
+  echo
+fi
+
 echo "  Choose TLS cert source:"
-echo "    ${BOLD}1${RESET}) Let's Encrypt via Cloudflare DNS  ${DIM}(requires domain + CF API token)${RESET}"
-echo "    ${BOLD}2${RESET}) Self-signed cert                   ${DIM}(works anywhere, browser warning)${RESET}"
-echo "    ${BOLD}3${RESET}) Skip                               ${DIM}(HTTP only)${RESET}"
-if [[ $ASSUME_YES -eq 1 ]]; then
-  tls_choice=2
-  info "[--yes] defaulting to self-signed"
+if [[ -n "$tunnel_detected" ]]; then
+  echo "    ${BOLD}1${RESET}) ${BOLD}Skip — tunnel handles edge TLS${RESET} ${DIM}(recommended for your setup)${RESET}"
+  echo "    ${BOLD}2${RESET}) Let's Encrypt via Cloudflare DNS  ${DIM}(requires domain + CF API token)${RESET}"
+  echo "    ${BOLD}3${RESET}) Self-signed cert                   ${DIM}(works anywhere, browser warning)${RESET}"
+  default_choice=1
 else
-  read -r -p "  Choice [1/2/3]: " tls_choice
+  echo "    ${BOLD}1${RESET}) Let's Encrypt via Cloudflare DNS  ${DIM}(requires domain + CF API token)${RESET}"
+  echo "    ${BOLD}2${RESET}) Self-signed cert                   ${DIM}(works anywhere, browser warning)${RESET}"
+  echo "    ${BOLD}3${RESET}) Skip                               ${DIM}(HTTP only — use if behind a tunnel)${RESET}"
+  default_choice=2
+fi
+
+if [[ $ASSUME_YES -eq 1 ]]; then
+  tls_choice=$default_choice
+  info "[--yes] defaulting to choice ${tls_choice}"
+else
+  read -r -p "  Choice [1/2/3] (default: ${default_choice}): " tls_choice
+  tls_choice=${tls_choice:-$default_choice}
+fi
+
+# Normalize: when a tunnel was detected, menu items shift. Remap back to the
+# internal keys (1=LE, 2=self-signed, 3=skip) used downstream.
+if [[ -n "$tunnel_detected" ]]; then
+  case "$tls_choice" in
+    1) tls_choice=3 ;;  # tunnel skip → internal skip
+    2) tls_choice=1 ;;  # tunnel LE   → internal LE
+    3) tls_choice=2 ;;  # tunnel SS   → internal self-signed
+  esac
 fi
 
 install_caddy_base() {
@@ -441,27 +479,48 @@ if [[ "$tls_choice" == "1" || "$tls_choice" == "2" ]]; then
   else
     fail "Caddy failed to start — check: journalctl -xeu caddy.service | tail -40"
   fi
+elif [[ -n "$tunnel_detected" ]]; then
+  ok "Skipping Caddy — $tunnel_detected handles edge TLS"
+else
+  warn "Skipped HTTPS — Nexus will serve HTTP on :3000"
+  warn "This is only safe behind a trusted tunnel (WARP, Tailscale, etc)"
+fi
 
-  # Set NODE_ENV=production so Nexus flips secure-cookie mode on the
-  # X-Forwarded-Proto: https header Caddy now sends.
-  nexus_env_file=$(systemctl show -p EnvironmentFiles --value nexus.service 2>/dev/null \
-                   | awk '{print $1}' | sed 's/(ignore_errors=.*//' | tr -d '(-)')
-  if [[ -n "$nexus_env_file" && -f "$nexus_env_file" ]]; then
-    if grep -qE '^NODE_ENV=production' "$nexus_env_file"; then
-      ok "NODE_ENV=production already set in $nexus_env_file"
-    else
-      if confirm "Set NODE_ENV=production in $nexus_env_file? (required for Secure cookies)"; then
-        run "sed -i '/^NODE_ENV=/d' '$nexus_env_file'"
-        run "echo 'NODE_ENV=production' >> '$nexus_env_file'"
-        run "systemctl restart nexus"
-        ok "NODE_ENV=production set; nexus restarted"
-      fi
-    fi
-  else
-    warn "Could not locate Nexus environment file — set NODE_ENV=production manually"
+# ── Nexus hardening that applies regardless of TLS choice ────────────────────
+# These flip on secure-cookie mode and force loopback-only binding so nothing
+# on the LAN can bypass the chosen ingress (Caddy, cloudflared, or nothing).
+
+nexus_env_file=$(systemctl show -p EnvironmentFiles --value nexus.service 2>/dev/null \
+                 | awk '{print $1}' | sed 's/(ignore_errors=.*//' | tr -d '(-)')
+
+if [[ -n "$nexus_env_file" && -f "$nexus_env_file" ]]; then
+  env_changed=0
+
+  if grep -qE '^NODE_ENV=production' "$nexus_env_file"; then
+    ok "NODE_ENV=production already set in $nexus_env_file"
+  elif confirm "Set NODE_ENV=production in $nexus_env_file? (required for Secure cookies)"; then
+    run "sed -i '/^NODE_ENV=/d' '$nexus_env_file'"
+    run "echo 'NODE_ENV=production' >> '$nexus_env_file'"
+    ok "NODE_ENV=production set"
+    env_changed=1
+  fi
+
+  if grep -qE '^HOSTNAME=127\.0\.0\.1' "$nexus_env_file"; then
+    ok "HOSTNAME=127.0.0.1 already set (loopback-only bind)"
+  elif confirm "Bind Nexus to 127.0.0.1 only? (prevents LAN bypass of the ingress)"; then
+    run "sed -i '/^HOSTNAME=/d' '$nexus_env_file'"
+    run "echo 'HOSTNAME=127.0.0.1' >> '$nexus_env_file'"
+    ok "HOSTNAME=127.0.0.1 set"
+    env_changed=1
+  fi
+
+  if [[ $env_changed -eq 1 ]]; then
+    run "systemctl restart nexus"
+    ok "nexus restarted with new env"
   fi
 else
-  warn "Skipped HTTPS step — Nexus will remain HTTP on :3000"
+  warn "Could not locate Nexus environment file via systemd"
+  warn "Manually set NODE_ENV=production and HOSTNAME=127.0.0.1 in your env file"
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -171,12 +171,18 @@ else
   warn "No TLS cert at $TLS_CERT — Nexus is HTTP-only"
 fi
 
+tunnel_present=""
+pgrep -x cloudflared &>/dev/null && tunnel_present="cloudflared"
+pgrep -x tailscaled  &>/dev/null && tunnel_present="${tunnel_present:+$tunnel_present, }tailscaled"
+
 if systemctl is-active --quiet caddy; then
   ok "Caddy service active"
 elif command -v caddy &>/dev/null; then
   warn "Caddy installed but not running"
+elif [[ -n "$tunnel_present" ]]; then
+  ok "No local Caddy — edge TLS handled by $tunnel_present"
 else
-  warn "Caddy not installed — no HTTPS reverse proxy"
+  warn "Caddy not installed and no tunnel detected — no HTTPS"
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────

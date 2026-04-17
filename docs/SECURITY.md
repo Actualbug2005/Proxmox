@@ -61,34 +61,37 @@ ingress misconfig, app regression) grants RCE.
 
 ## Trust boundaries
 
-Three layers own different parts of the stack. Each is independently
-deployable; the app has fallbacks for everything the ingress should own,
-so day-zero deployments without the full ingress are still safe.
+Three layers own different parts of the stack, but the middle layer is
+**optional**. Nexus ships security headers, body caps, path validation,
+rate limiting and audit logging at the app layer, so a deployment with
+only an edge ZTNA (Cloudflare Access, Tailscale Funnel) and no reverse
+proxy is still safe. A reverse proxy adds defence-in-depth when you have
+it; it's not a prerequisite.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Cloudflare Edge  /  Tailscale Tailnet  /  Authelia forward-auth    │
+│  Edge / ZTNA  —  Cloudflare Access, Tailscale, Authelia             │
 │  — ZTNA gatekeeper: who can reach the server at all                 │
+│  — TLS termination with a public-trusted cert (CF / LE / Funnel)    │
 │  — MFA enforcement, identity binding                                │
 │  — Default-deny for everything non-admin                            │
 └─────────────────────────────────────────────────────────────────────┘
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  Reverse proxy: Caddy / nginx / Traefik                             │
-│  — TLS termination (Let's Encrypt / Cloudflare origin cert)         │
-│  — HSTS, CSP, frame-ancestors, X-Content-Type-Options, …            │
-│  — Body size caps (12 MB general, 20 GB ISO)                        │
-│  — Rate limit (30/s general, 2/s login — coarse edge controls)      │
-│  — X-Forwarded-Proto=https → triggers Nexus's secure-cookie mode    │
-│                                                                      │
-│  CrowdSec bouncer (at this layer OR at nftables)                    │
-│  — L3/L4 drop of IPs that tripped local/community scenarios         │
+│  Reverse proxy (OPTIONAL): Caddy / nginx / Traefik                  │
+│  — Only needed for direct-LAN deployments. Skippable when Cloudflare│
+│    Tunnel, Tailscale Funnel, etc. already terminate edge TLS.       │
+│  — TLS termination (Let's Encrypt via Cloudflare DNS / self-signed) │
+│  — Belt-and-braces body caps, rate limits                           │
 └─────────────────────────────────────────────────────────────────────┘
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Nexus (Next.js 16 + Node 22)                                       │
+│  — HSTS, CSP, X-Frame-Options, X-Content-Type-Options,              │
+│    Referrer-Policy, Permissions-Policy via next.config.ts           │
+│  — Loopback bind (HOSTNAME=127.0.0.1) — no LAN bypass of ingress    │
 │  — Session management: opaque 256-bit sessionId → Redis/memory      │
 │  — CSRF double-submit HMAC (validateCsrf on every mutating route)   │
 │  — PVE ticket refresh at 90 min                                     │
@@ -98,6 +101,10 @@ so day-zero deployments without the full ingress are still safe.
 │  — Structured login logs → CrowdSec parser                          │
 │  — Asymmetric hybrid audit log for /api/exec + /api/scripts/run     │
 └─────────────────────────────────────────────────────────────────────┘
+                                 │  ↑ CrowdSec nftables bouncer
+                                 │    reads scenarios triggered by the
+                                 │    login logs above, drops IPs at L3
+                                 ▼
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -112,21 +119,23 @@ so day-zero deployments without the full ingress are still safe.
 
 ## Control ownership matrix
 
-| Concern | Ingress (primary) | Nexus (fallback) | PVE (floor) |
-|---|---|---|---|
-| TLS cert + protocol | ✓ | — | — |
-| HSTS, CSP, X-Frame-Options | ✓ | — | — |
-| Identity (who is this user?) | ✓ (ZTNA + MFA) | ✓ (PVE creds → ticket) | ✓ (PAM/PVE realm) |
-| Brute-force blocking | ✓ (CrowdSec L3 + ingress RL) | ✓ (10/5min per IP+user) | ✓ (PVE's own 1s delay) |
-| Session revocation | — (ingress session) | ✓ (store DELETE) | — |
-| Body size caps | ✓ (outer 12 MB) | ✓ (inner 10 MB) | — |
-| Path traversal | — | ✓ (segment validation) | — |
-| Content-Type allow-list | — | ✓ | — |
-| Cache-Control no-store | — | ✓ | — |
-| Command injection in exec | — | ✓ (argv isolation + stdin) | — |
-| PVE ACL enforcement | — | — | ✓ (Sys.Modify checked) |
-| Cert pinning (PVE hop) | — | ⚠ (skipped; scoped Agent) | — |
-| Audit log (exec, run) | — | ✓ (asymmetric hybrid) | — (not bypassable) |
+| Concern | Edge / ZTNA | Reverse proxy (opt.) | Nexus (app) | PVE (floor) |
+|---|---|---|---|---|
+| TLS cert + protocol | ✓ (public-trusted) | ✓ (if deployed) | — | — |
+| HSTS, CSP, X-Frame-Options | — | ✓ (if deployed) | ✓ (next.config.ts) | — |
+| Identity (who is this user?) | ✓ (ZTNA + MFA) | — | ✓ (PVE creds → ticket) | ✓ (PAM/PVE realm) |
+| Brute-force blocking | ✓ (edge RL) | — | ✓ (10/5min per IP+user) | ✓ (PVE's own 1s delay) |
+| L3/L4 IP dropping | — | — | ✓ (CrowdSec nft bouncer reads Nexus logs) | — |
+| Session revocation | — (edge session) | — | ✓ (store DELETE) | — |
+| Body size caps | ✓ (edge) | ✓ (if deployed) | ✓ (inner 10 MB) | — |
+| Loopback-only bind | — | — | ✓ (HOSTNAME=127.0.0.1) | — |
+| Path traversal | — | — | ✓ (segment validation) | — |
+| Content-Type allow-list | — | — | ✓ | — |
+| Cache-Control no-store | — | — | ✓ | — |
+| Command injection in exec | — | — | ✓ (argv isolation + stdin) | — |
+| PVE ACL enforcement | — | — | — | ✓ (Sys.Modify checked) |
+| Cert pinning (PVE hop) | — | — | ⚠ (skipped; scoped Agent) | — |
+| Audit log (exec, run) | — | — | ✓ (asymmetric hybrid) | — (not bypassable) |
 
 Every row with two ✓s is belt-and-braces. Every row where only Nexus
 appears is app-level only — that's where the ingress can't help (the
@@ -139,11 +148,23 @@ concern is specific to Nexus's business logic).
 Nexus ships with sensible defaults but several controls require operator
 decisions the application can't make for you.
 
-### 1. Deploy the ingress
+### 1. Pick an ingress topology
 
-Pick one from [`deploy/`](../deploy/) and stand it up *before* setting
-`NODE_ENV=production`. The app is safe in dev mode (no Secure cookies,
-no ZTNA) on localhost; it's not safe on a LAN without the ingress.
+Nexus binds to loopback in production (`HOSTNAME=127.0.0.1`), so *something*
+has to front it. Pick one:
+
+- **Cloudflare Access / Tailscale Funnel / Authelia** — edge terminates TLS
+  with a public-trusted cert, handles ZTNA + MFA, tunnels to loopback. No
+  local reverse proxy needed. This is the simplest path.
+- **Caddy on :443** — direct-LAN deployments. Run
+  [`./deploy/install-hardening.sh`](../deploy/install-hardening.sh) and pick
+  option 2 (Let's Encrypt via Cloudflare DNS-01) or option 3 (self-signed).
+- **Nothing** — only acceptable on an offline lab network. The app's
+  security headers, CSRF, and CrowdSec still protect it, but HSTS is
+  meaningless without HTTPS.
+
+`NODE_ENV=production` must be set in the Nexus env file regardless — this
+is what flips secure-cookie mode. The installer handles it for you.
 
 ### 2. Generate the audit keypair off-box
 
@@ -177,20 +198,22 @@ node --experimental-strip-types scripts/nexus-audit-decrypt.ts \
 
 ### 3. Set up the CrowdSec pipeline
 
-Copy [`deploy/crowdsec/parsers/s01-parse/nexus-login.yaml`](../deploy/crowdsec/parsers/s01-parse/nexus-login.yaml)
-and [`deploy/crowdsec/scenarios/nexus-bf.yaml`](../deploy/crowdsec/scenarios/nexus-bf.yaml)
-to `/etc/crowdsec/{parsers,scenarios}/`, configure log acquisition per
-[`deploy/crowdsec/acquis.yaml`](../deploy/crowdsec/acquis.yaml), install
-a bouncer per
-[`deploy/crowdsec/bouncers/README.md`](../deploy/crowdsec/bouncers/README.md).
+Run [`./deploy/install-hardening.sh`](../deploy/install-hardening.sh) —
+it drops the parser and three scenarios into `/etc/crowdsec/`, wires
+log acquisition via journalctl, installs the nftables firewall bouncer,
+and auto-allowlists your primary LAN CIDR (from `ip route`) plus loopback.
 
-Add your tailnet + LAN ranges to the allowlist so failed logins from
-you don't self-ban:
+Manual allowlist tweaks use `cscli` (note the syntax differs by version):
 
 ```bash
-sudo cscli allowlists items add --ip 100.64.0.0/10   # Tailscale CGNAT
-sudo cscli allowlists items add --ip 10.0.0.0/8       # LAN
+cscli allowlists add nexus-homelab 100.64.0.0/10   # Tailscale CGNAT
+cscli allowlists add nexus-homelab YOUR_ADMIN_IP
 ```
+
+Scenarios shipped:
+- `nexus/login-bf` — 5 fails in ~2.5 min → 5-min ban
+- `nexus/login-slowbf` — 10 fails over ~100 min → 1-hr ban
+- `nexus/credential-stuffing` — 3 distinct usernames from one IP → 12-hr ban
 
 ### 4. Rotate keys annually
 
@@ -292,3 +315,5 @@ triaged and a fix plan exists.
 | 2 app (belt-and-braces) | `90bdd06` | 2025-04-16 |
 | 2 infra (ingress templates) | `574dc0f` | 2025-04-16 |
 | 2 docs (this file) | — | 2025-04-16 |
+| 2.1 one-shot installer + `nexus doctor` | — | 2026-04-17 |
+| 2.2 security headers → `next.config.ts`; Caddy now optional | — | 2026-04-17 |
