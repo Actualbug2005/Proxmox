@@ -5,6 +5,8 @@ import { NodeCard } from '@/components/dashboard/node-card';
 import { ResourceTree } from '@/components/dashboard/resource-tree';
 import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
 import { TaskList } from '@/components/dashboard/task-list';
+import { BulkActionBar, type BulkActionRequest } from '@/components/dashboard/bulk-action-bar';
+import { useToast } from '@/components/ui/toast';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { ClusterResourcePublic } from '@/types/proxmox';
@@ -12,7 +14,44 @@ import type { ClusterResourcePublic } from '@/types/proxmox';
 export default function DashboardPage() {
   const { data: resources, isLoading, isError, refetch, dataUpdatedAt } = useClusterResources();
   const [selected, setSelected] = useState<ClusterResourcePublic | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const defaultNode = useDefaultNode();
+  const toast = useToast();
+
+  function toggleSelected(r: ClusterResourcePublic, next: boolean) {
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (next) n.add(r.id);
+      else n.delete(r.id);
+      return n;
+    });
+  }
+
+  function toggleNodeGroup(guests: ClusterResourcePublic[], next: boolean) {
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      for (const g of guests) {
+        if (next) n.add(g.id);
+        else n.delete(g.id);
+      }
+      return n;
+    });
+  }
+
+  // Resolve selected IDs back to full resources for the action bar. The
+  // cluster-resources query is the authority; if a selection references
+  // a resource that's since been removed, it's silently filtered.
+  const selectedResources = (resources ?? []).filter((r) => selectedIds.has(r.id));
+
+  // Phase 1 stub — Phase 4 replaces this with the bulk-lifecycle mutation
+  // once the API route lands. Logging intent keeps the UI end-to-end
+  // testable without the server backing yet.
+  function handleBulkAction(req: BulkActionRequest) {
+    toast.info(
+      `Bulk ${req.op}: ${selectedResources.length} selected`,
+      'Backend not yet wired — Phase 4 will connect this to /api/cluster/bulk-lifecycle.',
+    );
+  }
 
   const nodes = resources?.filter((r) => r.type === 'node') ?? [];
   const defaultNodeResource = nodes.find((n) => (n.node ?? n.id) === defaultNode) ?? nodes[0];
@@ -92,15 +131,25 @@ export default function DashboardPage() {
           {/* Main grid */}
           <div className="grid grid-cols-[280px_1fr] gap-4">
             {/* Resource tree */}
-            <div className="studio-card rounded-lg p-3">
-              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-2">
-                Resource Tree
-              </p>
-              <ResourceTree
-                resources={resources}
-                selectedId={selected?.id}
-                onSelect={setSelected}
+            <div className="space-y-2">
+              <BulkActionBar
+                selected={selectedResources}
+                onClear={() => setSelectedIds(new Set())}
+                onAction={handleBulkAction}
               />
+              <div className="studio-card rounded-lg p-3">
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 mb-2">
+                  Resource Tree
+                </p>
+                <ResourceTree
+                  resources={resources}
+                  selectedId={selected?.id}
+                  onSelect={setSelected}
+                  selectedIds={selectedIds}
+                  onToggleSelected={toggleSelected}
+                  onToggleNodeGroup={toggleNodeGroup}
+                />
+              </div>
             </div>
 
             {/* Right panel */}

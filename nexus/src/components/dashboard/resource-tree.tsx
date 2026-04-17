@@ -11,12 +11,22 @@ import {
 } from 'lucide-react';
 import { cn, cpuPercent, formatBytes } from '@/lib/utils';
 import { StatusDot } from '@/components/ui/status-dot';
+import { Checkbox, type CheckboxState } from '@/components/ui/checkbox';
 import type { ClusterResourcePublic } from '@/types/proxmox';
 
 interface ResourceTreeProps {
   resources: ClusterResourcePublic[];
   onSelect?: (resource: ClusterResourcePublic) => void;
   selectedId?: string;
+  /**
+   * Additive multi-select for bulk lifecycle. When provided, a checkbox
+   * column is rendered on guest rows (qemu/lxc) and a tri-state checkbox on
+   * each node row that covers all guests under it. Single-select via
+   * onSelect / selectedId is unaffected.
+   */
+  selectedIds?: Set<string>;
+  onToggleSelected?: (resource: ClusterResourcePublic, next: boolean) => void;
+  onToggleNodeGroup?: (guests: ClusterResourcePublic[], next: boolean) => void;
 }
 
 type GroupedResources = {
@@ -32,17 +42,19 @@ function ResourceRow({
   selected,
   onSelect,
   indent = false,
+  leading,
 }: {
   resource: ClusterResourcePublic;
   selected: boolean;
   onSelect?: (r: ClusterResourcePublic) => void;
   indent?: boolean;
+  /** Optional cell rendered before the status dot (used for the multi-select checkbox). */
+  leading?: React.ReactNode;
 }) {
   const Icon =
     resource.type === 'node' ? Server : resource.type === 'qemu' ? Monitor : Box;
 
   const cpu = cpuPercent(resource.cpu);
-  // normalise node online/offline into StatusDot vocabulary
   const dotStatus =
     resource.status === 'online'
       ? 'running'
@@ -71,35 +83,67 @@ function ResourceRow({
     </>
   );
 
-  const cls = cn(
-    'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition group',
-    indent && 'ml-5',
+  const linkCls = cn(
+    'flex-1 flex items-center gap-2 px-2 py-2 rounded-lg text-left transition group min-w-0',
     selected ? 'bg-zinc-800 text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300',
   );
 
+  const rowCls = cn(
+    'w-full flex items-center gap-1.5',
+    indent && 'ml-5',
+  );
+
+  let main: React.ReactNode;
   if (resource.type === 'qemu' && resource.node && resource.vmid) {
-    return (
-      <Link href={`/dashboard/vms/${resource.node}/${resource.vmid}`} className={cls}>
+    main = (
+      <Link href={`/dashboard/vms/${resource.node}/${resource.vmid}`} className={linkCls}>
         {inner}
       </Link>
     );
-  }
-  if (resource.type === 'lxc' && resource.node && resource.vmid) {
-    return (
-      <Link href={`/dashboard/cts/${resource.node}/${resource.vmid}`} className={cls}>
+  } else if (resource.type === 'lxc' && resource.node && resource.vmid) {
+    main = (
+      <Link href={`/dashboard/cts/${resource.node}/${resource.vmid}`} className={linkCls}>
         {inner}
       </Link>
     );
+  } else {
+    main = (
+      <button onClick={() => onSelect?.(resource)} className={linkCls}>
+        {inner}
+      </button>
+    );
   }
+
   return (
-    <button onClick={() => onSelect?.(resource)} className={cls}>
-      {inner}
-    </button>
+    <div className={rowCls}>
+      {leading}
+      {main}
+    </div>
   );
 }
 
-export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreeProps) {
+// Helper: compute the tri-state for a node's child checkbox.
+function nodeGroupState(
+  guests: ClusterResourcePublic[],
+  selectedIds: Set<string>,
+): CheckboxState {
+  if (guests.length === 0) return false;
+  const n = guests.filter((g) => selectedIds.has(g.id)).length;
+  if (n === 0) return false;
+  if (n === guests.length) return true;
+  return 'indeterminate';
+}
+
+export function ResourceTree({
+  resources,
+  onSelect,
+  selectedId,
+  selectedIds,
+  onToggleSelected,
+  onToggleNodeGroup,
+}: ResourceTreeProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const multiSelect = selectedIds !== undefined && onToggleSelected !== undefined;
 
   const grouped = resources.reduce<GroupedResources>((acc, r) => {
     if (r.type === 'node') {
@@ -132,6 +176,7 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
         const isCollapsed = collapsed.has(nodeName);
         const nodeResource = group.node;
         const children = [...group.vms, ...group.containers];
+        const groupState = multiSelect ? nodeGroupState(children, selectedIds) : false;
 
         return (
           <div key={nodeName}>
@@ -139,6 +184,7 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
               <button
                 onClick={() => toggle(nodeName)}
                 className="p-1 text-zinc-500 hover:text-zinc-300 transition"
+                aria-label={isCollapsed ? 'Expand' : 'Collapse'}
               >
                 {isCollapsed ? (
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -152,6 +198,15 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
                     resource={nodeResource}
                     selected={selectedId === nodeResource.id}
                     onSelect={onSelect}
+                    leading={
+                      multiSelect && children.length > 0 ? (
+                        <Checkbox
+                          checked={groupState}
+                          onChange={(next) => onToggleNodeGroup?.(children, next)}
+                          ariaLabel={`Select all guests on ${nodeName}`}
+                        />
+                      ) : null
+                    }
                   />
                 </div>
               ) : (
@@ -170,6 +225,16 @@ export function ResourceTree({ resources, onSelect, selectedId }: ResourceTreePr
                     selected={selectedId === r.id}
                     onSelect={onSelect}
                     indent
+                    leading={
+                      multiSelect ? (
+                        <Checkbox
+                          checked={selectedIds.has(r.id)}
+                          onChange={(next) => onToggleSelected(r, next)}
+                          ariaLabel={`Select ${r.name ?? r.id}`}
+                          className="ml-5"
+                        />
+                      ) : null
+                    }
                   />
                 ))}
               </div>
