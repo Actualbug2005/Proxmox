@@ -86,9 +86,13 @@ function isActive(pathname: string, href: string): boolean {
 
 interface SidebarProps {
   username?: string;
+  /** Drawer state for the mobile breakpoint. Ignored at lg+ where the
+   *  sidebar is always visible. */
+  open?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ username }: SidebarProps) {
+export function Sidebar({ username, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -107,8 +111,17 @@ export function Sidebar({ username }: SidebarProps) {
       // No overflow-hidden on the outer capsule: the rounded-[24px] corners
       // would otherwise clip the inner nav's scrollbar track. Each interior
       // section handles its own edge paint via the translucent dividers.
-      className="fixed top-4 left-4 bottom-4 z-40 flex w-60 flex-col
-                 liquid-glass rounded-[24px]"
+      //
+      // Mobile: slide-in drawer. Below lg we translate the capsule off-screen
+      // by default and bring it in when `open` is true. At lg+ the sidebar
+      // ignores `open` entirely and stays put.
+      className={cn(
+        'fixed top-4 left-4 bottom-4 z-40 flex w-60 flex-col',
+        'liquid-glass rounded-[24px]',
+        'transition-transform duration-300',
+        open ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)]',
+        'lg:translate-x-0',
+      )}
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-white/5 px-4 py-5">
@@ -152,6 +165,7 @@ export function Sidebar({ username }: SidebarProps) {
                   <Link
                     key={href}
                     href={href}
+                    onClick={onClose}
                     className={cn(
                       // rounded-xl for the inner pills gives a clean concentric
                       // ratio against the 24px capsule (roughly 1:2).

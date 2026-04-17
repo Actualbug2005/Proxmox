@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
-import { Sidebar } from '@/components/dashboard/sidebar';
+import { AppShell } from '@/components/dashboard/app-shell';
 import { CommandPalette } from '@/components/dashboard/command-palette';
 import { JobStatusBar } from '@/components/script-jobs/JobStatusBar';
 
@@ -15,11 +15,9 @@ import { JobStatusBar } from '@/components/script-jobs/JobStatusBar';
  * Geometry (Apple Liquid Glass HIG):
  *   - No wrapper bg — the body's radial gradients feed the sidebar's
  *     backdrop-filter. Painting a colour here would flatten the glass.
- *   - pl-[272px] reserves 16px gap + 240px capsule + 16px breathing on
- *     the left so content clears the floating sidebar.
- *   - pr-4 py-4 mirror the same gutter on the other three sides.
- *   - transition-all duration-300 makes the padding animate gracefully if
- *     a future collapse/expand feature changes the sidebar width.
+ *   - At lg+ pl-[272px] reserves 16px gap + 240px capsule + 16px breathing
+ *     on the left so content clears the floating sidebar; below lg the
+ *     sidebar hides behind a hamburger drawer (see AppShell).
  */
 export default async function AppShellLayout({
   children,
@@ -35,11 +33,7 @@ export default async function AppShellLayout({
        * No fixed-position DOM nodes needed — the glow is painted by `body`
        * and fixed via background-attachment, so it stays spatially stable
        * as tables scroll. */}
-      <Sidebar username={session.username} />
-
-      <main className="pl-[272px] pr-4 py-4 min-h-screen w-full transition-all duration-300">
-        {children}
-      </main>
+      <AppShell username={session.username}>{children}</AppShell>
 
       <CommandPalette />
 
