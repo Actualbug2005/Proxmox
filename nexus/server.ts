@@ -9,6 +9,7 @@
  */
 import { createServer } from 'node:http';
 import next from 'next';
+import { startScheduler } from './src/lib/scheduler';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -170,5 +171,18 @@ app.prepare().then(() => {
 
   httpServer.listen(port, () => {
     console.log(`▲ Next.js + WS relay ready on http://localhost:${port}`);
+  });
+
+  // Scheduler tick. Phase 1 stub: log the fire and advance lastFiredAt so we
+  // can verify the loop end-to-end without Phase 2's executor. Phase 2 swaps
+  // this handler for a real runScriptJob() call.
+  startScheduler(async (job) => {
+    console.info('[scheduler] would fire:', {
+      id: job.id,
+      scriptName: job.scriptName,
+      node: job.node,
+      owner: job.owner,
+    });
+    return { jobId: undefined };
   });
 });
