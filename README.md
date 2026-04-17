@@ -18,7 +18,7 @@ A fast, high-contrast web UI for [Proxmox VE](https://www.proxmox.com/) that run
 - **Keyboard-first** — global `⌘K` command palette for jump-to-any-resource.
 - **Live telemetry** — RRD charts for node / VM / CT, TanStack Query polling with stale-while-revalidate.
 - **Embedded terminal** — `xterm.js` wired to the PVE VNC websocket proxy; no separate app.
-- **Community Scripts marketplace** — categorised index fetched from [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE), with per-script manifest detail, dynamic option forms, CSRF-protected SSH execution, and structured 502/504 error handling.
+- **Community Scripts marketplace** — two-pane catalogue backed by the upstream [PocketBase public API](https://db.community-scripts.org) (migrated from the old per-slug JSON files), per-script detail with install-method tabs, logo, credentials, severity-coloured notes, and best-effort env overrides (hostname, CT ID, CPU/RAM/disk, storage, password). Execution is **fire-and-forget**: the server spawns the script detached, returns a `jobId` immediately (so Cloudflare Tunnel's 100 s cap never matters), and a floating **bottom-right status bar** plus a live-log drawer track progress with an Abort button. CSRF-protected + structured upstream error handling on every endpoint.
 - **Cluster-aware** — pulls from `/cluster/resources`; single pane for multi-node deployments.
 - **Type-safe wire layer** — every Proxmox `0|1` boolean passes through a nominally branded codec; the UI works in native `boolean` only. Raw `0`/`1` literals are compile-errors outside the codec.
 
@@ -89,6 +89,10 @@ const encodeFirewallOptions = (opts: Partial<FirewallOptionsPublic>) =>
 
 The brand makes raw `0`/`1` literal assignment a compile error anywhere outside the codec. See the `refactor(core): enforce branded PveBool lockdown` commit for the enforcement mechanism.
 
+### Script execution
+
+Community scripts can take 2–10 minutes to finish, far longer than any reasonable edge-proxy read timeout (Cloudflare Tunnel: 100 s). So `/api/scripts/run` doesn't await the child — it spawns an `ssh root@<node> bash -s` (or local `bash` when target == nexus host) detached, tees stdout+stderr to both an on-disk log (`/tmp/nexus-script-logs/<jobId>.log`) and an in-memory 64 KB ring, and returns `{jobId}` in <1 s. Status + tail live in `src/lib/script-jobs.ts`; the UI polls `/api/scripts/jobs/[jobId]` every 2 s until the child closes, then GC's the job record after 24 h. `DELETE /api/scripts/jobs/[jobId]` sends SIGTERM for user-initiated aborts. Caller-supplied env overrides are filtered through a whitelist + value regex before ever hitting the bash preamble.
+
 ### Auth
 
 - User logs in with PVE credentials (PAM/PVE realms). The server-side handler calls `POST /access/ticket`, stashes the ticket + CSRF token in the session store, and returns only the opaque session id to the browser as an `httpOnly` cookie.
@@ -140,13 +144,15 @@ To update: re-run the install script. It's idempotent — fast-forwards to `orig
 
 ## Design system
 
-**Hybrid "Liquid Glass + Solid Industrial"** — the chrome (sidebar) uses Apple-style Liquid Glass (backdrop-filter blur against an aurora mesh), while the workspace (cards, tables, rows) stays opaque zinc-900 for data readability. Key properties:
+**"Studio Dark"** — monochrome, high-contrast, in the Vercel/Linear lineage. Two distinct materials give the app a clear chrome-vs-content hierarchy without any GPU-animated compositing:
 
-- **Aurora mesh background** — three oversized colour nodes (violet, midnight blue, teal) blurred to 150px with `mix-blend-mode: screen`, plus an SVG fractalNoise overlay at `mix-blend-mode: overlay` for matte texture and anti-banding.
-- **Floating sidebar capsule** — `fixed top-4 left-4 bottom-4`, `rounded-[24px]`, concentric inner pills at `rounded-xl`.
-- **Accessibility** — `@media (prefers-reduced-transparency: reduce)` collapses the glass to solid zinc-900 and hides the aurora. Focus rings (`focus-visible:ring-2 ring-orange-500`) on every interactive element.
-- **Workspace surfaces** — `bg-zinc-900`, `border-zinc-800/60`, `rounded-lg` (8px). No backdrop-blur in the content layer.
-- **Typography** — Geist Sans/Mono, 11px section labels, 12px meta, 14px body, tabular-nums on all numeric columns.
+- **Canvas** — zinc-950 (`#09090b`) anchored by a single static indigo-700 radial glow at 15% alpha from the top-center. `background-attachment: fixed` keeps it stationary while long tables scroll; no aurora mesh, no noise overlay.
+- **Workspace cards** (`.studio-card`) — translucent zinc-900 at 40% alpha over the canvas, 1px border at 5% white with an 8% top-edge "light catch". No `backdrop-filter` in the content layer — safe to stack dozens per page. Nested cards auto-drop their fill to transparent to avoid compound-alpha darkening.
+- **Chrome / sidebar** (`.liquid-glass`) — the single place `backdrop-filter: blur(40px) saturate(200%)` lives, over a translucent zinc layer. Gives the sidebar an OS-shell feel floating above the workspace.
+- **Accessibility** — `@media (prefers-reduced-transparency: reduce)` collapses both materials to solid zinc-900 with opaque borders. The indigo glow stays (it's colour, not filter).
+- **Typography** — Geist Sans/Mono. Fixed scale: 11px all-caps section labels only, 12px meta, 13px tabular data, 14px body, 16/18/24px headings. `font-variant-numeric: tabular-nums` on every numeric column.
+- **Radius** — 8px (`rounded-lg`) on every container, enforced `!important` on `.studio-card` to out-rank stray `rounded-xl` / `rounded-2xl` utilities.
+- **Scrollbar** — 8px etched-glass thumb (translucent white, 10% → 20% on hover); never a native OS scrollbar.
 
 ## Layout
 
@@ -162,14 +168,16 @@ nexus/
 │   │   │   └── scripts/              # Community Scripts marketplace
 │   │   ├── api/
 │   │   │   ├── proxmox/[...path]/    # Dynamic proxy → PVE
-│   │   │   ├── scripts/              # GET index, GET [slug] manifest
-│   │   │   └── scripts/run/          # POST execution (SSH pipeline)
+│   │   │   ├── scripts/              # GET index (PocketBase), GET [slug] manifest
+│   │   │   ├── scripts/run/          # POST — fire-and-forget, returns {jobId}
+│   │   │   └── scripts/jobs/         # GET list, GET/[jobId] detail+log, DELETE abort
 │   │   ├── login/
 │   │   └── globals.css               # Design tokens + aurora mesh + Liquid Glass
 │   ├── components/               # Domain UI (firewall-options-tab, backup-job-editor, …)
 │   ├── lib/
 │   │   ├── proxmox-client.ts     # The wire codec + typed API surface
-│   │   ├── community-scripts.ts  # Upstream fetcher + ScriptManifest/Category/Option types
+│   │   ├── community-scripts.ts  # PocketBase fetcher + ScriptManifest/Category types
+│   │   ├── script-jobs.ts        # In-memory job registry + /tmp log files + env whitelist
 │   │   ├── auth.ts               # PVE ticket acquisition + session
 │   │   ├── csrf.ts               # HMAC double-submit
 │   │   ├── session-store.ts      # Memory / Redis backends
