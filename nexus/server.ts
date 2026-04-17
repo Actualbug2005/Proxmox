@@ -11,8 +11,11 @@ import { createServer } from 'node:http';
 import next from 'next';
 // Node's --experimental-strip-types needs explicit extensions on relative
 // imports (no webpack/Next.js resolver in the custom-server entry point).
-import { startScheduler } from './src/lib/scheduler.ts';
+import { startSchedulerSource, type SchedulerSource } from './src/lib/scheduler.ts';
 import { runScriptJob } from './src/lib/run-script-job.ts';
+import * as scheduledJobsStore from './src/lib/scheduled-jobs-store.ts';
+import * as chainsStore from './src/lib/chains-store.ts';
+import { runChain } from './src/lib/run-chain.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -55,14 +58,43 @@ export function createRelaySession(params: {
   ticketPort: string;
   pveAuthCookie: string;
   username: string;
+  /**
+   * Backend protocol we're bridging.
+   *
+   *   'shell' — PVE termproxy (xterm over WS). After the WS upgrade, the
+   *             backend expects the FIRST frame to be "user:ticket\n"
+   *             (see proxmox-termproxy/src/main.rs::read_ticket()).
+   *             Without it, termproxy hangs until its own timeout.
+   *
+   *   'vnc'   — PVE vncproxy (QEMU/LXC graphical console over WS). The
+   *             vncticket query param has already authenticated the
+   *             connection by the time the WS upgrade completes, and
+   *             the raw RFB (VNC) protocol starts on the first byte
+   *             the guest sends. Writing "user:ticket\n" here would
+   *             corrupt the RFB handshake and make noVNC fail with a
+   *             "server rejected version" error.
+   *
+   *   Default: 'shell' for backward compat with termproxy callers that
+   *   predate the VNC branch.
+   */
+  mode?: 'shell' | 'vnc';
 }): Promise<void> {
   return new Promise((resolve, reject) => {
-    const { sessionId, pveHost, pvePort, pveWsPath, ticket, ticketPort, pveAuthCookie, username } = params;
+    const {
+      sessionId,
+      pveHost,
+      pvePort,
+      pveWsPath,
+      ticket,
+      ticketPort,
+      pveAuthCookie,
+      username,
+      mode = 'shell',
+    } = params;
 
-    // Connect through pveproxy's vncwebsocket endpoint (not termproxy which
-    // returns 501, and not raw TCP which is not a WebSocket at all).
-    // pveproxy validates the vncticket query param then bridges to the local
-    // termproxy TCP port.
+    // Connect through pveproxy's vncwebsocket endpoint — pveproxy validates
+    // the vncticket query param then bridges to the local termproxy or
+    // vncproxy TCP port depending on which API produced the ticket.
     const pveWsUrl = `wss://${pveHost}:${pvePort}${pveWsPath}?port=${ticketPort}&vncticket=${encodeURIComponent(ticket)}`;
 
     // Scoped TLS bypass for PVE's self-signed cert. pveHost is loaded from
@@ -85,10 +117,11 @@ export function createRelaySession(params: {
     };
 
     pveWs.on('open', () => {
-      // pveproxy is a transparent WS<->TCP bridge. termproxy (Rust) expects the
-      // first line to be "user:ticket\n" (see proxmox-termproxy/src/main.rs
-      // read_ticket()). Without this exact format, termproxy times out.
-      pveWs.send(`${username}:${ticket}\n`);
+      if (mode === 'shell') {
+        // termproxy protocol preamble — see the mode JSDoc above for why
+        // this is required here but MUST be skipped in VNC mode.
+        pveWs.send(`${username}:${ticket}\n`);
+      }
       relaySessions.set(sessionId, session);
       resolve();
     });
@@ -180,7 +213,17 @@ app.prepare().then(() => {
   // was enforced at schedule-create time; the runner validates scriptUrl
   // and node name again as defense in depth.
   const DEFAULT_SCHED_TIMEOUT_MS = 15 * 60 * 1000;
-  startScheduler(async (job) => {
+
+  const scriptsSource: SchedulerSource<scheduledJobsStore.ScheduledJob> = {
+    name: 'scripts',
+    list: () => scheduledJobsStore.list(),
+    getId: (j) => j.id,
+    getSchedule: (j) => j.schedule,
+    isEnabled: (j) => j.enabled,
+    getLastFiredAt: (j) => j.lastFiredAt,
+    onFired: (id, at, result) => scheduledJobsStore.markFired(id, result.jobId, at),
+  };
+  startSchedulerSource(scriptsSource, async (job) => {
     const result = await runScriptJob({
       user: job.owner,
       node: job.node,
@@ -192,5 +235,22 @@ app.prepare().then(() => {
       timeoutMs: job.timeoutMs ?? DEFAULT_SCHED_TIMEOUT_MS,
     });
     return { jobId: result.jobId };
+  });
+
+  // Chain scheduler — independent source so its dedup/tick state doesn't
+  // entangle with single-script schedules. `runChain` is fire-and-forget
+  // at the caller level; the handler just kicks it off and returns.
+  const chainsSource: SchedulerSource<chainsStore.Chain> = {
+    name: 'chains',
+    list: () => chainsStore.list(),
+    getId: (c) => c.id,
+    getSchedule: (c) => c.schedule,
+    isEnabled: (c) => c.enabled,
+    getLastFiredAt: (c) => c.lastFiredAt,
+    onFired: (id, at) => chainsStore.markFired(id, at),
+  };
+  startSchedulerSource(chainsSource, async (chain) => {
+    runChain(chain);
+    return {};
   });
 });

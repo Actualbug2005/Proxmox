@@ -277,4 +277,14 @@ export const RATE_LIMITS = {
    * prevents a runaway client from filling the in-memory registry.
    */
   bulkLifecycle: { limit: 10, windowMs: 60_000 },
+
+  /**
+   * /api/scripts/chains — CRUD + ad-hoc /run for script chains. A chain
+   * is fundamentally "fire N scripts in sequence", so the scriptsRun
+   * bucket already caps the real expensive surface (per-step runScriptJob
+   * calls). This is a separate, tighter bucket on the orchestration
+   * surface so a client can't spam chain creates/runs to inflate the
+   * stored state file or pile up in-flight runs.
+   */
+  scriptsChains: { limit: 10, windowMs: 60_000 },
 } as const;
