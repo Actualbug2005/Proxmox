@@ -93,8 +93,9 @@ export function getRenewalFailureCount(): number {
  */
 async function renewPVETicket(
   session: PVEAuthSession,
+  fetcher: typeof pveFetch = pveFetch,
 ): Promise<PVETicketResponse> {
-  const res = await pveFetch(
+  const res = await fetcher(
     `https://${session.proxmoxHost}:8006/api2/json/access/ticket`,
     {
       method: 'POST',
@@ -129,6 +130,7 @@ async function renewPVETicket(
 export async function refreshPVESessionIfStale(
   sessionId: string,
   session: PVEAuthSession,
+  fetcher: typeof pveFetch = pveFetch,
 ): Promise<PVEAuthSession> {
   const now = Date.now();
   const age = now - session.ticketIssuedAt;
@@ -147,7 +149,7 @@ export async function refreshPVESessionIfStale(
   }
 
   try {
-    const fresh = await renewPVETicket(session);
+    const fresh = await renewPVETicket(session, fetcher);
     const updated: PVEAuthSession = {
       ...session,
       ticket: fresh.ticket,

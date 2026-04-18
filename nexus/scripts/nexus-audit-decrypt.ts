@@ -84,7 +84,13 @@ function decryptEnvelope(privateKeyPem: Buffer, cipherB64: string): string {
     throw new Error(`Unexpected AES key length ${aesKey.length}, expected ${AES_KEY_BYTES}`);
   }
 
-  const decipher = createDecipheriv('aes-256-gcm', aesKey, iv);
+  // Pin the GCM auth-tag length to AUTH_TAG_BYTES so a truncated tag can't
+  // pass verification. The producer in src/lib/exec-audit.ts uses the same
+  // constant; without this option the decipher would accept tags shorter
+  // than 16 bytes and an attacker could forge entries (CWE-310).
+  const decipher = createDecipheriv('aes-256-gcm', aesKey, iv, {
+    authTagLength: AUTH_TAG_BYTES,
+  });
   decipher.setAuthTag(authTag);
   const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   return plaintext.toString('utf8');
@@ -114,7 +120,10 @@ async function main() {
       process.stdout.write(JSON.stringify({ id: entry.id, cmd: plaintext }) + '\n');
       if (args.entryId) return; // single-entry mode: stop after match
     } catch (err) {
-      console.error(`decrypt failed for id=${entry.id}:`, err instanceof Error ? err.message : err);
+      // Use %s placeholders (not template-string concat) so externally
+      // sourced values can't be interpreted as printf format specifiers
+      // (semgrep CWE-134).
+      console.error('decrypt failed for id=%s: %s', entry.id, err instanceof Error ? err.message : String(err));
     }
   }
   if (args.entryId) {

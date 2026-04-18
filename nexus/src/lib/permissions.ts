@@ -55,17 +55,20 @@ export function getPermissionProbeErrorCount(): number {
  * with `.catch(() => true)` for "resilience", they can still exploit it,
  * but at least nothing this function does will throw into the caller's
  * catch block and silently fail open.
+ *
+ * `fetcher` defaults to the real `pveFetch`; tests inject a stub.
  */
 export async function userHasPrivilege(
   session: PVEAuthSession,
   path: string,
   privilege: string,
+  fetcher: typeof pveFetch = pveFetch,
 ): Promise<boolean> {
   const qs = new URLSearchParams({ path, userid: session.username }).toString();
   const url = `https://${session.proxmoxHost}:8006/api2/json/access/permissions?${qs}`;
 
   try {
-    const res = await pveFetch(url, {
+    const res = await fetcher(url, {
       headers: { Cookie: `PVEAuthCookie=${session.ticket}` },
     });
     if (res.status >= 500) {
