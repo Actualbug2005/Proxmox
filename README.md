@@ -19,8 +19,12 @@ A fast, high-contrast web UI for [Proxmox VE](https://www.proxmox.com/) that run
 - **Live telemetry** — RRD charts for node / VM / CT, TanStack Query polling with stale-while-revalidate.
 - **Embedded terminal** — `xterm.js` wired to the PVE VNC websocket proxy; no separate app.
 - **Community Scripts marketplace** — two-pane catalogue backed by the upstream [PocketBase public API](https://db.community-scripts.org) (migrated from the old per-slug JSON files), per-script detail with install-method tabs, logo, credentials, severity-coloured notes, and best-effort env overrides (hostname, CT ID, CPU/RAM/disk, storage, password). Execution is **fire-and-forget**: the server spawns the script detached, returns a `jobId` immediately (so Cloudflare Tunnel's 100 s cap never matters), and a floating **bottom-right status bar** plus a live-log drawer track progress with an Abort button. CSRF-protected + structured upstream error handling on every endpoint.
+- **Bulk operations** — pick a selection of VMs/CTs in any dashboard table, fire a start/stop/shutdown/reboot/snapshot batch at up to 3 concurrent, and watch the per-item progress (with UPID links back to PVE's task log) stream in a floating progress panel until every item hits a terminal state.
+- **Script chains** — compose ordered sequences of Community Scripts, pick `halt-on-failure` or `continue-on-failure`, run ad-hoc or on a 5-field cron. Persisted, scheduler-fired, and auto-disabled after 5 consecutive failed fires (flip back on in the UI once you've fixed the root cause).
 - **Cluster-aware** — pulls from `/cluster/resources`; single pane for multi-node deployments.
 - **Type-safe wire layer** — every Proxmox `0|1` boolean passes through a nominally branded codec; the UI works in native `boolean` only. Raw `0`/`1` literals are compile-errors outside the codec.
+- **Branded identifiers** — VM ids, node names, PVE userids, session tickets, CSRF tokens, and batch ids all carry phantom-tag brands so field-swap bugs (e.g. passing a `Userid` where a `NodeName` was expected) fail at `tsc` instead of at runtime.
+- **Discriminated state machines** — bulk items, chain step runs, and PVE tasks are discriminated unions; the compiler refuses illegal states like a `pending` row with a `finishedAt`, a `success` row with no UPID, or a `running` task with an `exitstatus`.
 
 ## Quick install
 
@@ -49,9 +53,14 @@ After it finishes: `http://<your-pve-ip>:3000` — log in with any PVE credentia
 |---|---|---|
 | `PROXMOX_HOST` | yes | Host PVE is reachable at (default: `localhost` since Nexus runs on the host) |
 | `JWT_SECRET` | yes | Opaque session-cookie signer; auto-generated 36-byte base64 |
-| `NODE_TLS_REJECT_UNAUTHORIZED` | yes | Set to `0` so the app can talk to PVE's self-signed cert at `:8006` |
 | `PORT` | no | Listen port (default `3000`) |
 | `REDIS_URL` | no | Enable ioredis-backed session store for multi-instance / HA deployments; without it, sessions live in-memory and reset on restart |
+| `NEXUS_SECURE_COOKIES` | no | Set to `false` to serve session cookies without the `Secure` flag when operating over plain HTTP on a trusted LAN. Defaults to `true` in production, `false` in dev. |
+| `NEXUS_DATA_DIR` | no | On-disk home for persisted state (scheduled-jobs.json, scheduled-chains.json). Defaults to `$TMPDIR/nexus-data` — override to a durable path in production. |
+| `NEXUS_VERSION_FILE` | no | Path the version/health endpoints read the running SemVer from. Defaults to `/opt/nexus/current/VERSION` (baked in by the release tarball). |
+| `NEXUS_REPO` | no | `owner/repo` for the GitHub release-check probe. Defaults to `Actualbug2005/Proxmox`. |
+
+TLS verification for PVE's self-signed cert is handled *inside* the `pveFetch` helper (scoped `undici.Agent`), so `NODE_TLS_REJECT_UNAUTHORIZED=0` is **no longer set process-wide** — outbound calls to anything other than PVE still validate certs normally.
 
 Examples for Redis:
 
@@ -97,6 +106,20 @@ Community scripts can take 2–10 minutes to finish, far longer than any reasona
 
 - User logs in with PVE credentials (PAM/PVE realms). The server-side handler calls `POST /access/ticket`, stashes the ticket + CSRF token in the session store, and returns only the opaque session id to the browser as an `httpOnly` cookie.
 - Double-submit CSRF: a non-httpOnly companion cookie (`nexus_csrf`) holds an HMAC-SHA256 of `sessionId`; the browser echoes it in the `X-Nexus-CSRF` header on mutations. Validated server-side with `timingSafeEqual`.
+- **Ticket refresh & back-off**: every authenticated call checks ticket age and proactively re-auths against PVE at 90 min (well before the ~2 h expiry). A failed renewal stamps a 30 s back-off so a transiently-broken PVE doesn't get hammered on every request.
+- **Session rotation on login**: any pre-existing `nexus_session` cookie is invalidated in the store before a new sessionId is issued — blocks session-fixation even if an attacker plants a cookie pre-auth.
+
+### Route middleware — `src/lib/route-middleware.ts`
+
+Every authenticated API route composes through `withAuth` / `withCsrf` HOFs so the auth preamble can't be forgotten:
+
+```ts
+export const POST = withCsrf(async (req, { session, sessionId }) => {
+  // session is a fully-validated PVEAuthSession — branded fields and all
+});
+```
+
+The handler signature *requires* `ctx.session`, so omitting the wrapper is a compile error. `withAuth` is the read-only variant for GETs (no CSRF check — GETs are safe by definition). Three routes intentionally stay hand-rolled — `auth/login` (creates the session), `auth/logout` (works even without a session), and `proxmox/[...path]` (multi-verb handler with custom refresh + response helper).
 
 ## Development
 
@@ -122,7 +145,7 @@ Built on Node's native `node:test` runner via `tsx` loader — no Jest/Vitest in
 npm test
 ```
 
-Current coverage focuses on the wire codec (round-trip, undefined-passthrough, mutation guarantees, idempotence on already-decoded booleans).
+**~220 tests across ~50 suites** covering: the wire codec, CSRF double-submit, PVE ticket renewal + back-off, permission probe fail-closed paths, exec-audit GCM envelope round-trips, remote-shell node-name injection guards, rate-limit token buckets + slot semaphores, brand parsers (accept/reject matrix), bulk-op discriminated transitions, chain-store JSON migration sanitiser, chain runner halt-on-failure vs continue semantics, cluster-pressure recent-failure collection, scheduler tick dedup + auto-disable, and the community-scripts PocketBase fetcher.
 
 ### Type check
 

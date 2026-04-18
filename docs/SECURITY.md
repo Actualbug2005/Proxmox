@@ -231,6 +231,16 @@ At minimum:
   bursts mean something.
 - `cscli decisions list` — any active bans → review the source IP.
 - `/var/log/nexus/exec.jsonl` — periodic grep for unexpected exec calls.
+- **`GET /api/system/health`** (auth-gated) — surfaces the silent-failure
+  counters the audit flagged: `counters.renewalFailures`,
+  `counters.permissionProbeErrors`, `counters.auditWriteFailures`,
+  `counters.schedulerFireFailures`, plus `session.backend` (flips from
+  `redis` → `memory` if the Redis auto-fallback ever fires). Scrape at
+  30–60 s and alert on any non-zero delta. Structured log lines with
+  stable event names back each counter:
+  `event=pve_renewal_failed`, `event=permission_probe_error`,
+  `event=exec_audit_write_failed`, `event=scheduler_fire_failed`,
+  `event=session_store_fallback`, `event=scheduler_auto_disabled`.
 
 ---
 
@@ -247,6 +257,47 @@ At minimum:
 | **Audit private key** | Offline machine, yubikey PIV, password manager | the running PVE host, any server |
 | Audit public key | `/etc/nexus/audit-pubkey.pem` | git is fine — public key is public |
 | Authelia / Cloudflare Access secrets | Per ingress stack's own secret store | the Nexus process |
+
+---
+
+## Compile-time guards (app layer)
+
+Two mechanisms catch whole classes of bug before runtime:
+
+### 1. Route middleware (`withAuth` / `withCsrf`)
+
+Every mutating route composes through `withCsrf`; every authenticated
+read uses `withAuth`. The handler signature requires `ctx.session`,
+so a route that "forgot" the CSRF check doesn't compile. Search the
+tree for hand-rolled `getSession() + validateCsrf()` — the only three
+routes that legitimately bypass this pattern are `auth/login`,
+`auth/logout`, and the multi-verb `proxmox/[...path]` proxy; all
+other paths go through the HOFs.
+
+### 2. Branded primitives (`@/types/brands`)
+
+Nominal brands on the values that trust enters through. Each brand has
+a single sanctioned parser; any `as Brand` cast without going through
+the parser is a review smell.
+
+| Brand | Parser validates | Used on |
+|---|---|---|
+| `SessionTicket` | non-empty, ≤ 4 KB | `PVEAuthSession.ticket` (raw PVE ticket string) |
+| `PveCsrfToken` | non-empty, ≤ 512 B | `PVEAuthSession.csrfToken` (PVE's own CSRF, version-flexible format) |
+| `CsrfToken` | 64 lowercase hex | Nexus double-submit cookie (HMAC-SHA-256 of sessionId) |
+| `Userid` | `user@realm` shape | `PVEAuthSession.username` |
+| `VmId` | int in [1..999_999_999] | VM / CT ids on every per-guest route |
+| `NodeName` | same regex as SSH injection guard | node segment of every per-node call |
+| `BatchId` | UUID v4 | Bulk-lifecycle batch ids |
+| `Slug` | lowercase kebab-case, ≤ 63 chars | Community-Script slug on `/api/scripts/[slug]` |
+| `SafeRelPath` | strips leading `/`, forbids `..` segments | NAS browse / download sub-paths |
+| `CronExpr` | validated by `lib/cron-match.validateCron` | schedule / chain schedule expressions |
+
+`SessionTicket` / `PveCsrfToken` / `Userid` are re-parsed on every PVE
+response (login, ticket renewal) so a behaviour change or MITM can't
+sneak a malformed value into the session store — parse failures fall
+back to the renewal-failure path (stale session returned, back-off
+stamped, failure counter incremented).
 
 ---
 
@@ -312,12 +363,16 @@ triaged and a fix plan exists.
 
 ## Change history
 
-| Phase | Commits | Date |
-|---|---|---|
-| 1 (critical fixes) | `2014cc4` `42c78d2` `58c4ea1` `b17920c` | 2025-04-16 |
-| 2 app (belt-and-braces) | `90bdd06` | 2025-04-16 |
-| 2 infra (ingress templates) | `574dc0f` | 2025-04-16 |
-| 2 docs (this file) | — | 2025-04-16 |
-| 2.1 one-shot installer + `nexus doctor` | — | 2026-04-17 |
-| 2.2 security headers → `next.config.ts`; Caddy now optional | — | 2026-04-17 |
-| 2.3 quick-win bundle: H8 timeout, M2 rotation, M11 slug, M12 verified | — | 2026-04-17 |
+| Phase | Description | Release | Date |
+|---|---|---|---|
+| 1 | Critical fixes: global-TLS bypass, exec caps, curl redirect-follow, ticket refresh | — | 2025-04-16 |
+| 2 app | Belt-and-braces: security headers, body caps, content-type allow-list, cache-control | — | 2025-04-16 |
+| 2 infra | Ingress templates (CrowdSec parsers, Caddy config) | — | 2025-04-16 |
+| 2 docs | This file | — | 2025-04-16 |
+| 2.1 | One-shot installer + `nexus doctor` health probe | — | 2026-04-17 |
+| 2.2 | Security headers moved to `next.config.ts`; Caddy demoted to optional | — | 2026-04-17 |
+| 2.3 | Quick-win bundle: H8 exec timeout, M2 session rotation, M11 slug tightening | — | 2026-04-17 |
+| A–H | Codebase audit remediation: silent-failure counters, 401 back-off (H2), probe-error differentiation (H5), Redis auto-fallback (H9), critical-primitive test coverage | v0.4.5 – v0.7.0 | 2026-04-17 |
+| 0.7.x | Tier-4 cleanup: route middleware (`withAuth`/`withCsrf`), `useCsrfMutation` hook, POLL_INTERVALS centralisation, branded phantom types (`VmId`/`NodeName`/`Userid`/`BatchId`/`Slug`/`SafeRelPath`), scored-target discriminated union | v0.7.1 – v0.8.0 | 2026-04-17 |
+| 0.8.x | Code hygiene: full lint-warning sweep, severity colour-token migration (238 sites), `BulkItem` / `ChainStepRun` / `PVETask` discriminated unions with JSON-migration sanitiser, bundle audit + dead-type trim | v0.8.1 – v0.8.6 | 2026-04-18 |
+| 0.9.x | Brand adoption on `PVEAuthSession.{ticket, csrfToken, username}` with parse-on-ingress on login + renewal; eight additional routes migrated to `withAuth`/`withCsrf`; `CsrfToken` vs `PveCsrfToken` brand split (hotfix — PVE's CSRFPreventionToken format ≠ Nexus's 64-hex shape, conflating them was breaking all logins) | v0.9.0 – v0.9.2 | 2026-04-18 |
