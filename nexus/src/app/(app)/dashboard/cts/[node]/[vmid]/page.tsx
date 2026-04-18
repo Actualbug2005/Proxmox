@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { cpuPercent, formatBytes, memPercent, formatUptime, cn } from '@/lib/utils';
@@ -93,7 +94,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
   const { data: status, isLoading: statusLoading } = useQuery({
     queryKey: ['ct', node, vmid, 'status'],
     queryFn: () => api.containers.status(node, vmid),
-    refetchInterval: 5_000,
+    refetchInterval: POLL_INTERVALS.guestStatus,
   });
 
   const { data: config, isLoading: configLoading } = useQuery({
@@ -105,7 +106,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
     queryKey: ['ct', node, vmid, 'tasks'],
     queryFn: () => api.nodes.tasks(node),
     select: (data) => data.filter((t) => t.id === String(vmid)).slice(0, 10),
-    refetchInterval: 10_000,
+    refetchInterval: POLL_INTERVALS.guestTasks,
   });
 
   const invalidate = () => {

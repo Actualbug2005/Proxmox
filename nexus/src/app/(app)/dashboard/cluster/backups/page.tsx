@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -74,7 +75,7 @@ export default function BackupsPage() {
     queries: nodeStoragePairs.map(({ node, storage }) => ({
       queryKey: ['backups', 'files', node, storage],
       queryFn: () => api.backups.files(node, storage),
-      refetchInterval: 30_000,
+      refetchInterval: POLL_INTERVALS.config,
     })),
   });
 
@@ -97,7 +98,7 @@ export default function BackupsPage() {
   const { data: jobs, isLoading: loadingJobs } = useQuery({
     queryKey: ['backups', 'jobs'],
     queryFn: () => api.backups.jobs.list(),
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
 
   const [deleteTarget, setDeleteTarget] = useState<FileWithLocation | null>(null);

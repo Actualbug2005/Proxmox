@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -149,7 +150,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
   const { data: snapshots, isLoading } = useQuery({
     queryKey: ['snapshot', kind, node, vmid],
     queryFn: () => client.list(node, vmid),
-    refetchInterval: 15_000,
+    refetchInterval: POLL_INTERVALS.services,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['snapshot', kind, node, vmid] });

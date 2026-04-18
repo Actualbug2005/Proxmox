@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
 import { Server, ShieldCheck, ShieldAlert, HeartPulse, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,7 @@ export function ClusterStatusPanel() {
   const { data, isLoading } = useQuery({
     queryKey: ['cluster', 'status'],
     queryFn: () => api.cluster.status(),
-    refetchInterval: 15_000,
+    refetchInterval: POLL_INTERVALS.services,
   });
 
   const clusterEntry = data?.find((d) => d.type === 'cluster');

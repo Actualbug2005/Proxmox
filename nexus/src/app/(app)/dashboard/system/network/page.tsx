@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useSystemNode } from '@/app/(app)/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -176,7 +177,7 @@ export default function NetworkPage() {
     queryKey: ['network', node],
     queryFn: () => api.networkIfaces.list(node),
     enabled: !!node,
-    refetchInterval: 15_000,
+    refetchInterval: POLL_INTERVALS.services,
   });
 
   const list = ifaces ?? [];

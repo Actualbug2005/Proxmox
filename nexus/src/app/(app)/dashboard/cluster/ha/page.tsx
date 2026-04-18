@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -35,19 +36,19 @@ export default function HAPage() {
   const { data: resources, isLoading: loadingRes } = useQuery({
     queryKey: ['ha', 'resources'],
     queryFn: () => api.ha.resources.list(),
-    refetchInterval: 15_000,
+    refetchInterval: POLL_INTERVALS.services,
   });
 
   const { data: groups, isLoading: loadingGroups } = useQuery({
     queryKey: ['ha', 'groups'],
     queryFn: () => api.ha.groups.list(),
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
 
   const { data: haStatus } = useQuery({
     queryKey: ['ha', 'status', 'current'],
     queryFn: () => api.ha.status.current(),
-    refetchInterval: 10_000,
+    refetchInterval: POLL_INTERVALS.cluster,
   });
 
   const [editRes, setEditRes] = useState<HAResource | null>(null);

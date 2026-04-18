@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, toPveBool } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -20,7 +21,7 @@ export default function PoolsPage() {
   const { data: pools, isLoading } = useQuery({
     queryKey: ['pools'],
     queryFn: () => api.pools.list(),
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -191,7 +192,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
   const { data: detailed } = useQuery({
     queryKey: ['pool', pool.poolid],
     queryFn: () => api.pools.get(pool.poolid),
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
   const { data: resources } = useQuery({ queryKey: ['cluster', 'resources'], queryFn: () => api.cluster.resources() });
 

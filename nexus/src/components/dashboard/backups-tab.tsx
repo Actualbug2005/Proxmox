@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -173,7 +174,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
     queries: backupStorages.map((s) => ({
       queryKey: ['backups', 'files', node, s.storage],
       queryFn: () => api.backups.files(node, s.storage),
-      refetchInterval: 30_000,
+      refetchInterval: POLL_INTERVALS.config,
     })),
   });
 

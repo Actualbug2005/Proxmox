@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import { useNodes, useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
+import { useNodes, useClusterResources, useDefaultNode, POLL_INTERVALS } from '@/hooks/use-cluster';
 import { NodeMetricsChart } from '@/components/dashboard/node-metrics-chart';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatusDot } from '@/components/ui/status-dot';
@@ -114,7 +114,7 @@ function NodeDetailPanel({ node }: { node: ClusterResourcePublic }) {
   const { data: status, isLoading } = useQuery({
     queryKey: ['node', name, 'status'],
     queryFn: () => api.nodes.status(name),
-    refetchInterval: 10_000,
+    refetchInterval: POLL_INTERVALS.nodeStatus,
   });
 
   return (

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useSystemNode } from '@/app/(app)/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { formatUptime } from '@/lib/utils';
@@ -18,7 +19,7 @@ export default function PowerPage() {
     queryKey: ['node', node, 'status'],
     queryFn: () => api.nodes.status(node),
     enabled: !!node,
-    refetchInterval: 10_000,
+    refetchInterval: POLL_INTERVALS.nodeStatus,
   });
 
   const powerM = useMutation({

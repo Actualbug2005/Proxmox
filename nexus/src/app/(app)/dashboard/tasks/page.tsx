@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useNodes } from '@/hooks/use-cluster';
+import { useNodes, POLL_INTERVALS } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -65,7 +65,7 @@ export default function TasksPage() {
       return results.flat().sort((a, b) => b.starttime - a.starttime);
     },
     enabled: nodeNames.length > 0,
-    refetchInterval: paused ? false : 10_000,
+    refetchInterval: paused ? false : POLL_INTERVALS.cluster,
   });
 
   const filtered =

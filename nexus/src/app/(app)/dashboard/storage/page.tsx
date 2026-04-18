@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { useNodes } from '@/hooks/use-cluster';
+import { useNodes, POLL_INTERVALS } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { Gauge } from '@/components/ui/gauge';
@@ -168,7 +168,7 @@ export default function StoragePage() {
       return results.flat();
     },
     enabled: nodeNames.length > 0 && tab === 'pools',
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
 
   const storages = storageQueries.data ?? [];

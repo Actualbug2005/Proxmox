@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, ProxmoxAPIError } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useSystemNode } from '@/app/(app)/dashboard/system/node-context';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -316,7 +317,7 @@ export default function CertificatesPage() {
     queryKey: [...TUNNEL_STATUS_KEY, node],
     queryFn: () => fetchTunnelStatus(node),
     enabled: !!node && tab === 'tunnels',
-    refetchInterval: 10_000,
+    refetchInterval: POLL_INTERVALS.services,
     retry: (failureCount, err) => {
       // Don't hammer the server retrying a 403 — the user lacks Sys.Audit.
       if (err instanceof ProxmoxAPIError && (err.status === 403 || err.status === 401)) return false;

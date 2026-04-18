@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { ToastProvider } from '@/components/ui/toast';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -12,7 +13,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 5_000,
-            refetchInterval: 10_000,
+            // Global default. Per-query hooks override with the specific
+            // POLL_INTERVALS.* key that fits their cadence; this is the
+            // fallback for queries that don't set refetchInterval at all.
+            refetchInterval: POLL_INTERVALS.cluster,
             retry: 1,
           },
         },
