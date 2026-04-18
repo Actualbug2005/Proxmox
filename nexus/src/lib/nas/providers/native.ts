@@ -22,6 +22,9 @@ import type {
   NasProvider,
   NasShare,
   NasService,
+  QuotaEntry,
+  QuotaReport,
+  QuotaTarget,
 } from '@/types/nas';
 import { Readable } from 'node:stream';
 import { runScriptOnNode, spawnScriptStream } from '@/lib/remote-shell';
@@ -173,9 +176,24 @@ printf 'nfs=%s\\n'  "$(systemctl is-active nfs-kernel-server 2>/dev/null || echo
 echo '===NEXUS_STATUS_END==='
 `;
 
+/**
+ * Slice the block between the `start` and `end` fenceposts emitted by
+ * FETCH_SCRIPT. Uses plain indexOf rather than a dynamic RegExp — the
+ * fencepost strings already live in compile-time literals and the
+ * linear scan is both simpler and ReDoS-proof.
+ */
 function extractSection(stdout: string, start: string, end: string): string {
-  const re = new RegExp(`${start}\\n([\\s\\S]*?)\\n${end}`);
-  return stdout.match(re)?.[1] ?? '';
+  const a = stdout.indexOf(start);
+  if (a === -1) return '';
+  const bodyStart = a + start.length;
+  const b = stdout.indexOf(end, bodyStart);
+  if (b === -1) return '';
+  // Strip the single \n that delimits the fencepost from the body on
+  // both sides. The FETCH_SCRIPT writes echo lines, so those newlines
+  // are always present; fall back to the raw slice if not.
+  const leading = stdout[bodyStart] === '\n' ? 1 : 0;
+  const trailing = stdout[b - 1] === '\n' ? 1 : 0;
+  return stdout.slice(bodyStart + leading, b - trailing);
 }
 
 function parseServiceStatus(block: string): Record<NasProtocol, 'running' | 'stopped'> {
@@ -358,6 +376,138 @@ function mapGnuType(c: string): FileNode['type'] | null {
  * Size goes to stderr so stdout stays a pure byte stream the HTTP layer
  * can forward unchanged.
  */
+/**
+ * Build the upload script. The client base64-encodes the file bytes; the
+ * script decodes into a tmp file under the same directory and atomically
+ * renames it into place. Size + traversal + overwrite checks happen inside
+ * the script so there's no TS round-trip between "is this path safe" and
+ * "write these bytes".
+ *
+ * Overwrite is refused — the UI is expected to delete + re-upload when the
+ * operator really means to replace a file.
+ *
+ * `b64Payload` MUST already be pure base64 (the call site enforces this),
+ * so the single-quoted literal below is injection-safe.
+ */
+function buildUploadScript(
+  sharePath: string,
+  subDir: string,
+  filename: string,
+  b64Payload: string,
+): string {
+  return `set -euo pipefail
+SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
+SUB_DIR="$(printf '%s' '${b64(subDir)}' | base64 -d)"
+FILENAME="$(printf '%s' '${b64(filename)}' | base64 -d)"
+
+if [ -n "$SUB_DIR" ]; then
+  TARGET_DIR="$SHARE_PATH/$SUB_DIR"
+else
+  TARGET_DIR="$SHARE_PATH"
+fi
+
+REAL_SHARE="$(realpath -e "$SHARE_PATH")"
+REAL_TARGET_DIR="$(realpath -e "$TARGET_DIR")"
+
+case "$REAL_TARGET_DIR" in
+  "$REAL_SHARE"|"$REAL_SHARE"/*) ;;
+  *) echo "Path escapes share root" >&2; exit 3;;
+esac
+
+if [ ! -d "$REAL_TARGET_DIR" ]; then
+  echo "Target is not a directory" >&2
+  exit 2
+fi
+
+DEST="$REAL_TARGET_DIR/$FILENAME"
+if [ -e "$DEST" ]; then
+  echo "File already exists; refusing overwrite" >&2
+  exit 4
+fi
+
+# Tmp file in the SAME directory so rename is atomic (same filesystem).
+TMP="$(mktemp "$REAL_TARGET_DIR/.nexus-upload.XXXXXX")"
+# Trap to clean up the tmp file on any failure path.
+trap 'rm -f "$TMP"' EXIT
+
+printf '%s' '${b64Payload}' | base64 -d > "$TMP"
+chmod 0644 "$TMP"
+mv "$TMP" "$DEST"
+trap - EXIT
+`;
+}
+
+/**
+ * Build the quota-report script. Uses `repquota -u` / `-g` against the
+ * filesystem that contains the share path. Emits a fenced JSON blob to
+ * stdout. If quotas aren't enabled on the filesystem we surface the
+ * `no-quotas` tag so the provider returns null to the UI.
+ */
+function buildQuotaReportScript(sharePath: string): string {
+  return `set -euo pipefail
+SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
+REAL_SHARE="$(realpath -e "$SHARE_PATH")"
+DEVICE="$(df -P --output=source "$REAL_SHARE" | tail -n 1)"
+MNT="$(df -P --output=target "$REAL_SHARE" | tail -n 1)"
+
+# quota needs to be turned on; if it isn't we emit a sentinel line.
+if ! quotaon -p "$MNT" 2>/dev/null | grep -qE '(user|group) quotas on'; then
+  printf '%s\\n' 'NEXUS_NO_QUOTAS'
+  exit 0
+fi
+
+echo "===NEXUS_DEVICE_START==="
+printf '%s' "$DEVICE"
+echo
+echo "===NEXUS_DEVICE_END==="
+
+# repquota output format: one row per user/group with name, block-used,
+# block-soft, block-hard, ... We take just the columns we need. The -n
+# flag suppresses the UID/GID -> name lookup; we resolve names separately
+# so the parse stays robust against /etc/passwd drift.
+echo "===NEXUS_USER_START==="
+repquota -u -O csv "$MNT" 2>/dev/null || true
+echo "===NEXUS_USER_END==="
+
+echo "===NEXUS_GROUP_START==="
+repquota -g -O csv "$MNT" 2>/dev/null || true
+echo "===NEXUS_GROUP_END==="
+`;
+}
+
+/**
+ * Build the set-quota script. `setquota` takes block soft + hard in 1KB
+ * units — the provider converts from bytes before calling. 0 clears the
+ * quota for that target. Inode quotas are not exposed yet.
+ *
+ * `name` is base64'd (may contain a dash or dot in rare configs) and
+ * passed to setquota via the decoded shell variable.
+ */
+function buildSetQuotaScript(
+  sharePath: string,
+  kind: 'user' | 'group',
+  name: string,
+  softKb: number,
+  hardKb: number,
+): string {
+  const flag = kind === 'user' ? '-u' : '-g';
+  return `set -euo pipefail
+SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
+REAL_SHARE="$(realpath -e "$SHARE_PATH")"
+MNT="$(df -P --output=target "$REAL_SHARE" | tail -n 1)"
+TARGET="$(printf '%s' '${b64(name)}' | base64 -d)"
+
+# Refuse if quotas aren't on — same posture as the report script so the
+# UI sees a consistent error.
+if ! quotaon -p "$MNT" 2>/dev/null | grep -qE '(user|group) quotas on'; then
+  echo "Quotas not enabled on $MNT" >&2
+  exit 5
+fi
+
+setquota ${flag} "$TARGET" ${softKb} ${hardKb} 0 0 "$MNT"
+`;
+}
+
 function buildDownloadScript(sharePath: string, subPath: string): string {
   return `set -euo pipefail
 SHARE_PATH="$(printf '%s' '${b64(sharePath)}' | base64 -d)"
@@ -644,4 +794,165 @@ export const nativeProvider: NasProvider = {
     const webStream = Readable.toWeb(stdout) as ReadableStream<Uint8Array>;
     return { stream: webStream, filename, size };
   },
+
+  async uploadFile(
+    node: string,
+    shareId: string,
+    subDir: string,
+    filename: string,
+    bytes: Uint8Array,
+  ): Promise<void> {
+    // Mirror the listDirectory / downloadFile traversal posture: refuse
+    // '..' and absolute sub-paths at the TS boundary; the remote script
+    // does its own realpath prefix-check as the second layer.
+    if (subDir.includes('..')) {
+      throw new Error('Invalid path: contains directory traversal (..)');
+    }
+    if (subDir.startsWith('/')) {
+      throw new Error('Invalid path: must be relative to the share root');
+    }
+    // Refuse slashes / null bytes in the basename — if the operator wants
+    // a sub-directory they pick it via the file browser, not by smuggling
+    // one into the filename. Keep this loose enough to allow normal
+    // shell-safe filename characters (space, dot, underscore, dash).
+    if (filename.length === 0 || filename.length > 255) {
+      throw new Error('Invalid filename: must be 1..255 characters');
+    }
+    if (filename.includes('/') || filename.includes('\0')) {
+      throw new Error('Invalid filename: slash or NUL not allowed');
+    }
+    if (filename === '.' || filename === '..') {
+      throw new Error('Invalid filename: "." and ".." are reserved');
+    }
+    // 100 MB per-upload cap — see module-level constant so tests can
+    // tweak without redeploy. 4/3× memory overhead lives in the client
+    // base64 encode; at 100 MB that's ~133 MB of encoded body which
+    // Node handles comfortably.
+    if (bytes.byteLength > UPLOAD_MAX_BYTES) {
+      throw new Error(`File too large: ${bytes.byteLength} > ${UPLOAD_MAX_BYTES}`);
+    }
+
+    const shares = await fetchAllShares(node);
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) {
+      throw new Error(`Share not found: id=${shareId}`);
+    }
+
+    const b64Payload = Buffer.from(bytes).toString('base64');
+    const script = buildUploadScript(share.path, subDir, filename, b64Payload);
+    const res = await runScriptOnNode(node, script, {
+      timeoutMs: 120_000,
+      // Allow the script itself (with base64 payload) through the shell
+      // stdin — runViaStdin caps stdin at maxBuffer which defaults to
+      // 10 MB. Bump it for uploads so we can actually reach the 100 MB
+      // body cap.
+      maxBuffer: 200 * 1024 * 1024,
+    });
+    if (res.exitCode !== 0) {
+      throw new Error(
+        `uploadFile: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 500)}`,
+      );
+    }
+  },
+
+  async getQuotas(node: string, shareId: string): Promise<QuotaReport | null> {
+    const shares = await fetchAllShares(node);
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) {
+      throw new Error(`Share not found: id=${shareId}`);
+    }
+    const res = await runScriptOnNode(node, buildQuotaReportScript(share.path), {
+      timeoutMs: 20_000,
+    });
+    if (res.exitCode !== 0) {
+      throw new Error(
+        `getQuotas: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 300)}`,
+      );
+    }
+    if (res.stdout.includes('NEXUS_NO_QUOTAS')) return null;
+    const device = extractSection(res.stdout, '===NEXUS_DEVICE_START===', '===NEXUS_DEVICE_END===').trim();
+    const userCsv = extractSection(res.stdout, '===NEXUS_USER_START===', '===NEXUS_USER_END===');
+    const groupCsv = extractSection(res.stdout, '===NEXUS_GROUP_START===', '===NEXUS_GROUP_END===');
+    return {
+      device,
+      users: parseRepquotaCsv(userCsv, 'user'),
+      groups: parseRepquotaCsv(groupCsv, 'group'),
+    };
+  },
+
+  async setQuota(
+    node: string,
+    shareId: string,
+    target: QuotaTarget,
+    softBytes: number,
+    hardBytes: number,
+  ): Promise<void> {
+    if (target.kind !== 'user' && target.kind !== 'group') {
+      throw new Error('Invalid quota kind');
+    }
+    // Name must be a plausible unix identifier — setquota itself will
+    // refuse garbage, but we reject shell metacharacters early to keep
+    // bad errors from operator typos narrow. The script base64-encodes
+    // the value before handing it to setquota.
+    if (!/^[A-Za-z0-9._-]{1,64}$/.test(target.name)) {
+      throw new Error('Invalid quota target name');
+    }
+    if (!Number.isFinite(softBytes) || softBytes < 0) {
+      throw new Error('Invalid softBytes');
+    }
+    if (!Number.isFinite(hardBytes) || hardBytes < 0) {
+      throw new Error('Invalid hardBytes');
+    }
+    const shares = await fetchAllShares(node);
+    const share = shares.find((s) => s.id === shareId);
+    if (!share) {
+      throw new Error(`Share not found: id=${shareId}`);
+    }
+    const softKb = Math.ceil(softBytes / 1024);
+    const hardKb = Math.ceil(hardBytes / 1024);
+    const script = buildSetQuotaScript(share.path, target.kind, target.name, softKb, hardKb);
+    const res = await runScriptOnNode(node, script, { timeoutMs: 15_000 });
+    if (res.exitCode !== 0) {
+      throw new Error(
+        `setQuota: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 300)}`,
+      );
+    }
+  },
 };
+
+/** 100 MB first-cut per-upload cap. See uploadFile jsdoc for rationale. */
+const UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+
+/**
+ * Parse the CSV output from `repquota -u -O csv` / `-g -O csv`.
+ *
+ * repquota CSV header:
+ *   name, type, BlockStatus, FileStatus, BlockUsed, BlockSoft, BlockHard, BlockGrace, FileUsed, FileSoft, FileHard, FileGrace
+ *
+ * We only need name + BlockUsed/Soft/Hard. Block columns are in KiB.
+ * Convert to bytes at the boundary.
+ */
+export function parseRepquotaCsv(csv: string, kind: 'user' | 'group'): QuotaEntry[] {
+  const lines = csv.split('\n').map((l) => l.trim()).filter(Boolean);
+  const out: QuotaEntry[] = [];
+  for (const line of lines) {
+    // Skip the header row and any comment/banner lines.
+    if (line.startsWith('#')) continue;
+    if (line.toLowerCase().startsWith('name,')) continue;
+    const cols = line.split(',');
+    if (cols.length < 7) continue;
+    const name = cols[0];
+    const used = Number.parseInt(cols[4], 10);
+    const soft = Number.parseInt(cols[5], 10);
+    const hard = Number.parseInt(cols[6], 10);
+    if (!Number.isFinite(used) || !Number.isFinite(soft) || !Number.isFinite(hard)) continue;
+    out.push({
+      kind,
+      name,
+      usedBytes: used * 1024,
+      softBytes: soft * 1024,
+      hardBytes: hard * 1024,
+    });
+  }
+  return out;
+}

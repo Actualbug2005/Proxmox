@@ -94,4 +94,71 @@ export interface NasProvider {
     shareId: string,
     subPath: string,
   ): Promise<{ stream: ReadableStream<Uint8Array>; filename: string; size: number }>;
+
+  /**
+   * Write a new file under `shareId/subDir` with the given contents.
+   * `subDir` is relative to the share root and MUST NOT contain `..`.
+   * `filename` must be a plain basename (no slashes). The provider is
+   * responsible for refusing overwrites and for atomically renaming a
+   * tmp file into place so readers never see a partial write.
+   *
+   * Size-capped by the provider to protect against DoS on shared
+   * infrastructure. Native caps at 100 MB in the first cut.
+   */
+  uploadFile(
+    node: string,
+    shareId: string,
+    subDir: string,
+    filename: string,
+    bytes: Uint8Array,
+  ): Promise<void>;
+
+  /**
+   * Read the current user + group quotas for a share's filesystem.
+   * Returns `null` if the share's filesystem doesn't have quotas enabled
+   * (the UI shows an actionable hint instead of a crash).
+   */
+  getQuotas?(node: string, shareId: string): Promise<QuotaReport | null>;
+
+  /**
+   * Set a soft + hard block quota for one user or group on the share's
+   * filesystem. Sizes are bytes; pass 0 to clear the quota.
+   */
+  setQuota?(
+    node: string,
+    shareId: string,
+    target: QuotaTarget,
+    softBytes: number,
+    hardBytes: number,
+  ): Promise<void>;
+}
+
+// ─── Quotas (7.x backlog item B) ────────────────────────────────────────────
+
+/** Scope of one quota row — either a UNIX user or a UNIX group. */
+export interface QuotaTarget {
+  kind: 'user' | 'group';
+  /** Textual username or groupname. Lookup + conversion to UID/GID
+   *  happens inside the provider (so an operator can type `apache`, not
+   *  `33`). */
+  name: string;
+}
+
+/** One quota row as returned by `repquota -u` / `-g`. */
+export interface QuotaEntry {
+  kind: 'user' | 'group';
+  name: string;
+  /** Current block usage in bytes. */
+  usedBytes: number;
+  /** Soft limit in bytes. 0 = no limit. */
+  softBytes: number;
+  /** Hard limit in bytes. 0 = no limit. */
+  hardBytes: number;
+}
+
+export interface QuotaReport {
+  /** Filesystem device the quotas live on (e.g. `/dev/sda1`). */
+  device: string;
+  users: QuotaEntry[];
+  groups: QuotaEntry[];
 }

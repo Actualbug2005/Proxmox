@@ -21,6 +21,10 @@ export const unasProvider: NasProvider = {
   getServices: async () => notImplemented(),
   listDirectory: async () => notImplemented(),
   downloadFile: async () => notImplemented(),
+  uploadFile: async () => notImplemented(),
+  // getQuotas / setQuota are optional on NasProvider, so we skip them
+  // here — the native provider implements them, U-NAS deferred until
+  // the REST adapter lands.
 };
 
 export { nativeProvider };

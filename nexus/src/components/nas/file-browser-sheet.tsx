@@ -15,23 +15,27 @@
  * disk. We always `URL.revokeObjectURL` in a try/finally so the blob URL
  * never leaks regardless of success or failure.
  */
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Folder,
   File as FileIcon,
   Link as LinkIcon,
   Download,
   Loader2,
+  Upload,
   X,
   ChevronRight,
   Home,
   AlertCircle,
 } from 'lucide-react';
-import { api } from '@/lib/proxmox-client';
+import { api, readCsrfCookie } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { formatBytes, cn } from '@/lib/utils';
 import type { FileNode } from '@/types/nas';
+
+/** Matches the server-side cap in /api/nas/upload. */
+const UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
 
 interface Props {
   node: string;
@@ -53,8 +57,11 @@ function formatMtime(mtime: number): string {
 
 export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
   const toast = useToast();
+  const qc = useQueryClient();
   const [currentPath, setCurrentPath] = useState<string>('');
   const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
+  const [uploadingName, setUploadingName] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const { data: files, isLoading, error } = useQuery({
     queryKey: ['nas-browse', node, shareId, currentPath],
@@ -85,6 +92,48 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
       setCurrentPath('');
     } else {
       setCurrentPath(segments.slice(0, index + 1).join('/'));
+    }
+  }
+
+  async function handleUpload(file: File): Promise<void> {
+    if (file.size === 0) {
+      toast.error('Upload failed', 'Empty file.');
+      return;
+    }
+    if (file.size > UPLOAD_MAX_BYTES) {
+      toast.error(
+        'Upload too large',
+        `${formatBytes(file.size)} exceeds the ${formatBytes(UPLOAD_MAX_BYTES)} cap.`,
+      );
+      return;
+    }
+    setUploadingName(file.name);
+    try {
+      const form = new FormData();
+      form.set('node', node);
+      form.set('shareId', shareId);
+      form.set('subDir', currentPath);
+      form.set('file', file);
+      const csrf = readCsrfCookie();
+      const res = await fetch('/api/nas/upload', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: csrf ? { 'X-Nexus-CSRF': csrf } : undefined,
+        body: form,
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      toast.success('Upload complete', file.name);
+      // Refresh the directory listing so the new file appears.
+      await qc.invalidateQueries({ queryKey: ['nas-browse', node, shareId, currentPath] });
+    } catch (err) {
+      toast.error('Upload failed', err instanceof Error ? err.message : String(err));
+    } finally {
+      setUploadingName(null);
+      // Reset input so picking the same file again still fires onChange.
+      if (fileInput.current) fileInput.current.value = '';
     }
   }
 
@@ -143,7 +192,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
           </button>
         </div>
 
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs + upload */}
         <div className="flex items-center gap-1 px-5 py-3 border-b border-[var(--color-border-subtle)] text-xs overflow-x-auto">
           <button
             onClick={() => navigateToSegment(-1)}
@@ -173,6 +222,34 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
               </button>
             </div>
           ))}
+          <div className="ml-auto flex items-center gap-2">
+            <input
+              ref={fileInput}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUpload(f);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={uploadingName !== null}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--color-border-subtle)]',
+                'text-[var(--color-fg-secondary)] hover:bg-[var(--color-overlay)] transition disabled:opacity-40',
+              )}
+              title={`Upload a file to the current directory (max ${formatBytes(UPLOAD_MAX_BYTES)})`}
+            >
+              {uploadingName ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Upload className="w-3 h-3" />
+              )}
+              {uploadingName ? 'Uploading…' : 'Upload'}
+            </button>
+          </div>
         </div>
 
         {/* Body */}

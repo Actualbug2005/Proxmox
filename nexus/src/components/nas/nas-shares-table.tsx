@@ -11,10 +11,21 @@ import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
-import { Loader2, Share2, Trash2, Lock, Unlock, FolderOpen } from 'lucide-react';
+import {
+  Gauge,
+  HardDriveDownload,
+  Loader2,
+  Share2,
+  Trash2,
+  Lock,
+  Unlock,
+  FolderOpen,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { NasShare, NasProtocol } from '@/types/nas';
 import { FileBrowserSheet } from './file-browser-sheet';
+import { QuotaEditorDialog } from './quota-editor-dialog';
+import { MountToCtDialog } from './mount-to-ct-dialog';
 
 interface Props {
   node: string;
@@ -36,6 +47,8 @@ export function NasSharesTable({ node }: Props) {
   const toast = useToast();
   const [pendingDelete, setPendingDelete] = useState<NasShare | null>(null);
   const [activeBrowse, setActiveBrowse] = useState<NasShare | null>(null);
+  const [activeQuotas, setActiveQuotas] = useState<NasShare | null>(null);
+  const [activeMount, setActiveMount] = useState<NasShare | null>(null);
 
   const { data: shares, isLoading, error } = useQuery({
     queryKey: ['nas-shares', node],
@@ -71,6 +84,23 @@ export function NasSharesTable({ node }: Props) {
           shareId={activeBrowse.id}
           shareName={activeBrowse.name}
           onClose={() => setActiveBrowse(null)}
+        />
+      )}
+
+      {activeQuotas && (
+        <QuotaEditorDialog
+          node={node}
+          shareId={activeQuotas.id}
+          shareName={activeQuotas.name}
+          onClose={() => setActiveQuotas(null)}
+        />
+      )}
+
+      {activeMount && (
+        <MountToCtDialog
+          node={node}
+          share={activeMount}
+          onClose={() => setActiveMount(null)}
         />
       )}
 
@@ -151,14 +181,32 @@ export function NasSharesTable({ node }: Props) {
                       <button
                         onClick={() => setActiveBrowse(s)}
                         aria-label={`Browse ${s.name}`}
+                        title="Browse files"
                         className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 rounded-md transition"
                       >
                         <FolderOpen className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => setActiveMount(s)}
+                        aria-label={`Mount ${s.name} to a container`}
+                        title="Mount into LXC"
+                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 rounded-md transition"
+                      >
+                        <HardDriveDownload className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setActiveQuotas(s)}
+                        aria-label={`Edit quotas for ${s.name}`}
+                        title="Quotas"
+                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)] hover:bg-white/5 rounded-md transition"
+                      >
+                        <Gauge className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => setPendingDelete(s)}
                         disabled={deleteM.isPending}
                         aria-label={`Delete ${s.name}`}
+                        title="Delete"
                         className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-err)] hover:bg-[var(--color-err)]/10 rounded-md transition disabled:opacity-40"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -318,8 +318,9 @@ From the full feature review:
 - Keyboard layout selector.
 
 ### NAS
-- Upload via file browser.
-- Per-share permission editor with quotas.
+- ✅ Upload via file browser — shipped in v0.24.0 (100 MB cap, atomic write, refuses overwrite).
+- ✅ Per-share permission editor with quotas — shipped in v0.24.0 (per-user and per-group block quotas via `setquota`/`repquota`).
+- ✅ Bind-mount a share into an LXC — shipped in v0.24.0 (new; equivalent to `pct set <vmid> -mpN …`).
 - Additional providers (TrueNAS, Synology).
 
 ### Cross-cutting
