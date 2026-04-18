@@ -1,7 +1,14 @@
 # Nexus Roadmap — Tiers 5 → 9 and Backlog
 
 **Date:** 2026-04-18
-**Status:** Draft (post Tier-4 system work landed)
+**Status:** In progress — Top-10 items #1-3 shipped (v0.10.0-v0.12.0)
+
+**Shipped this session (first 3 of the Top-10):**
+- ✅ **#2 — Unit picker primitive (7.2)** → `v0.10.0` (UnitInput in VM/CT create)
+- ✅ **#3 — Audit Log Explorer UI (8.1)** → `v0.11.0` (`/dashboard/cluster/audit`)
+- ✅ **#1 — Tag/Folder Resource View (7.1)** → `v0.12.0` (`/dashboard/resources` + Segmented toggle)
+
+**Next up (from the Top-10):** #6 Schedule next-fire preview (2d), #7 Drag-and-drop bento (1d), then #4 Notification Rule Engine / #5 Auto-DRS (each 3-4d, both need design sign-off first).
 **Source material:** session audit 2026-04-18 covering roadmap completion, feature review, and community-gap research (Proxmox forums, PDM roadmap, SDN threads, VMware-migration commentary).
 
 This document rolls up three analyses from today's session:
@@ -123,13 +130,13 @@ These are referenced throughout so later tiers can build on them without re-desc
 
 **Theme:** forum-cited frictions that are cheap individually and compound into a much nicer product.
 
-### 7.1 Tag / Folder Resource View
+### 7.1 Tag / Folder Resource View ✅ shipped in v0.12.0
 - **Rationale.** Bugzilla #4441 ("Tag View") has a prototype upstream but isn't shipped. Forum users keep asking. PVE tags API already exists; client-side grouping is 4h of work.
 - **Shape.** New segmented toggle on resource-tree header: `Flat | Nodes | Tags | Pools`. In `Tags` mode, guests group under each of their tag strings (multi-membership allowed); untagged fall into "Untagged". Color chips use PVE's `tag-style-override` palette when present.
 - **Touchpoints.** `src/components/dashboard/resource-tree.tsx` only. Tag writes happen via existing PVE config endpoints — no backend changes.
 - **Effort.** 4 hours. **Pull.** H.
 
-### 7.2 Unit Picker for Memory / Disk Fields
+### 7.2 Unit Picker for Memory / Disk Fields ✅ shipped in v0.10.0
 - **Rationale.** Longstanding forum request. Low-effort, high-delight.
 - **Shape.** New primitive `src/components/ui/unit-input.tsx` with `unit ∈ {MiB, GiB, TiB}` and coerce-on-submit. Reused in VM create, CT create, disk resize dialogs, storage mapping.
 - **Effort.** 2 hours. **Pull.** M.
@@ -173,7 +180,7 @@ These are referenced throughout so later tiers can build on them without re-desc
 
 **Theme:** close the gap between "secure enough" and "defensible under audit."
 
-### 8.1 Audit Log Explorer UI
+### 8.1 Audit Log Explorer UI ✅ shipped in v0.11.0
 - **Rationale.** Backend and decrypt script already exist (`exec-audit.ts`, `scripts/nexus-audit-decrypt.ts`). UI is missing.
 - **Shape.** `/dashboard/cluster/audit` with filter by user, action, time, scope. Decrypts in a server-only route that streams decrypted rows to the browser (keys never leave the server).
 - **Effort.** 2 days. **Pull.** H (for regulated environments).
@@ -337,18 +344,18 @@ Nexus surfaces or mitigates where possible (warning banners, rollback wrappers, 
 
 Ordered by recommended sequencing, not strict priority:
 
-| # | Item | Tier | Effort | Pull | Why this slot |
-|---|------|------|--------|------|---------------|
-| 1 | **Tag/Folder Resource View** (7.1) | 7 | 4h | H | Cheapest H-pull win in the plan. |
-| 2 | **Unit picker primitive** (7.2) | 7 | 2h | M | Ships alongside #1, tiny reusable primitive. |
-| 3 | **Audit Log Explorer UI** (8.1) | 8 | 2d | H | Backend already done; pure UI. |
-| 4 | **Notification Rule Engine** (5.1) | 5 | 3–4d | H | Foundation for 5.2–5.4, 9.7. Must land first in Tier 5. |
-| 5 | **Auto-DRS Loop** (5.3) | 5 | 3–4d | Highest | Single biggest community-pull feature; scorer already exists. |
-| 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | Hugely improves existing scheduled-jobs UX. |
-| 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | Registry is ready; 1-day ship. |
-| 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | Completes the "intelligence" loop with 5.1 + 5.3. |
-| 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | Unlocks all of Tier 6. |
-| 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | Bundle SSRF guard + CSP headers + safe-regex audit as one PR. |
+| # | Item | Tier | Effort | Pull | Status | Why this slot |
+|---|------|------|--------|------|--------|---------------|
+| 1 | **Tag/Folder Resource View** (7.1) | 7 | 4h | H | ✅ v0.12.0 | Cheapest H-pull win in the plan. |
+| 2 | **Unit picker primitive** (7.2) | 7 | 2h | M | ✅ v0.10.0 | Ships alongside #1, tiny reusable primitive. |
+| 3 | **Audit Log Explorer UI** (8.1) | 8 | 2d | H | ✅ v0.11.0 | Backend already done; pure UI. |
+| 4 | **Notification Rule Engine** (5.1) | 5 | 3–4d | H | pending | Foundation for 5.2–5.4, 9.7. Must land first in Tier 5. |
+| 5 | **Auto-DRS Loop** (5.3) | 5 | 3–4d | Highest | pending | Single biggest community-pull feature; scorer already exists. |
+| 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | pending | Hugely improves existing scheduled-jobs UX. |
+| 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | pending | Registry is ready; 1-day ship. |
+| 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | pending | Completes the "intelligence" loop with 5.1 + 5.3. |
+| 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | pending | Unlocks all of Tier 6. |
+| 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | pending | Bundle SSRF guard + CSP headers + safe-regex audit as one PR. |
 
 After #10, re-evaluate. The federation track (6.2–6.4) is the likely Tier-6 sprint; WebAuthn (8.2) and Granular Nexus Roles (8.4) are the Tier-8 sprint; local scripts (9.1) and PBS widgets (9.3) are the Tier-9 kickoff.
 
