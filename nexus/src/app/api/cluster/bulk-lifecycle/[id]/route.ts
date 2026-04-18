@@ -9,32 +9,22 @@
  * can't probe for batch ids.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { cancelBatch, getBatch } from '@/lib/bulk-ops';
 import { toDto } from '../route';
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { id } = await ctx.params;
+export const GET = withAuth<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
   const batch = getBatch(id);
   if (!batch || batch.user !== session.username) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   return NextResponse.json({ batch: toDto(batch) });
-}
+});
 
-export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { id } = await ctx.params;
+export const DELETE = withCsrf<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
   const batch = getBatch(id);
   if (!batch || batch.user !== session.username) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -42,4 +32,4 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   cancelBatch(id);
   const after = getBatch(id);
   return NextResponse.json({ batch: after ? toDto(after) : null });
-}
+});

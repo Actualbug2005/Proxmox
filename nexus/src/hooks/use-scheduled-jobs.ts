@@ -8,6 +8,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readCsrfCookie } from '@/lib/proxmox-client';
+import { readError } from '@/lib/create-csrf-mutation';
 import type { ScheduledJobDto } from '@/lib/scheduled-jobs-dto';
 
 export type { ScheduledJobDto };
@@ -37,11 +38,6 @@ export interface UpdateScheduledJobInput {
 }
 
 const LIST_KEY = ['scheduled-jobs', 'list'] as const;
-
-async function readError(res: Response): Promise<string> {
-  const body = (await res.json().catch(() => ({}))) as { error?: string };
-  return body.error ?? `HTTP ${res.status}`;
-}
 
 export function useScheduledJobs() {
   return useQuery<{ jobs: ScheduledJobDto[] }, Error>({

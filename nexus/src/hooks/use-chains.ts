@@ -13,6 +13,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readCsrfCookie } from '@/lib/proxmox-client';
+import { readError } from '@/lib/create-csrf-mutation';
 import type { ChainDto, ChainStepDto } from '@/lib/chains-dto';
 import type {
   ChainStepPolicy,
@@ -51,11 +52,6 @@ export interface UpdateChainInput {
 
 const LIST_KEY = ['chains', 'list'] as const;
 const chainKey = (id: string) => ['chains', 'one', id] as const;
-
-async function readError(res: Response): Promise<string> {
-  const body = (await res.json().catch(() => ({}))) as { error?: string };
-  return body.error ?? `HTTP ${res.status}`;
-}
 
 function csrfHeaders(): Record<string, string> {
   const csrf = readCsrfCookie();

@@ -6,8 +6,8 @@
  * fire-and-forget systems.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { readCsrfCookie } from '@/lib/proxmox-client';
+import { useQuery } from '@tanstack/react-query';
+import { useCsrfMutation, readError } from '@/lib/create-csrf-mutation';
 import type { BulkBatchDto } from '@/app/api/cluster/bulk-lifecycle/route';
 import type { BulkOp, GuestType, SnapshotParams } from '@/lib/bulk-ops';
 
@@ -37,11 +37,6 @@ export interface StartBulkOpResponse {
 
 const LIST_KEY = ['bulk-lifecycle', 'list'] as const;
 const detailKey = (id: string) => ['bulk-lifecycle', 'detail', id] as const;
-
-async function readError(res: Response): Promise<string> {
-  const body = (await res.json().catch(() => ({}))) as { error?: string };
-  return body.error ?? `HTTP ${res.status}`;
-}
 
 function anyNonTerminal(batches: BulkBatchDto[]): boolean {
   return batches.some(
@@ -89,42 +84,17 @@ export function useBulkBatch(id: string | null) {
 }
 
 export function useStartBulkOp() {
-  const qc = useQueryClient();
-  return useMutation<StartBulkOpResponse, Error, StartBulkOpInput>({
-    mutationFn: async (input) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch('/api/cluster/bulk-lifecycle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
-        },
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as StartBulkOpResponse;
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<StartBulkOpResponse, StartBulkOpInput>({
+    url: '/api/cluster/bulk-lifecycle',
+    method: 'POST',
+    invalidateKeys: [[...LIST_KEY]],
   });
 }
 
 export function useCancelBulkOp() {
-  const qc = useQueryClient();
-  return useMutation<{ batch: BulkBatchDto | null }, Error, string>({
-    mutationFn: async (id) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch(`/api/cluster/bulk-lifecycle/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: { ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}) },
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { batch: BulkBatchDto | null };
-    },
-    onSuccess: (_data, id) => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-      void qc.invalidateQueries({ queryKey: detailKey(id) });
-    },
+  return useCsrfMutation<{ batch: BulkBatchDto | null }, string>({
+    url: (id) => `/api/cluster/bulk-lifecycle/${encodeURIComponent(id)}`,
+    method: 'DELETE',
+    invalidateKeys: (_data, id) => [[...LIST_KEY], [...detailKey(id)]],
   });
 }
