@@ -79,29 +79,39 @@ async function drive(chain: Chain, opts: RunChainOptions): Promise<void> {
 
   for (let i = 0; i < chain.steps.length; i++) {
     if (halted) {
-      runRows[i] = { ...runRows[i], status: 'skipped' };
+      runRows[i] = { stepIndex: i, status: 'skipped' };
       await setLastRun(chain.id, runRows);
       continue;
     }
 
     const step = chain.steps[i];
     const startedAt = deps.now();
-    runRows[i] = { ...runRows[i], status: 'running', startedAt };
+    runRows[i] = { stepIndex: i, status: 'running', startedAt };
     await setLastRun(chain.id, runRows);
 
     const outcome = await runOneStep(chain, step, deps, pollMs, watchdogMs);
-    runRows[i] = {
-      ...runRows[i],
-      status: outcome.status,
-      jobId: outcome.jobId,
-      error: outcome.error,
-      finishedAt: deps.now(),
-    };
-    await setLastRun(chain.id, runRows);
-
-    if (outcome.status === 'failed' && chain.policy === 'halt-on-failure') {
-      halted = true;
+    const finishedAt = deps.now();
+    if (outcome.status === 'success') {
+      // success requires jobId — runOneStep guarantees it.
+      runRows[i] = {
+        stepIndex: i,
+        status: 'success',
+        startedAt,
+        finishedAt,
+        jobId: outcome.jobId!,
+      };
+    } else {
+      runRows[i] = {
+        stepIndex: i,
+        status: 'failed',
+        startedAt,
+        finishedAt,
+        error: outcome.error ?? 'Unknown error',
+        jobId: outcome.jobId,
+      };
+      if (chain.policy === 'halt-on-failure') halted = true;
     }
+    await setLastRun(chain.id, runRows);
   }
 }
 

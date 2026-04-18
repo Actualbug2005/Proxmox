@@ -37,13 +37,86 @@ export interface ChainStep {
   timeoutMs?: number;
 }
 
-export interface ChainStepRun {
+/**
+ * Discriminated by `status` so each lifecycle state only carries the
+ * fields that are meaningful for it. A `pending` row with a `finishedAt`
+ * is a bug the compiler now rejects.
+ *
+ * Persisted inside `Chain.lastRun` in scheduled-chains.json — old records
+ * (pre-0.8.4) used a single loose interface with every field optional.
+ * `sanitiseChainStepRun` below strips fields the old shape may have
+ * carried that don't belong on the new state.
+ */
+export interface PendingChainStepRun {
   stepIndex: number;
-  status: ChainStepStatus;
+  status: 'pending';
+}
+export interface RunningChainStepRun {
+  stepIndex: number;
+  status: 'running';
+  startedAt: number;
   jobId?: string;
-  startedAt?: number;
-  finishedAt?: number;
-  error?: string;
+}
+export interface SuccessChainStepRun {
+  stepIndex: number;
+  status: 'success';
+  startedAt: number;
+  finishedAt: number;
+  jobId: string;
+}
+export interface FailedChainStepRun {
+  stepIndex: number;
+  status: 'failed';
+  startedAt: number;
+  finishedAt: number;
+  error: string;
+  /** Optional — missing when dispatch/validation failed before a job was created. */
+  jobId?: string;
+}
+export interface SkippedChainStepRun {
+  stepIndex: number;
+  status: 'skipped';
+}
+
+export type ChainStepRun =
+  | PendingChainStepRun
+  | RunningChainStepRun
+  | SuccessChainStepRun
+  | FailedChainStepRun
+  | SkippedChainStepRun;
+
+/**
+ * Accept arbitrary JSON-decoded input and narrow it to the union. Old
+ * persisted records had fields (error on success rows, finishedAt on
+ * pending rows) that the new type rejects; strip them rather than fail
+ * the whole load. Returns null for shapes that can't be salvaged.
+ */
+export function sanitiseChainStepRun(raw: unknown): ChainStepRun | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const stepIndex = typeof r.stepIndex === 'number' ? r.stepIndex : null;
+  const status = typeof r.status === 'string' ? r.status : null;
+  if (stepIndex === null || !status) return null;
+  const startedAt = typeof r.startedAt === 'number' ? r.startedAt : undefined;
+  const finishedAt = typeof r.finishedAt === 'number' ? r.finishedAt : undefined;
+  const jobId = typeof r.jobId === 'string' ? r.jobId : undefined;
+  const error = typeof r.error === 'string' ? r.error : undefined;
+  switch (status) {
+    case 'pending':
+      return { stepIndex, status: 'pending' };
+    case 'running':
+      return { stepIndex, status: 'running', startedAt: startedAt ?? 0, jobId };
+    case 'success':
+      if (!jobId || startedAt === undefined || finishedAt === undefined) return null;
+      return { stepIndex, status: 'success', startedAt, finishedAt, jobId };
+    case 'failed':
+      if (startedAt === undefined || finishedAt === undefined) return null;
+      return { stepIndex, status: 'failed', startedAt, finishedAt, error: error ?? 'Unknown error', jobId };
+    case 'skipped':
+      return { stepIndex, status: 'skipped' };
+    default:
+      return null;
+  }
 }
 
 export interface Chain {
@@ -109,6 +182,19 @@ async function readFile(): Promise<FileShape> {
     const raw = await fsp.readFile(FILE, 'utf8');
     const parsed = JSON.parse(raw) as FileShape;
     if (parsed.version !== 1 || !Array.isArray(parsed.chains)) return EMPTY;
+    // Pre-0.8.4 lastRun rows had a single loose shape — re-narrow on read so
+    // the in-memory union stays sound. Rows that can't be salvaged are
+    // dropped (the chain still loads, just without a stale run history).
+    for (const c of parsed.chains) {
+      if (Array.isArray(c.lastRun)) {
+        const cleaned: ChainStepRun[] = [];
+        for (const r of c.lastRun) {
+          const sane = sanitiseChainStepRun(r);
+          if (sane) cleaned.push(sane);
+        }
+        c.lastRun = cleaned;
+      }
+    }
     return parsed;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return EMPTY;
