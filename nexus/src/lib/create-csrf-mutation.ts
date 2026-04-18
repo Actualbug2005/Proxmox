@@ -46,6 +46,14 @@ export interface CsrfMutationOptions<TData, TInput> {
    * Default: true for POST/PUT/PATCH; false for DELETE.
    */
   sendBody?: boolean;
+  /**
+   * Transform the input before JSON-stringifying for the request body.
+   * Use when the URL derives from one field of the input but the body
+   * should carry a different subset — e.g. PATCH /items/:id where id
+   * goes in the URL and the rest of the input goes in the body.
+   * Default: JSON.stringify(input).
+   */
+  body?: (input: TInput) => unknown;
   /** Extra mutation options passed through to react-query. */
   extra?: Omit<UseMutationOptions<TData, Error, TInput>, 'mutationFn'>;
 }
@@ -69,13 +77,14 @@ export function useCsrfMutation<TData, TInput>(options: CsrfMutationOptions<TDat
     mutationFn: async (input) => {
       const url = typeof options.url === 'function' ? options.url(input) : options.url;
       const csrf = readCsrfCookie();
+      const bodyValue = options.body ? options.body(input) : input;
       const res = await fetch(url, {
         method: options.method,
         headers: {
           ...(shouldSendBody ? { 'Content-Type': 'application/json' } : {}),
           ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
         },
-        ...(shouldSendBody ? { body: JSON.stringify(input) } : {}),
+        ...(shouldSendBody ? { body: JSON.stringify(bodyValue) } : {}),
       });
       if (!res.ok) throw new Error(await readError(res));
       // Some DELETE endpoints return 204 No Content — guard against that.

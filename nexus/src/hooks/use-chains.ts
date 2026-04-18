@@ -11,9 +11,8 @@
  * updates without flooding the API for idle chains.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { readCsrfCookie } from '@/lib/proxmox-client';
-import { readError } from '@/lib/create-csrf-mutation';
+import { useQuery } from '@tanstack/react-query';
+import { useCsrfMutation, readError } from '@/lib/create-csrf-mutation';
 import type { ChainDto, ChainStepDto } from '@/lib/chains-dto';
 import type {
   ChainStepPolicy,
@@ -52,14 +51,6 @@ export interface UpdateChainInput {
 
 const LIST_KEY = ['chains', 'list'] as const;
 const chainKey = (id: string) => ['chains', 'one', id] as const;
-
-function csrfHeaders(): Record<string, string> {
-  const csrf = readCsrfCookie();
-  return {
-    'Content-Type': 'application/json',
-    ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
-  };
-}
 
 export function useChains() {
   return useQuery<{ chains: ChainDto[] }, Error>({
@@ -112,78 +103,42 @@ export function useChain(id: string | null, opts: { live?: boolean } = {}) {
 }
 
 export function useCreateChain() {
-  const qc = useQueryClient();
-  return useMutation<{ chain: ChainDto }, Error, CreateChainInput>({
-    mutationFn: async (input) => {
-      const res = await fetch('/api/scripts/chains', {
-        method: 'POST',
-        headers: csrfHeaders(),
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { chain: ChainDto };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<{ chain: ChainDto }, CreateChainInput>({
+    url: '/api/scripts/chains',
+    method: 'POST',
+    invalidateKeys: [[...LIST_KEY]],
   });
 }
 
+interface UpdateChainCall {
+  id: string;
+  patch: UpdateChainInput;
+}
+
 export function useUpdateChain() {
-  const qc = useQueryClient();
-  return useMutation<
-    { chain: ChainDto },
-    Error,
-    { id: string; patch: UpdateChainInput }
-  >({
-    mutationFn: async ({ id, patch }) => {
-      const res = await fetch(`/api/scripts/chains/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: csrfHeaders(),
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { chain: ChainDto };
-    },
-    onSuccess: (_data, vars) => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-      void qc.invalidateQueries({ queryKey: chainKey(vars.id) });
-    },
+  return useCsrfMutation<{ chain: ChainDto }, UpdateChainCall>({
+    url: (input) => `/api/scripts/chains/${encodeURIComponent(input.id)}`,
+    method: 'PATCH',
+    body: (input) => input.patch,
+    invalidateKeys: (_data, vars) => [[...LIST_KEY], [...chainKey(vars.id)]],
   });
 }
 
 export function useDeleteChain() {
-  const qc = useQueryClient();
-  return useMutation<{ removed: true }, Error, string>({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/scripts/chains/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: csrfHeaders(),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { removed: true };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<{ removed: true }, string>({
+    url: (id) => `/api/scripts/chains/${encodeURIComponent(id)}`,
+    method: 'DELETE',
+    invalidateKeys: [[...LIST_KEY]],
   });
 }
 
 export function useRunChain() {
-  const qc = useQueryClient();
-  return useMutation<{ started: boolean; chainId: string }, Error, string>({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/scripts/chains/${encodeURIComponent(id)}/run`, {
-        method: 'POST',
-        headers: csrfHeaders(),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { started: boolean; chainId: string };
-    },
-    onSuccess: (_data, id) => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-      void qc.invalidateQueries({ queryKey: chainKey(id) });
-    },
+  return useCsrfMutation<{ started: boolean; chainId: string }, string>({
+    url: (id) => `/api/scripts/chains/${encodeURIComponent(id)}/run`,
+    method: 'POST',
+    // The run endpoint takes no body — just the URL path + CSRF header.
+    sendBody: false,
+    invalidateKeys: (_data, id) => [[...LIST_KEY], [...chainKey(id)]],
   });
 }
 

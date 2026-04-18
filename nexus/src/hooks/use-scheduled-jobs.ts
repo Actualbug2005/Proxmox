@@ -6,9 +6,8 @@
  * a separate rethink.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { readCsrfCookie } from '@/lib/proxmox-client';
-import { readError } from '@/lib/create-csrf-mutation';
+import { useQuery } from '@tanstack/react-query';
+import { useCsrfMutation, readError } from '@/lib/create-csrf-mutation';
 import type { ScheduledJobDto } from '@/lib/scheduled-jobs-dto';
 
 export type { ScheduledJobDto };
@@ -52,67 +51,33 @@ export function useScheduledJobs() {
 }
 
 export function useCreateScheduledJob() {
-  const qc = useQueryClient();
-  return useMutation<{ job: ScheduledJobDto }, Error, CreateScheduledJobInput>({
-    mutationFn: async (input) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch('/api/scripts/schedules', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
-        },
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { job: ScheduledJobDto };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<{ job: ScheduledJobDto }, CreateScheduledJobInput>({
+    url: '/api/scripts/schedules',
+    method: 'POST',
+    invalidateKeys: [[...LIST_KEY]],
   });
 }
 
+// PATCH needs the id in the URL AND the patch as the body. useCsrfMutation's
+// `body` transformer lets us derive each from the same TInput.
+interface UpdateScheduledJobCall {
+  id: string;
+  patch: UpdateScheduledJobInput;
+}
+
 export function useUpdateScheduledJob() {
-  const qc = useQueryClient();
-  return useMutation<
-    { job: ScheduledJobDto },
-    Error,
-    { id: string; patch: UpdateScheduledJobInput }
-  >({
-    mutationFn: async ({ id, patch }) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch(`/api/scripts/schedules/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
-        },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { job: ScheduledJobDto };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<{ job: ScheduledJobDto }, UpdateScheduledJobCall>({
+    url: (input) => `/api/scripts/schedules/${encodeURIComponent(input.id)}`,
+    method: 'PATCH',
+    body: (input) => input.patch,
+    invalidateKeys: [[...LIST_KEY]],
   });
 }
 
 export function useDeleteScheduledJob() {
-  const qc = useQueryClient();
-  return useMutation<{ removed: boolean }, Error, string>({
-    mutationFn: async (id) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch(`/api/scripts/schedules/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: { ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}) },
-      });
-      if (!res.ok) throw new Error(await readError(res));
-      return (await res.json()) as { removed: boolean };
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: LIST_KEY });
-    },
+  return useCsrfMutation<{ removed: boolean }, string>({
+    url: (id) => `/api/scripts/schedules/${encodeURIComponent(id)}`,
+    method: 'DELETE',
+    invalidateKeys: [[...LIST_KEY]],
   });
 }

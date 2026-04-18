@@ -13,8 +13,8 @@
  * stay consistent across the status bar, drawer, and scripts page.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { readCsrfCookie } from '@/lib/proxmox-client';
+import { useQuery } from '@tanstack/react-query';
+import { useCsrfMutation } from '@/lib/create-csrf-mutation';
 import type { JobSummary } from '@/app/api/scripts/jobs/route';
 
 export type { JobSummary };
@@ -86,48 +86,20 @@ export function useScriptJobDetail(jobId: string | null) {
 }
 
 export function useStartScriptJob() {
-  const qc = useQueryClient();
-  return useMutation<StartScriptJobResponse, Error, StartScriptJobInput>({
-    mutationFn: async (input) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch('/api/scripts/run', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}),
-        },
-        body: JSON.stringify(input),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      return (await res.json()) as StartScriptJobResponse;
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['script-jobs', 'list'] });
-    },
+  return useCsrfMutation<StartScriptJobResponse, StartScriptJobInput>({
+    url: '/api/scripts/run',
+    method: 'POST',
+    invalidateKeys: [['script-jobs', 'list']],
   });
 }
 
 export function useAbortScriptJob() {
-  const qc = useQueryClient();
-  return useMutation<{ aborted: boolean }, Error, string>({
-    mutationFn: async (jobId) => {
-      const csrf = readCsrfCookie();
-      const res = await fetch(`/api/scripts/jobs/${encodeURIComponent(jobId)}`, {
-        method: 'DELETE',
-        headers: { ...(csrf ? { 'X-Nexus-CSRF': csrf } : {}) },
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `HTTP ${res.status}`);
-      }
-      return (await res.json()) as { aborted: boolean };
-    },
-    onSuccess: (_data, jobId) => {
-      void qc.invalidateQueries({ queryKey: ['script-jobs', 'list'] });
-      void qc.invalidateQueries({ queryKey: ['script-jobs', 'detail', jobId] });
-    },
+  return useCsrfMutation<{ aborted: boolean }, string>({
+    url: (jobId) => `/api/scripts/jobs/${encodeURIComponent(jobId)}`,
+    method: 'DELETE',
+    invalidateKeys: (_data, jobId) => [
+      ['script-jobs', 'list'],
+      ['script-jobs', 'detail', jobId],
+    ],
   });
 }
