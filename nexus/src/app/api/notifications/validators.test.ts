@@ -74,6 +74,101 @@ describe('parseDestinationInput — discord', () => {
   });
 });
 
+describe('parseDestinationInput — email', () => {
+  const baseEmail = {
+    name: 'Ops email',
+    config: {
+      kind: 'email' as const,
+      host: 'smtp.example.com',
+      port: 587,
+      secure: false,
+      username: 'me@example.com',
+      password: 'fake-secret-used-for-test-only',
+      from: '"Nexus" <nexus@example.com>',
+      to: ['ops@example.com'],
+    },
+  };
+
+  it('accepts a well-formed STARTTLS (port 587) config', () => {
+    const r = parseDestinationInput(baseEmail);
+    assert.equal(r.ok, true);
+  });
+
+  it('accepts port 465 when secure=true', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, port: 465, secure: true },
+    });
+    assert.equal(r.ok, true);
+  });
+
+  it('refuses port 25 outright (no plaintext SMTP)', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, port: 25 },
+    });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /465.*587/);
+  });
+
+  it('refuses a port / secure mismatch (465 without secure=true)', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, port: 465, secure: false },
+    });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /secure must be true for port 465/);
+  });
+
+  it('refuses a URL pasted into the host field', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, host: 'https://smtp.example.com/' },
+    });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /hostname or IP/);
+  });
+
+  it('refuses an empty recipient list', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, to: [] },
+    });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /non-empty array/);
+  });
+
+  it('refuses non-plausible email addresses in to[]', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, to: ['not-an-email'] },
+    });
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.match(r.error, /non-plausible address/);
+  });
+
+  it('accepts an IPv4 host', () => {
+    const r = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, host: '192.168.1.10' },
+    });
+    assert.equal(r.ok, true);
+  });
+
+  it('accepts the tlsInsecure opt-out flag and refuses non-boolean values', () => {
+    const ok = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, tlsInsecure: true },
+    });
+    assert.equal(ok.ok, true);
+    const bad = parseDestinationInput({
+      ...baseEmail,
+      config: { ...baseEmail.config, tlsInsecure: 'yes' as unknown as boolean },
+    });
+    assert.equal(bad.ok, false);
+  });
+});
+
 describe('parseDestinationInput — unknown / malformed', () => {
   it('refuses an unknown kind', () => {
     const r = parseDestinationInput({

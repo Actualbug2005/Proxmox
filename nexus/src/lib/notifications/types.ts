@@ -141,7 +141,46 @@ export interface DiscordDestination {
   webhookUrl: string;
 }
 
-export type DestinationConfig = WebhookDestination | NtfyDestination | DiscordDestination;
+/**
+ * SMTP-delivered email. Ports are restricted to the modern TLS variants
+ * — 465 (implicit TLS) or 587 (STARTTLS) — because plain port 25 without
+ * auth/encryption is indefensible in 2026. `tlsInsecure` is the escape
+ * hatch for homelab SMTP with self-signed certs; it disables cert
+ * verification but does NOT downgrade to plaintext.
+ *
+ * Recipients are a static comma-separated list authored at destination
+ * creation time; no template-driven addressing (keeps the templating
+ * grammar logic-less).
+ */
+export interface EmailDestination {
+  kind: 'email';
+  host: string;
+  /** One of the two TLS ports — validator rejects anything else. */
+  port: 465 | 587;
+  /**
+   * True for port 465 (implicit TLS from connect). False for port 587
+   * (plaintext LOGIN then STARTTLS). Must match the port — 465 without
+   * `secure` or 587 with `secure` are both busted SMTP clients.
+   */
+  secure: boolean;
+  /**
+   * Opt-in to skipping TLS cert validation. Only for self-hosted /
+   * self-signed-cert LAN SMTP. Never disables encryption, only verification.
+   */
+  tlsInsecure?: boolean;
+  username: string;
+  password: string;
+  /** RFC 5322 "From:" address. */
+  from: string;
+  /** Non-empty list of RFC 5322 "To:" addresses. */
+  to: string[];
+}
+
+export type DestinationConfig =
+  | WebhookDestination
+  | NtfyDestination
+  | DiscordDestination
+  | EmailDestination;
 export type DestinationKind = DestinationConfig['kind'];
 
 /**

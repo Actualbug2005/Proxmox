@@ -49,6 +49,10 @@ const KIND_COPY: Record<DestinationKind, { label: string; hint: string }> = {
     label: 'Discord webhook',
     hint: 'Coloured-embed POST to a channel webhook URL.',
   },
+  email: {
+    label: 'Email (SMTP)',
+    hint: 'TLS-only (port 465/587); comma-separated recipient list.',
+  },
 };
 
 // Default config object per kind so the form has fields to bind to
@@ -56,7 +60,20 @@ const KIND_COPY: Record<DestinationKind, { label: string; hint: string }> = {
 function emptyConfigFor(kind: DestinationKind): DestinationConfig {
   if (kind === 'webhook') return { kind: 'webhook', url: '' };
   if (kind === 'ntfy') return { kind: 'ntfy', topicUrl: '' };
-  return { kind: 'discord', webhookUrl: '' };
+  if (kind === 'discord') return { kind: 'discord', webhookUrl: '' };
+  // Sensible email defaults: port 587 / STARTTLS is the most common
+  // homelab + cloud-SMTP combo; secure stays false because 587
+  // upgrades via STARTTLS, not implicit TLS.
+  return {
+    kind: 'email',
+    host: '',
+    port: 587,
+    secure: false,
+    username: '',
+    password: '',
+    from: '',
+    to: [],
+  };
 }
 
 export function DestinationForm({
@@ -167,6 +184,81 @@ export function DestinationForm({
         </Field>
       )}
 
+      {config.kind === 'email' && (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="SMTP host">
+              <Input
+                value={config.host}
+                onChange={(host) => setConfig({ ...config, host })}
+                placeholder="smtp.example.com"
+              />
+            </Field>
+            <Field label="Port" hint="465 = TLS, 587 = STARTTLS. No other ports.">
+              <select
+                value={config.port}
+                onChange={(e) => {
+                  const port = Number(e.target.value) as 465 | 587;
+                  // Keep secure in sync — 465 is implicit-TLS, 587 is
+                  // STARTTLS. Mismatched combos don't connect.
+                  setConfig({ ...config, port, secure: port === 465 });
+                }}
+                className={inputCls}
+              >
+                <option value={587}>587 (STARTTLS)</option>
+                <option value={465}>465 (TLS)</option>
+              </select>
+            </Field>
+            <Field label="TLS cert check" hint="Disable only for self-signed LAN SMTP. Transport stays encrypted either way.">
+              <select
+                value={config.tlsInsecure ? 'off' : 'on'}
+                onChange={(e) => setConfig({ ...config, tlsInsecure: e.target.value === 'off' })}
+                className={inputCls}
+              >
+                <option value="on">Strict (recommended)</option>
+                <option value="off">Allow self-signed</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Username">
+              <Input
+                value={config.username}
+                onChange={(username) => setConfig({ ...config, username })}
+                placeholder="me@example.com"
+              />
+            </Field>
+            <Field label="Password / app-password">
+              <Input
+                value={config.password}
+                onChange={(password) => setConfig({ ...config, password })}
+                type="password"
+                placeholder="(required)"
+              />
+            </Field>
+          </div>
+
+          <Field label="From address" hint="Appears as the 'From:' header; many providers require this to match the auth account.">
+            <Input
+              value={config.from}
+              onChange={(from) => setConfig({ ...config, from })}
+              placeholder='"Nexus" <nexus@example.com>'
+            />
+          </Field>
+          <Field label="To addresses" hint="Comma-separated. Each recipient receives every alert matching the bound rule.">
+            <Input
+              value={config.to.join(', ')}
+              onChange={(raw) => setConfig({
+                ...config,
+                to: raw.split(',').map((s) => s.trim()).filter(Boolean),
+              })}
+              placeholder="ops@example.com, pager@example.com"
+            />
+          </Field>
+        </>
+      )}
+
       {error && (
         <div className="flex items-start gap-2 text-sm text-[var(--color-err)] bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg px-3 py-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -241,5 +333,19 @@ function validConfig(config: DestinationConfig): boolean {
     if (config.basicAuth && !config.basicAuth.includes(':')) return false;
     return true;
   }
-  return isHttps(config.webhookUrl) && config.webhookUrl.includes('/api/webhooks/');
+  if (config.kind === 'discord') {
+    return isHttps(config.webhookUrl) && config.webhookUrl.includes('/api/webhooks/');
+  }
+  // Email — all fields populated; port + secure agreement is enforced
+  // by the Port dropdown's onChange, so just verify non-empty strings
+  // and at least one recipient. Per-address RFC shape is checked
+  // server-side on save (the regex lives in validators.ts).
+  return (
+    config.host.length > 0 &&
+    (config.port === 465 || config.port === 587) &&
+    config.username.length > 0 &&
+    config.password.length > 0 &&
+    config.from.length > 0 &&
+    config.to.length > 0
+  );
 }

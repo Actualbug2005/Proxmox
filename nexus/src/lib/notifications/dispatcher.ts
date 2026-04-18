@@ -25,6 +25,7 @@ import {
 import { dispatch as webhookDispatch } from './destinations/webhook.ts';
 import { dispatch as ntfyDispatch } from './destinations/ntfy.ts';
 import { dispatch as discordDispatch } from './destinations/discord.ts';
+import { dispatch as emailDispatch } from './destinations/email.ts';
 import type {
   DestinationConfig,
   DispatchRecord,
@@ -67,6 +68,10 @@ async function transportFor(
     case 'webhook': return webhookDispatch(config, payload, fetcher);
     case 'ntfy':    return ntfyDispatch(config, payload, fetcher);
     case 'discord': return discordDispatch(config, payload, fetcher);
+    // Email uses nodemailer directly — ignores the HTTP fetcher. Same
+    // DispatchResult contract so the dispatcher caller doesn't care
+    // whether the transport was HTTP or SMTP.
+    case 'email':   return emailDispatch(config, payload);
   }
 }
 

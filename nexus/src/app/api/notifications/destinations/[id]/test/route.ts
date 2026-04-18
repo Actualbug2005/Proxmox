@@ -17,6 +17,7 @@ import { getDestination, decryptDestination } from '@/lib/notifications/store';
 import { dispatch as webhookDispatch } from '@/lib/notifications/destinations/webhook';
 import { dispatch as ntfyDispatch } from '@/lib/notifications/destinations/ntfy';
 import { dispatch as discordDispatch } from '@/lib/notifications/destinations/discord';
+import { dispatch as emailDispatch } from '@/lib/notifications/destinations/email';
 import type { DestinationId } from '@/lib/notifications/types';
 import type { DispatchFetcher, DispatchPayload } from '@/lib/notifications/destinations/types';
 
@@ -53,10 +54,16 @@ export const POST = withCsrf<{ id: string }>(async (_req, ctx) => {
     title: 'Nexus test',
   };
 
-  const result =
-    config.kind === 'webhook' ? await webhookDispatch(config, payload, realFetcher) :
-    config.kind === 'ntfy'    ? await ntfyDispatch(config, payload, realFetcher) :
-                                await discordDispatch(config, payload, realFetcher);
+  // Switch (not ternary chain) so TypeScript enforces exhaustive
+  // coverage — a future destination kind landing in the union
+  // becomes a compile error here, not a silent runtime 502.
+  let result;
+  switch (config.kind) {
+    case 'webhook': result = await webhookDispatch(config, payload, realFetcher); break;
+    case 'ntfy':    result = await ntfyDispatch(config, payload, realFetcher);    break;
+    case 'discord': result = await discordDispatch(config, payload, realFetcher); break;
+    case 'email':   result = await emailDispatch(config, payload);                break;
+  }
 
   return NextResponse.json(result, { status: result.outcome === 'sent' ? 200 : 502 });
 });

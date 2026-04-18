@@ -15,6 +15,7 @@ import {
   EVENT_KINDS,
   type ComparisonOp,
   type DestinationConfig,
+  type EmailDestination,
   type EventKind,
   type ResolvePolicy,
   type RuleMatch,
@@ -67,6 +68,108 @@ function finiteNumber(v: unknown, field: string): Result<number> {
   return { ok: true, value: v };
 }
 
+// ─── Email helpers ─────────────────────────────────────────────────────────
+
+// RFC 5322 is famously unvalidatable by regex; this is the deliberately
+// permissive "has an @ with something on each side, no spaces or commas"
+// shape that catches fat-finger entries while not rejecting
+// address-literal or "Display Name <addr@host>" forms. The final delivery
+// system (SMTP receiver) is the only authoritative validator.
+const SIMPLE_EMAIL_RE = /^[^\s,]+@[^\s,]+$/;
+const DISPLAY_ADDR_RE = /^"?[^"<>]+"?\s*<[^\s,<>]+@[^\s,<>]+>$/;
+
+function isPlausibleEmailAddress(s: string): boolean {
+  return SIMPLE_EMAIL_RE.test(s) || DISPLAY_ADDR_RE.test(s);
+}
+
+// Parse a hostname. Allows DNS names + IPv4 literals + bracketed IPv6.
+// Rejects control chars, spaces, and the path / protocol separators
+// that would suggest the operator pasted a URL instead of a host.
+const HOSTNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9.\-]{0,253}[a-zA-Z0-9])?$/;
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+
+function isPlausibleHost(s: string): boolean {
+  if (s.startsWith('[') && s.endsWith(']')) return s.length > 2; // IPv6 literal
+  return HOSTNAME_RE.test(s) || IPV4_RE.test(s);
+}
+
+function parseEmailConfig(cfg: Record<string, unknown>): Result<EmailDestination> {
+  const host = str(cfg.host, 'config.host', 253);
+  if (!host.ok) return host;
+  if (!isPlausibleHost(host.value)) {
+    return { ok: false, error: 'config.host must be a hostname or IP (not a URL)' };
+  }
+
+  // Restricted to the two TLS-capable ports by design. Middle-ground
+  // security posture: port 25 + plaintext isn't defensible in 2026.
+  if (cfg.port !== 465 && cfg.port !== 587) {
+    return { ok: false, error: 'config.port must be 465 (TLS) or 587 (STARTTLS)' };
+  }
+  // Refuse mismatched port/secure combinations — 465 demands implicit
+  // TLS, 587 demands STARTTLS upgrade. Either swap breaks real SMTP
+  // clients silently; catching it here saves a 3am "why isn't it
+  // sending" investigation.
+  if (typeof cfg.secure !== 'boolean') {
+    return { ok: false, error: 'config.secure must be boolean' };
+  }
+  const expectedSecure = cfg.port === 465;
+  if (cfg.secure !== expectedSecure) {
+    return {
+      ok: false,
+      error: `config.secure must be ${expectedSecure} for port ${cfg.port}`,
+    };
+  }
+
+  // tlsInsecure is optional; default is undefined (strict validation).
+  let tlsInsecure: boolean | undefined;
+  if (cfg.tlsInsecure !== undefined) {
+    if (typeof cfg.tlsInsecure !== 'boolean') {
+      return { ok: false, error: 'config.tlsInsecure must be boolean' };
+    }
+    tlsInsecure = cfg.tlsInsecure;
+  }
+
+  const username = str(cfg.username, 'config.username', 256);
+  if (!username.ok) return username;
+  const password = str(cfg.password, 'config.password', 1024);
+  if (!password.ok) return password;
+
+  const from = str(cfg.from, 'config.from', 320);
+  if (!from.ok) return from;
+  if (!isPlausibleEmailAddress(from.value)) {
+    return { ok: false, error: 'config.from is not a plausible email address' };
+  }
+
+  if (!Array.isArray(cfg.to) || cfg.to.length === 0) {
+    return { ok: false, error: 'config.to must be a non-empty array of email addresses' };
+  }
+  const to: string[] = [];
+  for (const addr of cfg.to) {
+    if (typeof addr !== 'string' || addr.length === 0 || addr.length > 320) {
+      return { ok: false, error: 'config.to entries must be non-empty strings ≤ 320 chars' };
+    }
+    if (!isPlausibleEmailAddress(addr)) {
+      return { ok: false, error: `config.to contains a non-plausible address: ${addr}` };
+    }
+    to.push(addr);
+  }
+
+  return {
+    ok: true,
+    value: {
+      kind: 'email',
+      host: host.value,
+      port: cfg.port,
+      secure: cfg.secure,
+      tlsInsecure,
+      username: username.value,
+      password: password.value,
+      from: from.value,
+      to,
+    },
+  };
+}
+
 // ─── Destinations ──────────────────────────────────────────────────────────
 
 export interface DestinationInput {
@@ -117,6 +220,10 @@ export function parseDestinationInput(raw: unknown): Result<DestinationInput> {
       return { ok: false, error: 'config.webhookUrl does not look like a Discord webhook' };
     }
     config = { kind: 'discord', webhookUrl: webhookUrl.value };
+  } else if (kind === 'email') {
+    const emailCfg = parseEmailConfig(cfgObj);
+    if (!emailCfg.ok) return emailCfg;
+    config = emailCfg.value;
   } else {
     return { ok: false, error: `unknown destination kind: ${String(kind)}` };
   }

@@ -29,10 +29,11 @@ import { DestinationForm, type DestinationFormValue } from './destination-form';
 
 // Badge colour hint per kind so the table is scannable at a glance.
 // Each kind gets the same badge variant as elsewhere in the tree.
-const KIND_VARIANT: Record<DestinationKind, 'info' | 'outline' | 'success'> = {
+const KIND_VARIANT: Record<DestinationKind, 'info' | 'outline' | 'success' | 'warning'> = {
   webhook: 'outline',
   ntfy: 'info',
   discord: 'success',
+  email: 'warning',
 };
 
 export function DestinationsTab() {
@@ -223,9 +224,20 @@ export function DestinationsTab() {
               name: editing.name,
               // We don't have the plaintext config; seed an empty one of the
               // right kind so the form can render without the secrets.
-              config: editing.kind === 'webhook' ? { kind: 'webhook', url: '' } :
-                      editing.kind === 'ntfy'    ? { kind: 'ntfy', topicUrl: '' } :
-                                                   { kind: 'discord', webhookUrl: '' },
+              config:
+                editing.kind === 'webhook' ? { kind: 'webhook', url: '' } :
+                editing.kind === 'ntfy'    ? { kind: 'ntfy', topicUrl: '' } :
+                editing.kind === 'discord' ? { kind: 'discord', webhookUrl: '' } :
+                                             {
+                                               kind: 'email',
+                                               host: '',
+                                               port: 587,
+                                               secure: false,
+                                               username: '',
+                                               password: '',
+                                               from: '',
+                                               to: [],
+                                             },
             } : null}
             isPending={createM.isPending || updateM.isPending}
             error={formError}
