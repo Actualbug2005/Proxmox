@@ -61,6 +61,31 @@ export async function acquirePVETicket(
 export const PVE_TICKET_REFRESH_AFTER_MS = 90 * 60 * 1000;
 
 /**
+ * After a failed renewal, skip the next attempt for this long so a
+ * persistently-broken PVE doesn't get hammered on every request. Chosen
+ * short enough that a transient blip (DNS hiccup, PVE restart) self-heals
+ * within a minute, long enough that we're not paying an extra RTT per
+ * request under sustained failure.
+ */
+export const PVE_RENEWAL_BACKOFF_MS = 30 * 1000;
+
+/**
+ * Lightweight in-process counter for ops visibility. Phase C's
+ * `/api/system/health` endpoint reads it to expose renewal-failure rate.
+ * Lives on globalThis so HMR in dev doesn't reset it between reloads.
+ */
+declare global {
+  // eslint-disable-next-line no-var
+  var __nexusRenewalFailures: number | undefined;
+}
+function incRenewalFailureCounter(): void {
+  globalThis.__nexusRenewalFailures = (globalThis.__nexusRenewalFailures ?? 0) + 1;
+}
+export function getRenewalFailureCount(): number {
+  return globalThis.__nexusRenewalFailures ?? 0;
+}
+
+/**
  * Re-authenticate with PVE using the existing ticket as the password. PVE
  * accepts this as a renewal and returns a fresh ticket + CSRF token — no
  * user credentials required. See pveproxy source:
@@ -105,8 +130,21 @@ export async function refreshPVESessionIfStale(
   sessionId: string,
   session: PVEAuthSession,
 ): Promise<PVEAuthSession> {
-  const age = Date.now() - session.ticketIssuedAt;
+  const now = Date.now();
+  const age = now - session.ticketIssuedAt;
   if (age < PVE_TICKET_REFRESH_AFTER_MS) return session;
+
+  // H2 back-off. If we attempted renewal very recently and it failed, skip
+  // this attempt — PVE is presumably still unreachable for the same reason.
+  // Returning the stale session lets the next PVE call produce a real 401
+  // (handled by the proxy's ticket-expiry branch) without paying an extra
+  // renewal RTT on every request in the broken window.
+  if (
+    session.lastRenewalAttemptAt !== undefined &&
+    now - session.lastRenewalAttemptAt < PVE_RENEWAL_BACKOFF_MS
+  ) {
+    return session;
+  }
 
   try {
     const fresh = await renewPVETicket(session);
@@ -115,12 +153,27 @@ export async function refreshPVESessionIfStale(
       ticket: fresh.ticket,
       csrfToken: fresh.CSRFPreventionToken,
       ticketIssuedAt: Date.now(),
+      // Clear on success so a recovered PVE resumes normal behaviour.
+      lastRenewalAttemptAt: undefined,
     };
     await putSession(sessionId, updated);
     return updated;
   } catch (err) {
-    console.error('[refreshPVESessionIfStale] renewal failed:', err);
-    return session;
+    // Structured log line so ops alerting (journalctl, CrowdSec, etc.) can
+    // match on a stable event name rather than grepping free-form text.
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error('[nexus event=pve_renewal_failed] reason=%s user=%s', reason, session.username);
+    incRenewalFailureCounter();
+    // Stamp the attempt time so the back-off gate kicks in next call. Persist
+    // to the store so replicas behind a load balancer share the stamp too.
+    const stamped: PVEAuthSession = { ...session, lastRenewalAttemptAt: Date.now() };
+    try {
+      await putSession(sessionId, stamped);
+    } catch {
+      // Best-effort persist. A store outage here is a separate problem
+      // (likely the same outage that made renewal fail); don't cascade.
+    }
+    return stamped;
   }
 }
 

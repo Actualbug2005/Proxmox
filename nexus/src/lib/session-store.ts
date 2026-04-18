@@ -35,6 +35,14 @@ interface SessionBackend {
 
 // ─── Redis backend ──────────────────────────────────────────────────────────
 
+/**
+ * Number of consecutive Redis `error` events before we give up on Redis and
+ * flip the singleton to the in-memory backend (H9). Three events over the
+ * ioredis retry window is a firm enough signal to say "Redis is not reachable
+ * right now"; a healthier transient blip clears via the 'ready' listener.
+ */
+const REDIS_FAILOVER_THRESHOLD = 3;
+
 function buildRedisBackend(url: string): SessionBackend {
   const client = new Redis(url, {
     // Don't queue indefinitely on outage — fail fast so the route can 503.
@@ -43,10 +51,35 @@ function buildRedisBackend(url: string): SessionBackend {
     lazyConnect: false,
   });
 
+  let consecutiveErrors = 0;
+  let failedOver = false;
+
   client.on('error', (err: Error) => {
+    consecutiveErrors += 1;
     // Connection errors are noisy on outage. Log but don't crash — the
     // session lookup will reject and the route will surface a 401/500.
     console.error('[session-store:redis] error:', err.message);
+    if (!failedOver && consecutiveErrors >= REDIS_FAILOVER_THRESHOLD) {
+      failedOver = true;
+      console.error(
+        '[nexus event=session_store_fallback] redis unreachable after %d errors; flipping to memory backend (existing Redis sessions are unreachable regardless)',
+        REDIS_FAILOVER_THRESHOLD,
+      );
+      // Swap the module-level singleton. The next backend() call picks up
+      // the memory backend; in-flight Redis calls still reject once with
+      // the connection error (caller 401s / 500s, browser retries login).
+      globalThis.__nexusSessionBackend = buildMemoryBackend();
+      // Stop trying to reconnect so we don't leak sockets/timers.
+      client.disconnect();
+    }
+  });
+
+  // A clean reconnect resets the failure count — allows short outages to
+  // recover without permanent fallback. Once `failedOver` is true the flag
+  // stays — a Redis that came back after we abandoned it is a new story
+  // best solved with an operator-initiated Nexus restart.
+  client.on('ready', () => {
+    if (!failedOver) consecutiveErrors = 0;
   });
 
   return {

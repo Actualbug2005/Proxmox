@@ -55,6 +55,10 @@ export interface PVEAuthSession {
   /** Unix ms when the PVE ticket was issued (or last refreshed). Used by the
    *  proxy to trigger a proactive refresh before PVE's ~2h expiry lands. */
   ticketIssuedAt: number;
+  /** Unix ms of the most recent FAILED renewal attempt. Drives the 30s
+   *  back-off so a persistently-broken PVE doesn't get hammered on every
+   *  request. Cleared on successful renewal. */
+  lastRenewalAttemptAt?: number;
 }
 
 // ─── Cluster ──────────────────────────────────────────────────────────────────

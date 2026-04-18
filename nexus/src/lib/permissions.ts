@@ -12,10 +12,44 @@ import { pveFetch } from '@/lib/pve-fetch';
 type PermissionsResponse = { data?: Record<string, Record<string, number>> };
 
 /**
+ * Probe-error observability counter. The probe can fail for reasons that
+ * are NOT a genuine permission denial — upstream 5xx, transport error,
+ * malformed JSON. Each of those collapses to `false` (fail-closed, see
+ * userHasPrivilege JSDoc) so callers can't tell them apart from a real
+ * denial. The counter + structured log line let ops spot a broken PVE
+ * without scanning every call site. Phase C's /api/system/health exposes
+ * the count. Lives on globalThis so HMR doesn't reset it in dev.
+ */
+declare global {
+  // eslint-disable-next-line no-var
+  var __nexusPermissionProbeErrors: number | undefined;
+}
+type ProbeErrorKind = 'http_5xx' | 'transport' | 'parse';
+function logProbeError(
+  kind: ProbeErrorKind,
+  path: string,
+  user: string,
+  extra: string,
+): void {
+  globalThis.__nexusPermissionProbeErrors = (globalThis.__nexusPermissionProbeErrors ?? 0) + 1;
+  console.error(
+    '[nexus event=permission_probe_error] kind=%s user=%s path=%s %s',
+    kind,
+    user,
+    path,
+    extra,
+  );
+}
+export function getPermissionProbeErrorCount(): number {
+  return globalThis.__nexusPermissionProbeErrors ?? 0;
+}
+
+/**
  * Returns true only if PVE explicitly grants the privilege. Fails CLOSED on:
- *  - HTTP non-2xx (invalid ticket, 403, 500, etc.)
- *  - Transport errors (DNS, TLS handshake, connection refused, abort)
- *  - Malformed response bodies
+ *  - HTTP 401/403/404 (legitimate denial — not logged as a probe error)
+ *  - HTTP 5xx (upstream broken — logged as kind=http_5xx)
+ *  - Transport errors (DNS, TLS, connection refused, abort — kind=transport)
+ *  - Malformed response bodies (kind=parse)
  *
  * The outer try/catch is load-bearing: if anyone later wraps this function
  * with `.catch(() => true)` for "resilience", they can still exploit it,
@@ -34,12 +68,22 @@ export async function userHasPrivilege(
     const res = await pveFetch(url, {
       headers: { Cookie: `PVEAuthCookie=${session.ticket}` },
     });
+    if (res.status >= 500) {
+      logProbeError('http_5xx', path, session.username, `status=${res.status}`);
+      return false;
+    }
     if (!res.ok) return false;
-    const body = (await res.json()) as PermissionsResponse;
+    let body: PermissionsResponse;
+    try {
+      body = (await res.json()) as PermissionsResponse;
+    } catch (err) {
+      logProbeError('parse', path, session.username, `error=${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
     const entry = body.data?.[path];
     return Boolean(entry && entry[privilege]);
   } catch (err) {
-    console.error('[userHasPrivilege] transport error:', err);
+    logProbeError('transport', path, session.username, `error=${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
