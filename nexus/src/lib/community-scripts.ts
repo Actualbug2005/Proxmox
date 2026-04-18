@@ -94,16 +94,38 @@ export interface ScriptCategory {
  */
 export type FetchErrorKind = 'timeout' | 'network' | 'http' | 'parse' | 'empty';
 
+/** Kinds where `status` MUST NOT appear (no HTTP response was received or the
+ *  response wasn't an HTTP-status-bearing error). */
+type NonHttpKind = Exclude<FetchErrorKind, 'http'>;
+
+/**
+ * Discriminated error class. Constructor overloads enforce the kind/status
+ * invariant at compile time — `kind: 'http'` requires a status, all other
+ * kinds forbid one. Prior optional-status shape silently allowed inconsistent
+ * combinations.
+ */
 export class UpstreamFetchError extends Error {
   readonly kind: FetchErrorKind;
   readonly status?: number;
   readonly url: string;
 
+  constructor(kind: 'http', url: string, message: string, status: number);
+  constructor(kind: NonHttpKind, url: string, message: string);
   constructor(kind: FetchErrorKind, url: string, message: string, status?: number) {
     super(message);
     this.name = 'UpstreamFetchError';
     this.kind = kind;
-    this.status = status;
+    if (kind === 'http') {
+      if (status === undefined) {
+        // The overload signatures prevent this at compile time, but a
+        // dynamic caller (Reflect.construct, JSON-revived error, etc.)
+        // could still slip through. Default to 0 rather than leave
+        // status undefined for an http error.
+        this.status = 0;
+      } else {
+        this.status = status;
+      }
+    }
     this.url = url;
   }
 }

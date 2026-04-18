@@ -19,11 +19,20 @@ export function toPveBool(v: boolean | undefined): PveBool | undefined {
   return v === undefined ? undefined : v ? (1 as PveBool) : (0 as PveBool);
 }
 
-// Signature accepts raw number so defensive decoding from unknown wire
-// payloads (and test-literal inputs like `fromPveBool(1)`) still typechecks.
-// The branded PveBool is a subtype of number so prior call sites are unaffected.
-export function fromPveBool(v: number | boolean | null | undefined): boolean {
-  return v === 1 || v === true;
+// PVE returns booleans as one of: 1 / 0 (numeric, the documented default),
+// true / false (some endpoints), '1' / '0' (form-POST echoes — silently
+// treated as `false` by the prior implementation, which was the read-path
+// leak the audit flagged). null/undefined collapse to false. Any other
+// value is a wire-shape regression that should fail loud rather than
+// silently falsy.
+export function fromPveBool(v: number | boolean | string | null | undefined): boolean {
+  if (v === 1 || v === '1' || v === true) return true;
+  if (v === 0 || v === '0' || v === false || v === null || v === undefined) return false;
+  // Throwing here would cascade into 500s on PVE schema drift; coerce to
+  // false (fail-closed for permission-shaped flags) and log loudly so the
+  // operator can spot the upstream change in the journal.
+  console.error('[fromPveBool] unexpected wire value: type=%s value=%s', typeof v, String(v));
+  return false;
 }
 
 /**
@@ -54,7 +63,11 @@ export function decodeBoolFields<T extends object, K extends keyof T>(
   const out = { ...obj } as Record<PropertyKey, unknown>;
   for (const k of keys) {
     const v = obj[k];
-    out[k as PropertyKey] = v === undefined ? undefined : (((v as unknown) === 1 || v === true) as boolean);
+    // Route through fromPveBool so the '0'/'1' string handling stays in
+    // exactly one place (Phase H). `undefined` passes through unchanged
+    // so optional fields stay optional after decode.
+    out[k as PropertyKey] =
+      v === undefined ? undefined : fromPveBool(v as number | boolean | string | null);
   }
   return out as { [P in keyof T]: P extends K ? boolean | undefined : T[P] };
 }

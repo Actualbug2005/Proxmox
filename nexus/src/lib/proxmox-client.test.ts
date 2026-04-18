@@ -34,6 +34,21 @@ describe('fromPveBool', () => {
     assert.equal(fromPveBool(true), true);
     assert.equal(fromPveBool(false), false);
   });
+
+  it('decodes string "1" / "0" (Phase H read-path leak fix)', () => {
+    // Some PVE endpoints echo PveBool as a string (form-POST round-trips,
+    // network/sdn config reads). The pre-Phase-H implementation silently
+    // returned `false` for "1", which masked real "enabled" state in the UI.
+    assert.equal(fromPveBool('1'), true);
+    assert.equal(fromPveBool('0'), false);
+  });
+
+  it('returns false (and logs) on unexpected wire shapes', () => {
+    // Anything outside the documented vocabulary should NOT silently
+    // appear truthy. Fail closed.
+    assert.equal(fromPveBool('yes' as unknown as string), false);
+    assert.equal(fromPveBool(2 as unknown as number), false);
+  });
 });
 
 describe('encode/decode round-trip', () => {
