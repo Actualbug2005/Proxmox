@@ -8,6 +8,7 @@
  */
 import type { PVEAuthSession } from '@/types/proxmox';
 import { pveFetch } from '@/lib/pve-fetch';
+import { emit as emitNotification } from '@/lib/notifications/event-bus';
 
 type PermissionsResponse = { data?: Record<string, Record<string, number>> };
 
@@ -39,6 +40,11 @@ function logProbeError(
     path,
     extra,
   );
+  emitNotification({
+    kind: 'permission.probe.error',
+    at: Date.now(),
+    payload: { probeKind: kind, username: user, path, extra },
+  });
 }
 export function getPermissionProbeErrorCount(): number {
   return globalThis.__nexusPermissionProbeErrors ?? 0;

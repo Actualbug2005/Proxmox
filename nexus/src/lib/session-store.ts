@@ -16,6 +16,7 @@
  */
 import Redis from 'ioredis';
 import type { PVEAuthSession } from '@/types/proxmox';
+import { emit as emitNotification } from '@/lib/notifications/event-bus';
 
 const TTL_MS = 8 * 60 * 60 * 1000;
 const TTL_SECONDS = Math.floor(TTL_MS / 1000);
@@ -65,6 +66,11 @@ function buildRedisBackend(url: string): SessionBackend {
         '[nexus event=session_store_fallback] redis unreachable after %d errors; flipping to memory backend (existing Redis sessions are unreachable regardless)',
         REDIS_FAILOVER_THRESHOLD,
       );
+      emitNotification({
+        kind: 'session.store.fallback',
+        at: Date.now(),
+        payload: { consecutiveErrors: REDIS_FAILOVER_THRESHOLD },
+      });
       // Swap the module-level singleton. The next backend() call picks up
       // the memory backend; in-flight Redis calls still reject once with
       // the connection error (caller 401s / 500s, browser retries login).

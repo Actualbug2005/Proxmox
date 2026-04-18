@@ -18,6 +18,7 @@ import {
 import { deriveCsrfToken, CSRF_COOKIE } from '@/lib/csrf';
 import { pveFetch } from '@/lib/pve-fetch';
 import { parseSessionTicket, parsePveCsrfToken } from '@/types/brands';
+import { emit as emitNotification } from '@/lib/notifications/event-bus';
 
 export const SESSION_COOKIE = 'nexus_session';
 
@@ -170,6 +171,14 @@ export async function refreshPVESessionIfStale(
     const reason = err instanceof Error ? err.message : String(err);
     console.error('[nexus event=pve_renewal_failed] reason=%s user=%s', reason, session.username);
     incRenewalFailureCounter();
+    // Push the same event onto the notification bus so configured rules
+    // can alert on it. emit() is fire-and-forget and never throws, so a
+    // broken dispatcher can't cascade into a broken renewal path.
+    emitNotification({
+      kind: 'pve.renewal.failed',
+      at: Date.now(),
+      payload: { username: session.username, reason },
+    });
     // Stamp the attempt time so the back-off gate kicks in next call. Persist
     // to the store so replicas behind a load balancer share the stamp too.
     const stamped: PVEAuthSession = { ...session, lastRenewalAttemptAt: Date.now() };

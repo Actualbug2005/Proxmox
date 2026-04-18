@@ -39,6 +39,7 @@
 import { createHash, publicEncrypt, randomBytes, createCipheriv, constants } from 'node:crypto';
 import { appendFile, readFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { emit as emitNotification } from '@/lib/notifications/event-bus';
 
 // Exported so the decrypt helper (scripts/nexus-audit-decrypt.ts) imports
 // the same canonical frame sizes that encrypt uses.
@@ -223,6 +224,11 @@ export function noteAuditWriteFailure(
     user,
     reason,
   );
+  emitNotification({
+    kind: 'exec.audit.write.failed',
+    at: Date.now(),
+    payload: { endpoint, username: user, reason },
+  });
 }
 
 export function getAuditWriteFailureCount(): number {

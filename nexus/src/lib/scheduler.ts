@@ -22,6 +22,7 @@
 // runs under Node's --experimental-strip-types (no bundler resolver).
 import { matchesCron } from './cron-match.ts';
 import * as scriptsStore from './scheduled-jobs-store.ts';
+import { emit as emitNotification } from './notifications/event-bus.ts';
 
 const SCHED_TICK_MS = 60_000;
 const DEDUP_WINDOW_MS = 55_000;
@@ -116,6 +117,11 @@ async function runTick<T>(
           source.getId(item),
           reason,
         );
+        emitNotification({
+          kind: 'scheduler.fire.failed',
+          at: nowMs,
+          payload: { source: source.name, id: source.getId(item), reason },
+        });
         // Capture the error so onFired can persist it. Still stamp
         // lastFiredAt — retrying immediately within this minute would just
         // fail again. The operator sees the error via
@@ -141,6 +147,11 @@ async function runTick<T>(
             source.getId(item),
             failures,
           );
+          emitNotification({
+            kind: 'scheduler.auto.disabled',
+            at: nowMs,
+            payload: { source: source.name, id: source.getId(item), failures },
+          });
           try {
             await source.disable(source.getId(item), reason);
           } catch (err) {

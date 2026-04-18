@@ -16,6 +16,8 @@ import { runScriptJob } from './src/lib/run-script-job.ts';
 import * as scheduledJobsStore from './src/lib/scheduled-jobs-store.ts';
 import * as chainsStore from './src/lib/chains-store.ts';
 import { runChain } from './src/lib/run-chain.ts';
+import { attach as attachNotificationDispatcher } from './src/lib/notifications/dispatcher.ts';
+import { startPollSource as startNotificationPollSource } from './src/lib/notifications/poll-source.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -320,5 +322,22 @@ app.prepare().then(() => {
   startSchedulerSource(chainsSource, async (chain) => {
     runChain(chain);
     return {};
+  });
+
+  // ── Notification engine ──────────────────────────────────────────────────
+  // Wire the dispatcher onto the event bus so every emit() from
+  // instrumented sites (auth, permissions, exec-audit, scheduler,
+  // session-store) gets matched against rules + POSTed to destinations.
+  // No awaited handler — the bus is fire-and-forget.
+  attachNotificationDispatcher();
+
+  // Start the metric polling source. It currently fetches a synthetic
+  // empty snapshot because server-side fetching of `/cluster/resources`
+  // requires an authenticated PVE session, which this boot context
+  // doesn't have. Phase C.2 will bridge a service-account session for
+  // the poll; for now the poll tick runs but yields no metric events,
+  // and the push-emitters cover the five critical ops signals.
+  startNotificationPollSource({
+    fetchState: async () => ({ resources: [], nodeStatuses: {}, tasks: [] }),
   });
 });
