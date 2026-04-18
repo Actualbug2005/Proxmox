@@ -67,7 +67,17 @@ export interface PushedEvent {
     /** Guest-agent probe (5.2) — a filesystem crossed the disk-pressure threshold. */
     | 'guest.disk.filling'
     /** Guest-agent probe (5.2) — agent has been unreachable across multiple polls. */
-    | 'guest.agent.unreachable';
+    | 'guest.agent.unreachable'
+    /** Auto-update — release probe saw a newer tag than the running version. */
+    | 'nexus.update.available'
+    /** Auto-update — unattended installer triggered successfully. */
+    | 'nexus.update.installed'
+    /** Auto-update — unattended install refused by a safety rail (active jobs,
+     *  DRS migrations, consoles, or the 60-min floor). Release is still
+     *  available, just not applied this tick. */
+    | 'nexus.update.deferred'
+    /** Auto-update — installer returned non-zero. Operator review required. */
+    | 'nexus.update.failed';
   at: number;
   /** Free-form structured payload; rule matcher reads specific keys by kind. */
   payload: Record<string, string | number | boolean | null | undefined>;
@@ -104,6 +114,10 @@ export const EVENT_KINDS = [
   'drs.migration.failed',
   'guest.disk.filling',
   'guest.agent.unreachable',
+  'nexus.update.available',
+  'nexus.update.installed',
+  'nexus.update.deferred',
+  'nexus.update.failed',
   'metric.threshold.crossed',
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];

@@ -152,6 +152,17 @@ export function getJob(id: string): JobRecord | undefined {
  * the status bar shows just a few running jobs; the full list is used
  * when a user opens the job drawer history.
  */
+/**
+ * Count of jobs in the `running` state. Cheap O(n) scan over the in-
+ * memory map — the map is capped by JOB_TTL_MS GC so n stays small.
+ * Exists for the auto-update safety-rail check.
+ */
+export function countRunningJobs(): number {
+  let n = 0;
+  for (const j of jobs.values()) if (j.status === 'running') n += 1;
+  return n;
+}
+
 export function listJobsForUser(user: string, limit = 20): JobRecord[] {
   const out: JobRecord[] = [];
   for (const j of jobs.values()) {

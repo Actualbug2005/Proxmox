@@ -20,6 +20,10 @@ import { attach as attachNotificationDispatcher } from './src/lib/notifications/
 import { startPollSource as startNotificationPollSource } from './src/lib/notifications/poll-source.ts';
 import { runTick as runDrsTick } from './src/lib/drs/runner.ts';
 import { startPollSource as startGuestPollSource } from './src/lib/guest-agent/poll-source.ts';
+import { runTick as runUpdatesTick } from './src/lib/updates/checker.ts';
+import { readFile as fsReadFile } from 'node:fs/promises';
+import { execFile as execFileCb } from 'node:child_process';
+import { promisify } from 'node:util';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -173,7 +177,7 @@ setInterval(() => {
 }, 15_000);
 
 // ── Start server ──────────────────────────────────────────────────────────────
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const httpServer = createServer((req, res) => {
     // Next.js does its own URL parsing internally when parsedUrl is omitted,
     // so we don't need to duplicate it here. Dropping the legacy url.parse()
@@ -194,6 +198,13 @@ app.prepare().then(() => {
       return false;
     },
   });
+
+  // Expose a live count of connected noVNC / xterm sockets so the
+  // auto-update safety-rail check can refuse to restart the process
+  // out from under an active console session. Read-only peek; the
+  // updates checker calls this on each tick.
+  (globalThis as unknown as { __nexusActiveSocketCount?: () => number })
+    .__nexusActiveSocketCount = () => wss.clients.size;
 
   httpServer.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url ?? '/', URL_BASE);
@@ -381,4 +392,109 @@ app.prepare().then(() => {
     getSession: () => undefined,
     fetchGuests: async () => [],
   });
+
+  // ── Auto-update checker ─────────────────────────────────────────────────
+  // Reads the persisted policy every minute. The cron inside the policy
+  // is what actually gates network traffic — mode=off short-circuits
+  // before the GitHub probe; cron-miss exits even cheaper.
+  //
+  // The seams match server-local I/O:
+  //   - readCurrentVersion: mirrors /api/system/version's VERSION file
+  //     reader. 'dev' is returned when the file is absent (running
+  //     from a git clone) so the delta classifier short-circuits to
+  //     `null` and we stay in notify-only mode.
+  //   - fetchLatestRelease: GitHub releases API. Honours `channel` by
+  //     hitting `/releases/latest` (excludes pre-releases) or
+  //     `/releases?per_page=1` (includes them).
+  //   - getSignals: assembles the three safety-rail inputs from
+  //     script-jobs, DRS history, and the live WS counter.
+  //   - runInstaller: execFile into /usr/local/bin/nexus-update — the
+  //     same argv-only contract the existing /api/system/update POST
+  //     uses. No shell, no environment leakage.
+  const execFileAsync = promisify(execFileCb);
+  const UPDATE_REPO = process.env.NEXUS_REPO ?? 'Actualbug2005/Proxmox';
+  const UPDATE_VERSION_FILE = process.env.NEXUS_VERSION_FILE ?? '/opt/nexus/current/VERSION';
+  const UPDATER_BIN = process.env.NEXUS_UPDATER_BIN ?? '/usr/local/bin/nexus-update';
+
+  const chainsStoreForUpdater = chainsStore;
+  void chainsStoreForUpdater; // silence unused-import warning
+
+  const drsHistoryForUpdater = await import('./src/lib/drs/store.ts');
+
+  const updatesTimer = setInterval(() => {
+    void (async () => {
+      try {
+        await runUpdatesTick({
+          readCurrentVersion: async () => {
+            try {
+              return (await fsReadFile(UPDATE_VERSION_FILE, 'utf8')).trim() || 'dev';
+            } catch {
+              return 'dev';
+            }
+          },
+          fetchLatestRelease: async (channel) => {
+            const url =
+              channel === 'prerelease'
+                ? `https://api.github.com/repos/${UPDATE_REPO}/releases?per_page=1`
+                : `https://api.github.com/repos/${UPDATE_REPO}/releases/latest`;
+            try {
+              const res = await fetch(url, {
+                headers: {
+                  Accept: 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': `nexus/${UPDATE_REPO}`,
+                },
+                signal: AbortSignal.timeout(5_000),
+              });
+              if (!res.ok) return null;
+              const body = (await res.json()) as
+                | { tag_name?: string; html_url?: string }
+                | Array<{ tag_name?: string; html_url?: string }>;
+              const rel = Array.isArray(body) ? body[0] : body;
+              if (!rel?.tag_name) return null;
+              return { tag: rel.tag_name, url: rel.html_url ?? '' };
+            } catch {
+              return null;
+            }
+          },
+          getSignals: async () => {
+            const { countRunningJobs } = await import('./src/lib/script-jobs.ts');
+            const history = await drsHistoryForUpdater.recentHistory(5);
+            const tenMinAgo = Date.now() - 10 * 60_000;
+            const drsMigrationInFlight = history.some(
+              (h) => h.outcome === 'moved' && h.at >= tenMinAgo,
+            );
+            const activeConsoleSockets =
+              (globalThis as unknown as { __nexusActiveSocketCount?: () => number })
+                .__nexusActiveSocketCount?.() ?? 0;
+            return {
+              scriptJobsRunning: countRunningJobs(),
+              drsMigrationInFlight,
+              activeConsoleSockets,
+            };
+          },
+          runInstaller: async (version) => {
+            try {
+              await execFileAsync(UPDATER_BIN, ['--version', version], {
+                timeout: 120_000,
+                maxBuffer: 4 * 1024 * 1024,
+              });
+              return { ok: true };
+            } catch (err) {
+              return {
+                ok: false,
+                reason: err instanceof Error ? err.message : String(err),
+              };
+            }
+          },
+        });
+      } catch (err) {
+        console.error(
+          '[nexus event=updates_tick_failed] reason=%s',
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    })();
+  }, 60_000);
+  updatesTimer.unref?.();
 });

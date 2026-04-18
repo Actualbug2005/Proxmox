@@ -24,7 +24,7 @@ import { mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-export type RunSource = 'schedule' | 'chain';
+export type RunSource = 'schedule' | 'chain' | 'update';
 export type RunOutcome = 'success' | 'failed' | 'skipped';
 
 export interface RunHistoryEntry {
@@ -43,6 +43,9 @@ export interface RunHistoryEntry {
   durationMs?: number;
   /** Short error string on failure / skip. */
   error?: string;
+  /** Optional forensic note — used by non-failure entries (e.g. an auto-
+   *  update skip message) where `error` would misread as a real fault. */
+  note?: string;
 }
 
 function resolveDataDir(): string {

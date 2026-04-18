@@ -129,6 +129,43 @@ export function fixtureEvent(kind: EventKind): NotificationEvent {
           reason: 'QMP ping timeout (5s)',
         },
       };
+    case 'nexus.update.available':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          current: 'v0.22.0',
+          latest: 'v0.23.0',
+          delta: 'minor',
+          releaseUrl: 'https://github.com/Actualbug2005/Proxmox/releases/tag/v0.23.0',
+        },
+      };
+    case 'nexus.update.installed':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          previous: 'v0.22.0',
+          installed: 'v0.22.1',
+          delta: 'patch',
+        },
+      };
+    case 'nexus.update.deferred':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          current: 'v0.22.0',
+          latest: 'v0.22.1',
+          reason: 'active console WS connections detected',
+        },
+      };
+    case 'nexus.update.failed':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          current: 'v0.22.0',
+          target: 'v0.22.1',
+          reason: 'Updater failed: exit status 2',
+        },
+      };
   }
 }
 
@@ -149,6 +186,10 @@ export const KIND_LABELS: Record<EventKind, string> = {
   'drs.migration.failed':    'DRS migration failed',
   'guest.disk.filling':      'Guest disk filling up',
   'guest.agent.unreachable': 'Guest agent unreachable',
+  'nexus.update.available':  'Nexus update available',
+  'nexus.update.installed':  'Nexus auto-update installed',
+  'nexus.update.deferred':   'Nexus auto-update deferred',
+  'nexus.update.failed':     'Nexus auto-update failed',
   'metric.threshold.crossed': 'Metric threshold crossed',
 };
 
@@ -174,6 +215,15 @@ export const KIND_GROUPS: ReadonlyArray<{
   {
     label: 'Guest health (agent)',
     kinds: ['guest.disk.filling', 'guest.agent.unreachable'],
+  },
+  {
+    label: 'Auto-update',
+    kinds: [
+      'nexus.update.available',
+      'nexus.update.installed',
+      'nexus.update.deferred',
+      'nexus.update.failed',
+    ],
   },
   {
     label: 'Metric thresholds (polled)',
