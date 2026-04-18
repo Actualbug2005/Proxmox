@@ -52,17 +52,39 @@ export interface NodeSnapshot {
 
 export type TargetLabel = 'recommended' | 'ok' | 'tight' | 'not-allowed';
 
-export interface ScoredTarget {
+interface BaseScoredTarget {
   node: string;
-  score: number;
-  disqualified: boolean;
   reasons: string[];
   fit: {
     cpuHeadroomPct: number;
     memHeadroomPct: number;
   };
-  label: TargetLabel;
 }
+
+/** A node that PASSED the precondition + headroom checks. `label` narrows
+ *  to one of `'recommended' | 'ok' | 'tight'` and `score` is a real 0..100. */
+export interface AllowedScoredTarget extends BaseScoredTarget {
+  disqualified: false;
+  label: 'recommended' | 'ok' | 'tight';
+  score: number;
+}
+
+/** A node that was DISQUALIFIED (offline, source, precondition deny, or
+ *  insufficient headroom). `label === 'not-allowed'` and `score === 0` are
+ *  pinned by the type. */
+export interface DisqualifiedScoredTarget extends BaseScoredTarget {
+  disqualified: true;
+  label: 'not-allowed';
+  score: 0;
+}
+
+/**
+ * Discriminated union: callers narrow with `if (target.disqualified)` and
+ * the type system tracks `label`/`score` accordingly. Replaces the
+ * previous loose-optional shape where `{ disqualified: true, label: 'ok',
+ * score: 70 }` typechecked despite being incoherent.
+ */
+export type ScoredTarget = AllowedScoredTarget | DisqualifiedScoredTarget;
 
 const HEADROOM_FLOOR = 0.1; // 10% — below this the node's too tight after placement
 
@@ -115,30 +137,36 @@ function scoreOne(
     }
   }
 
-  let score = 0;
-  if (!disqualified) {
-    const cpuP = Math.min(Math.max(node.cpu, 0), 1);
-    const memP =
-      node.maxMemory > 0 ? Math.min(Math.max(node.memory / node.maxMemory, 0), 1) : 1;
-    const loadP =
-      node.loadavg1 !== undefined && node.maxCores > 0
-        ? Math.min(Math.max(node.loadavg1 / node.maxCores, 0), 1)
-        : 0;
-    score = 100 - cpuP * 40 - memP * 40 - loadP * 20;
-    score = Math.max(0, Math.min(100, score));
-  }
+  const fit = {
+    cpuHeadroomPct: Math.round(cpuHead * 100),
+    memHeadroomPct: Math.round(memHead * 100),
+  };
 
+  // Discriminated construction — each branch builds the variant the type
+  // system expects. The previous single-object form typechecked against
+  // the loose shape but the returned disqualified/label/score tuple could
+  // be inconsistent.
+  if (disqualified) {
+    return { node: node.name, disqualified: true, label: 'not-allowed', score: 0, reasons, fit };
+  }
+  const cpuP = Math.min(Math.max(node.cpu, 0), 1);
+  const memP =
+    node.maxMemory > 0 ? Math.min(Math.max(node.memory / node.maxMemory, 0), 1) : 1;
+  const loadP =
+    node.loadavg1 !== undefined && node.maxCores > 0
+      ? Math.min(Math.max(node.loadavg1 / node.maxCores, 0), 1)
+      : 0;
+  const raw = 100 - cpuP * 40 - memP * 40 - loadP * 20;
+  const score = Math.max(0, Math.min(100, raw));
+  // label is finalised after sort in scoreTargets — `recommended` is the
+  // winner of the first non-disqualified pass.
   return {
     node: node.name,
+    disqualified: false,
+    label: score >= 60 ? 'ok' : 'tight',
     score,
-    disqualified,
     reasons,
-    fit: {
-      cpuHeadroomPct: Math.round(cpuHead * 100),
-      memHeadroomPct: Math.round(memHead * 100),
-    },
-    // label is finalised after sort in scoreTargets
-    label: disqualified ? 'not-allowed' : score >= 60 ? 'ok' : 'tight',
+    fit,
   };
 }
 
@@ -171,9 +199,13 @@ export function scoreTargets(
     return b.score - a.score;
   });
 
-  // Mark the top non-disqualified as `recommended`.
+  // Mark the top non-disqualified as `recommended`. findIndex loses the
+  // narrowing on its return slot, so we re-check before the assignment.
   const topIdx = scored.findIndex((s) => !s.disqualified);
-  if (topIdx >= 0) scored[topIdx].label = 'recommended';
+  if (topIdx >= 0) {
+    const top = scored[topIdx];
+    if (!top.disqualified) top.label = 'recommended';
+  }
 
   return scored;
 }

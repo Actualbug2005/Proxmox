@@ -25,6 +25,11 @@ export interface NasShare {
   /** Runtime health. 'error' means the daemon refused the export (bad perms,
    *  missing path, config invalid, etc.). */
   status: NasShareStatus;
+  /** Present when `status === 'error'` — human-readable reason the daemon
+   *  refused the export. Surfaced in the UI so operators don't need to
+   *  shell into the node to diagnose a broken share. Providers may leave
+   *  it undefined if the specific reason is unknowable from their API. */
+  errorReason?: string;
   /** True when the export is read-only. */
   readOnly: boolean;
 }
