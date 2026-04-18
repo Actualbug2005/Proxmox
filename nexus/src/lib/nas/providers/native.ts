@@ -18,10 +18,12 @@
 import type {
   CreateNasSharePayload,
   FileNode,
+  NasClientMount,
   NasProtocol,
   NasProvider,
   NasShare,
   NasService,
+  NasServiceStatus,
   QuotaEntry,
   QuotaReport,
   QuotaTarget,
@@ -103,13 +105,22 @@ export function parseExports(text: string): NfsExportRaw[] {
 
 /**
  * Combine SMB + NFS parse results into a unified NasShare[] keyed by path.
- * A path exported via both protocols collapses into a single row with
- * protocols: ['smb','nfs'] and the stricter readOnly of the two.
+ *
+ * Status decision tree (most-informative first):
+ *   1. Every daemon serving this share is `not-installed` AND/OR the
+ *      share's path doesn't exist on disk → `orphan`. Operators can
+ *      delete the row to clean up the leftover config.
+ *   2. Any serving daemon is `running` → `active`.
+ *   3. Otherwise → `inactive`.
+ *
+ * `errorReason` carries the human-readable hint for the orphan branch
+ * so the table doesn't need a second column to explain itself.
  */
 export function correlateShares(
   smb: Map<string, SmbShareRaw>,
   nfs: NfsExportRaw[],
-  serviceStatus: Record<NasProtocol, 'running' | 'stopped'>,
+  serviceStatus: Record<NasProtocol, ResolvedServiceStatus>,
+  pathExists: (p: string) => boolean = () => true,
 ): NasShare[] {
   interface Accum {
     name: string;
@@ -147,14 +158,36 @@ export function correlateShares(
   }
 
   return Array.from(byPath.values()).map<NasShare>((s) => {
-    // A share is 'inactive' when every protocol serving it has a stopped daemon.
-    const anyRunning = s.protocols.some((p) => serviceStatus[p] === 'running');
+    const allDaemonsMissing = s.protocols.every(
+      (p) => serviceStatus[p].status === 'not-installed',
+    );
+    const exists = pathExists(s.path);
+    const anyRunning = s.protocols.some((p) => serviceStatus[p].status === 'running');
+
+    let status: NasShare['status'];
+    let errorReason: string | undefined;
+    if (allDaemonsMissing && !exists) {
+      status = 'orphan';
+      errorReason = `${s.protocols.map((p) => p.toUpperCase()).join(' / ')} daemon not installed and path is missing on disk`;
+    } else if (allDaemonsMissing) {
+      status = 'orphan';
+      errorReason = `${s.protocols.map((p) => p.toUpperCase()).join(' / ')} daemon not installed on this node`;
+    } else if (!exists) {
+      status = 'orphan';
+      errorReason = `Share path does not exist on disk`;
+    } else if (anyRunning) {
+      status = 'active';
+    } else {
+      status = 'inactive';
+    }
+
     return {
       id: Buffer.from(s.path).toString('base64url'),
       name: s.name,
       path: s.path,
       protocols: s.protocols,
-      status: anyRunning ? 'active' : 'inactive',
+      status,
+      errorReason,
       readOnly: s.readOnly,
     };
   });
@@ -162,7 +195,31 @@ export function correlateShares(
 
 // ─── Remote scripts ─────────────────────────────────────────────────────────
 
-/** One shot: cat both config files, emit service status, delimited for JS splitting. */
+/**
+ * One shot: cat both config files, walk candidate systemd units to find the
+ * live SMB / NFS daemon (falling back to "not-installed"), and emit the
+ * status block the provider parses.
+ *
+ * Distro reality: `smbd.service` is the standard on Debian/Proxmox, but
+ * some setups expose the umbrella `smb.service` or `samba.service` alias,
+ * and others are socket-activated — `smbd.socket` can be `active` while
+ * `smbd.service` reads as `inactive`. We probe in that order and report
+ * the first unit that resolves to `active`. If none of the candidates
+ * exist at all (`list-unit-files` returns none) we emit `not-installed`
+ * so the UI can show an actionable hint ("run `apt install samba`").
+ *
+ * The same block reports path-existence for each candidate share path
+ * (see buildPathExistenceCheck) — a share whose path no longer exists on
+ * disk is an orphan, and the UI surfaces deletion for those even when
+ * the daemon is down.
+ *
+ * Known candidates:
+ *   SMB: smbd.service, smb.service, samba.service, smbd.socket
+ *   NFS: nfs-kernel-server.service, nfs-server.service
+ */
+const SMB_UNIT_CANDIDATES = ['smbd.service', 'smb.service', 'samba.service', 'smbd.socket'] as const;
+const NFS_UNIT_CANDIDATES = ['nfs-kernel-server.service', 'nfs-server.service'] as const;
+
 const FETCH_SCRIPT = `set -euo pipefail
 echo '===NEXUS_SMB_START==='
 cat /etc/samba/smb.conf 2>/dev/null || true
@@ -171,8 +228,52 @@ echo '===NEXUS_EXPORTS_START==='
 cat /etc/exports 2>/dev/null || true
 echo '===NEXUS_EXPORTS_END==='
 echo '===NEXUS_STATUS_START==='
-printf 'smbd=%s\\n' "$(systemctl is-active smbd 2>/dev/null || echo inactive)"
-printf 'nfs=%s\\n'  "$(systemctl is-active nfs-kernel-server 2>/dev/null || echo inactive)"
+
+# probe_unit <var-prefix> <candidate-unit>...
+#
+# Walks the candidate list and prints:
+#   <prefix>_unit=<first-matched>
+#   <prefix>_status=<active|inactive|not-installed>
+# Prefers active units; if none are active but any exist, picks the
+# first existing one and reports its status. When no candidate even
+# exists on the host, emits not-installed + empty unit.
+probe_unit() {
+  local prefix="$1"
+  shift
+  local chosen=""
+  local chosen_status=""
+  local any_exists=0
+  for unit in "$@"; do
+    # \`list-unit-files\` returns non-zero when the pattern matches nothing.
+    if systemctl list-unit-files --no-legend "$unit" 2>/dev/null | grep -q "$unit"; then
+      any_exists=1
+      local status
+      status="$(systemctl is-active "$unit" 2>/dev/null || echo inactive)"
+      if [ "$status" = "active" ]; then
+        chosen="$unit"
+        chosen_status="active"
+        break
+      fi
+      # Remember the first existing-but-inactive unit so we still surface
+      # SOME unit name instead of "not-installed" when the operator has
+      # samba installed but stopped.
+      if [ -z "$chosen" ]; then
+        chosen="$unit"
+        chosen_status="$status"
+      fi
+    fi
+  done
+  if [ "$any_exists" = "0" ]; then
+    printf '%s_unit=\\n' "$prefix"
+    printf '%s_status=not-installed\\n' "$prefix"
+  else
+    printf '%s_unit=%s\\n' "$prefix" "$chosen"
+    printf '%s_status=%s\\n' "$prefix" "$chosen_status"
+  fi
+}
+
+probe_unit smb ${SMB_UNIT_CANDIDATES.map((u) => `'${u}'`).join(' ')}
+probe_unit nfs ${NFS_UNIT_CANDIDATES.map((u) => `'${u}'`).join(' ')}
 echo '===NEXUS_STATUS_END==='
 `;
 
@@ -196,14 +297,52 @@ function extractSection(stdout: string, start: string, end: string): string {
   return stdout.slice(bodyStart + leading, b - trailing);
 }
 
-function parseServiceStatus(block: string): Record<NasProtocol, 'running' | 'stopped'> {
-  const out: Record<NasProtocol, 'running' | 'stopped'> = { smb: 'stopped', nfs: 'stopped' };
+/** One protocol's resolved daemon state — what unit matched, and how it's doing. */
+export interface ResolvedServiceStatus {
+  status: NasServiceStatus;
+  /** Empty when status === 'not-installed'. */
+  unit: string;
+}
+
+/**
+ * Parse the FETCH_SCRIPT status block. Layout:
+ *   smb_unit=<name or empty>
+ *   smb_status=active|inactive|not-installed
+ *   nfs_unit=<name or empty>
+ *   nfs_status=active|inactive|not-installed
+ *
+ * `active` maps to `running`; everything else falls through to the
+ * literal status. Unknown keys are ignored — the parser is tolerant of
+ * extra blank or commented lines so future probe additions don't break
+ * it.
+ */
+export function parseServiceStatus(
+  block: string,
+): Record<NasProtocol, ResolvedServiceStatus> {
+  const out: Record<NasProtocol, ResolvedServiceStatus> = {
+    smb: { status: 'not-installed', unit: '' },
+    nfs: { status: 'not-installed', unit: '' },
+  };
+  const map: Record<string, string> = {};
   for (const line of block.split('\n')) {
-    const [k, v] = line.split('=');
-    if (!k || !v) continue;
-    if (k.trim() === 'smbd') out.smb = v.trim() === 'active' ? 'running' : 'stopped';
-    if (k.trim() === 'nfs') out.nfs = v.trim() === 'active' ? 'running' : 'stopped';
+    const eq = line.indexOf('=');
+    if (eq === -1) continue;
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim();
+    if (!key) continue;
+    map[key] = value;
   }
+  function resolve(prefix: 'smb' | 'nfs'): ResolvedServiceStatus {
+    const rawStatus = map[`${prefix}_status`] ?? 'not-installed';
+    const unit = map[`${prefix}_unit`] ?? '';
+    let status: NasServiceStatus;
+    if (rawStatus === 'active') status = 'running';
+    else if (rawStatus === 'not-installed') status = 'not-installed';
+    else status = 'stopped';
+    return { status, unit };
+  }
+  out.smb = resolve('smb');
+  out.nfs = resolve('nfs');
   return out;
 }
 
@@ -291,11 +430,109 @@ fi
 `;
 }
 
-/** Probe daemon status on the target node.
- *  `systemctl is-active smbd nfs-kernel-server` prints one status per unit,
- *  in argument order. The `|| true` keeps us past systemctl's non-zero exit
- *  when any unit is inactive. */
-const SERVICES_SCRIPT = `systemctl is-active smbd nfs-kernel-server 2>/dev/null || true`;
+/**
+ * Enumerate CIFS / NFS mounts this host consumes as a client.
+ * findmnt --json gives us source/target/fstype/options in one shot;
+ * parsing the raw kernel mount table is annoying and findmnt already
+ * understands the option-string format. Restricted to cifs/nfs/nfs4 so
+ * the NAS tab doesn't fill with tmpfs/autofs noise.
+ *
+ * findmnt exits non-zero with no matching mount; the `|| true`
+ * absorbs that as the "empty" case.
+ */
+const CLIENT_MOUNTS_SCRIPT = `set -eo pipefail
+findmnt --json --output SOURCE,TARGET,FSTYPE,OPTIONS --types cifs,nfs,nfs4 2>/dev/null || true
+`;
+
+interface FindmntJson { filesystems?: FindmntRow[] }
+interface FindmntRow {
+  source: string;
+  target: string;
+  fstype: string;
+  options: string;
+}
+
+export function parseClientMounts(stdout: string): NasClientMount[] {
+  const trimmed = stdout.trim();
+  if (!trimmed) return [];
+  let data: FindmntJson;
+  try {
+    data = JSON.parse(trimmed) as FindmntJson;
+  } catch {
+    return [];
+  }
+  const out: NasClientMount[] = [];
+  for (const row of data.filesystems ?? []) {
+    if (row.fstype !== 'cifs' && row.fstype !== 'nfs' && row.fstype !== 'nfs4') continue;
+    let server = '';
+    let shareName = '';
+    if (row.fstype === 'cifs') {
+      const m = /^\/\/([^/]+)\/(.+)$/.exec(row.source);
+      if (m) { server = m[1]; shareName = m[2]; }
+    } else {
+      const i = row.source.indexOf(':');
+      if (i > 0) {
+        server = row.source.slice(0, i);
+        shareName = row.source.slice(i + 1);
+      }
+    }
+    const readOnly = row.options.split(',').includes('ro');
+    out.push({
+      source: row.source,
+      mountpoint: row.target,
+      fsType: row.fstype as NasClientMount['fsType'],
+      server,
+      shareName,
+      readOnly,
+    });
+  }
+  return out;
+}
+
+/**
+ * Standalone probe used by /api/nas/services. Reuses the FETCH_SCRIPT
+ * `probe_unit` body so getShares and getServices can never disagree
+ * about which systemd unit is the "real" SMB / NFS daemon.
+ *
+ * Same fencepost layout as FETCH_SCRIPT's status block — parsed by
+ * `parseServiceStatus`.
+ */
+const SERVICES_SCRIPT = `set -euo pipefail
+echo '===NEXUS_STATUS_START==='
+probe_unit() {
+  local prefix="$1"
+  shift
+  local chosen=""
+  local chosen_status=""
+  local any_exists=0
+  for unit in "$@"; do
+    if systemctl list-unit-files --no-legend "$unit" 2>/dev/null | grep -q "$unit"; then
+      any_exists=1
+      local status
+      status="$(systemctl is-active "$unit" 2>/dev/null || echo inactive)"
+      if [ "$status" = "active" ]; then
+        chosen="$unit"
+        chosen_status="active"
+        break
+      fi
+      if [ -z "$chosen" ]; then
+        chosen="$unit"
+        chosen_status="$status"
+      fi
+    fi
+  done
+  if [ "$any_exists" = "0" ]; then
+    printf '%s_unit=\\n' "$prefix"
+    printf '%s_status=not-installed\\n' "$prefix"
+  else
+    printf '%s_unit=%s\\n' "$prefix" "$chosen"
+    printf '%s_status=%s\\n' "$prefix" "$chosen_status"
+  fi
+}
+probe_unit smb ${SMB_UNIT_CANDIDATES.map((u) => `'${u}'`).join(' ')}
+probe_unit nfs ${NFS_UNIT_CANDIDATES.map((u) => `'${u}'`).join(' ')}
+echo '===NEXUS_STATUS_END==='
+`;
 
 /**
  * Build the directory-listing script.
@@ -579,7 +816,65 @@ async function fetchAllShares(node: string): Promise<NasShare[]> {
   const nfs = parseExports(expText);
   const status = parseServiceStatus(statusText);
 
-  return correlateShares(smb, nfs, status);
+  // Collect every candidate path so we can probe disk existence in one
+  // batch. We pass the paths via stdin to a `while read -r` loop so the
+  // payload never lands on argv — same injection-safe posture as every
+  // other shell-out in this provider.
+  const paths = new Set<string>();
+  for (const data of smb.values()) if (data.path) paths.add(data.path);
+  for (const exp of nfs) paths.add(exp.path);
+  const present = await probePathExistence(node, [...paths]);
+
+  return correlateShares(smb, nfs, status, (p) => present.has(p));
+}
+
+/**
+ * Probe whether each `paths` entry exists on disk on `node`. Returns
+ * the set of paths that resolved to an existing inode (file or dir).
+ *
+ * Empty input short-circuits to an empty set without crossing a shell
+ * boundary.
+ */
+async function probePathExistence(node: string, paths: string[]): Promise<Set<string>> {
+  if (paths.length === 0) return new Set();
+  // Encode each path as a base64 line so the loop body never sees a
+  // raw shell metacharacter. The decoded value is `test -e`'d and the
+  // raw (still-base64) line is echoed back when present so we can match
+  // each result deterministically without quoting issues in stdout.
+  const payload = paths.map((p) => b64(p)).join('\n');
+  const script = `set -euo pipefail
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  decoded="$(printf '%s' "$line" | base64 -d)"
+  if [ -e "$decoded" ]; then
+    printf '%s\\n' "$line"
+  fi
+done <<'NEXUS_EOF'
+${payload}
+NEXUS_EOF
+`;
+  const res = await runScriptOnNode(node, script, { timeoutMs: 15_000 });
+  if (res.exitCode !== 0) {
+    // Non-fatal — fall back to "everything exists" so the share rows
+    // don't all flip to orphan on a transient ssh hiccup. The probe
+    // is a UI hint, not a security gate.
+    console.warn(
+      '[nas.probePathExistence] non-zero exit; assuming all paths exist:',
+      res.stderr.slice(0, 200),
+    );
+    return new Set(paths);
+  }
+  const present = new Set<string>();
+  for (const line of res.stdout.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    try {
+      present.add(Buffer.from(trimmed, 'base64').toString('utf8'));
+    } catch {
+      // Garbage line — skip; nothing to surface.
+    }
+  }
+  return present;
 }
 
 export const nativeProvider: NasProvider = {
@@ -637,22 +932,34 @@ export const nativeProvider: NasProvider = {
     }
   },
 
+  async getClientMounts(node: string): Promise<NasClientMount[]> {
+    const res = await runScriptOnNode(node, CLIENT_MOUNTS_SCRIPT, { timeoutMs: 10_000 });
+    if (res.exitCode !== 0) {
+      throw new Error(
+        `getClientMounts: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 300)}`,
+      );
+    }
+    return parseClientMounts(res.stdout);
+  },
+
   async getServices(node: string): Promise<NasService[]> {
     const res = await runScriptOnNode(node, SERVICES_SCRIPT, { timeoutMs: 10_000 });
-    // `systemctl is-active` exits non-zero when any unit is inactive —
-    // that's expected for a stopped-daemon case, not a script error.
-    // The `|| true` in SERVICES_SCRIPT already absorbs it, so any non-zero
-    // here is something worse (e.g. ssh failed).
     if (res.exitCode !== 0) {
       throw new Error(`getServices: remote script exited ${res.exitCode}: ${res.stderr.slice(0, 300)}`);
     }
-    const lines = res.stdout.trim().split('\n');
-    const smbdStatus = (lines[0] ?? '').trim();
-    const nfsStatus = (lines[1] ?? '').trim();
-    return [
-      { protocol: 'smb', status: smbdStatus === 'active' ? 'running' : 'stopped' },
-      { protocol: 'nfs', status: nfsStatus === 'active' ? 'running' : 'stopped' },
-    ];
+    const block = extractSection(
+      res.stdout,
+      '===NEXUS_STATUS_START===',
+      '===NEXUS_STATUS_END===',
+    );
+    const status = parseServiceStatus(block);
+    const out: NasService[] = [];
+    for (const proto of ['smb', 'nfs'] as const) {
+      const row: NasService = { protocol: proto, status: status[proto].status };
+      if (status[proto].unit) row.unit = status[proto].unit;
+      out.push(row);
+    }
+    return out;
   },
 
   async listDirectory(node: string, shareId: string, subPath: string): Promise<FileNode[]> {

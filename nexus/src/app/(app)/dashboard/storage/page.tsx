@@ -17,6 +17,7 @@ import { PhysicalDisksTable } from '@/components/storage/physical-disks-table';
 import { MapStorageDialog } from '@/components/storage/map-storage-dialog';
 import { NasServicesCard } from '@/components/nas/nas-services-card';
 import { NasSharesTable } from '@/components/nas/nas-shares-table';
+import { ConnectedMountsCard } from '@/components/nas/connected-mounts-card';
 import { CreateShareDialog } from '@/components/nas/create-share-dialog';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -377,6 +378,7 @@ export default function StoragePage() {
                 </button>
               </div>
               <NasSharesTable node={nasNode} />
+              <ConnectedMountsCard node={nasNode} />
             </>
           )}
         </>

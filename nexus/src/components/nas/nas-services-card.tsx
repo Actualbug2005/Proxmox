@@ -21,6 +21,21 @@ const LABELS: Record<NasProtocol, { title: string; unit: string }> = {
   nfs: { title: 'NFS', unit: 'nfs-kernel-server' },
 };
 
+function dotClass(status: NasService['status'] | undefined, loading: boolean): string {
+  if (loading) return 'bg-gray-600 animate-pulse';
+  if (status === 'running')
+    return 'bg-[var(--color-ok)] shadow-[0_0_6px] shadow-emerald-400/50';
+  if (status === 'not-installed') return 'bg-zinc-600';
+  return 'bg-[var(--color-err)]';
+}
+
+function statusLabel(status: NasService['status'] | undefined, loading: boolean): string {
+  if (loading) return '…';
+  if (!status) return 'unknown';
+  if (status === 'not-installed') return 'not installed';
+  return status;
+}
+
 function ServiceIndicator({
   protocol,
   service,
@@ -30,26 +45,30 @@ function ServiceIndicator({
   service?: NasService;
   loading: boolean;
 }) {
-  const running = service?.status === 'running';
   const label = LABELS[protocol];
+  // Prefer the actual matched unit when the probe reports one; fall back
+  // to the canonical default so the row never goes blank.
+  const displayUnit = service?.unit || label.unit;
+  const notInstalled = service?.status === 'not-installed';
+  const installCmd =
+    protocol === 'smb' ? 'apt install samba' : 'apt install nfs-kernel-server';
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-gray-950/40 border border-[var(--color-border-subtle)] rounded-lg">
+    <div className="flex items-start gap-3 px-4 py-2 bg-gray-950/40 border border-[var(--color-border-subtle)] rounded-lg">
       <span
-        className={cn(
-          'w-2.5 h-2.5 rounded-full shrink-0',
-          loading
-            ? 'bg-gray-600 animate-pulse'
-            : running
-              ? 'bg-[var(--color-ok)] shadow-[0_0_6px] shadow-emerald-400/50'
-              : 'bg-[var(--color-err)]',
-        )}
-        aria-label={running ? 'running' : 'stopped'}
+        className={cn('mt-1 w-2.5 h-2.5 rounded-full shrink-0', dotClass(service?.status, loading))}
+        aria-label={statusLabel(service?.status, loading)}
       />
       <div className="min-w-0">
         <p className="text-xs font-medium text-white">{label.title}</p>
         <p className="text-[11px] text-[var(--color-fg-subtle)] font-mono truncate">
-          {label.unit} · {loading ? '…' : (service?.status ?? 'unknown')}
+          {displayUnit} · {statusLabel(service?.status, loading)}
         </p>
+        {notInstalled && (
+          <p className="mt-1 text-[10px] text-[var(--color-fg-faint)] font-mono">
+            install with{' '}
+            <code className="px-1 py-0.5 rounded bg-black/40">{installCmd}</code>
+          </p>
+        )}
       </div>
     </div>
   );

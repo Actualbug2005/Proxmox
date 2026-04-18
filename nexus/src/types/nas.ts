@@ -11,7 +11,17 @@
 
 export type NasProtocol = 'smb' | 'nfs';
 
-export type NasShareStatus = 'active' | 'inactive' | 'error';
+/**
+ * Share status.
+ *
+ *   active   — exported by a running daemon (smbd / nfs-kernel-server).
+ *   inactive — export is configured but the daemon isn't running right now.
+ *   error    — daemon refused the export (bad perms, invalid config).
+ *   orphan   — config references this share but the NAS daemon isn't even
+ *              installed on the node, or the export path doesn't exist on
+ *              disk. These are leftovers — the UI offers deletion.
+ */
+export type NasShareStatus = 'active' | 'inactive' | 'error' | 'orphan';
 
 export interface NasShare {
   /** Stable id chosen by the backing provider (path, UUID, index, …). */
@@ -37,11 +47,50 @@ export interface NasShare {
 /** Input shape for createShare — the provider assigns id + initial status. */
 export type CreateNasSharePayload = Omit<NasShare, 'id' | 'status'>;
 
+/**
+ * Daemon status. `not-installed` distinguishes "the systemd unit doesn't
+ * exist on this host" from "the unit exists but is inactive" — the
+ * first is an actionable setup hint ("apt install samba"), the second
+ * is a routine start/stop toggle.
+ */
+export type NasServiceStatus = 'running' | 'stopped' | 'not-installed';
+
 export interface NasService {
   protocol: NasProtocol;
-  status: 'running' | 'stopped';
+  status: NasServiceStatus;
   /** Daemon version string if the provider can surface it. */
   version?: string;
+  /**
+   * The systemd unit the probe matched (e.g. `smbd.service`,
+   * `smbd.socket`, `smb.service`). Helpful for operators who run a
+   * non-default distro; absent when status === 'not-installed'.
+   */
+  unit?: string;
+}
+
+/**
+ * One mount the PVE host is consuming as a client — e.g. a CIFS export
+ * from a separate NAS, an NFS share from another server. Distinct from
+ * NasShare (which represents shares this host EXPORTS).
+ *
+ * Used for the "Connected mounts" card on the NAS tab so an operator
+ * can see at a glance "this PVE box gets its bulk storage from
+ * 10.2.1.122 over CIFS".
+ */
+export interface NasClientMount {
+  /** Source descriptor as reported by the kernel mount table — e.g.
+   *  `//10.2.1.122/Share` for CIFS, `nas01:/exports/data` for NFS. */
+  source: string;
+  /** Local mountpoint, e.g. `/mnt/the_singularity`. */
+  mountpoint: string;
+  /** Filesystem type — `cifs` or `nfs` / `nfs4`. */
+  fsType: 'cifs' | 'nfs' | 'nfs4';
+  /** Server address parsed out of `source` for at-a-glance grouping. */
+  server: string;
+  /** Share / export name parsed out of `source`. */
+  shareName: string;
+  /** True if mounted read-only. */
+  readOnly: boolean;
 }
 
 /**
@@ -112,6 +161,14 @@ export interface NasProvider {
     filename: string,
     bytes: Uint8Array,
   ): Promise<void>;
+
+  /**
+   * Enumerate CIFS / NFS mounts this node is consuming as a client.
+   * Optional — providers that have no kernel mount table to inspect
+   * (e.g. U-NAS REST adapter) may omit this and the UI hides the
+   * "Connected mounts" card.
+   */
+  getClientMounts?(node: string): Promise<NasClientMount[]>;
 
   /**
    * Read the current user + group quotas for a share's filesystem.

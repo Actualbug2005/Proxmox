@@ -31,10 +31,14 @@ interface Props {
   node: string;
 }
 
-const STATUS_VARIANT: Record<NasShare['status'], 'success' | 'outline' | 'danger'> = {
+const STATUS_VARIANT: Record<NasShare['status'], 'success' | 'outline' | 'danger' | 'warning'> = {
   active: 'success',
   inactive: 'outline',
   error: 'danger',
+  // Orphan = config leftover with no daemon and/or no on-disk path.
+  // Warning yellow signals "operator action recommended" without
+  // implying a hard failure.
+  orphan: 'warning',
 };
 
 const PROTOCOL_VARIANT: Record<NasProtocol, 'info' | 'warning'> = {
@@ -174,7 +178,14 @@ export function NasSharesTable({ node }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
+                    <span title={s.errorReason ?? undefined}>
+                      <Badge variant={STATUS_VARIANT[s.status]}>{s.status}</Badge>
+                    </span>
+                    {s.errorReason && (
+                      <p className="mt-0.5 text-[10px] text-[var(--color-fg-faint)] max-w-[24rem]">
+                        {s.errorReason}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
