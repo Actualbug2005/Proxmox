@@ -323,12 +323,12 @@ mitigated via infrastructure (requires deployment from
 | H2 | No login rate limit | ✓ | App (per-IP+user) + CrowdSec L3 + ingress |
 | H3 | Login error passthrough + SSRF-lite via host | ✓ | Host field removed; generic errors; commit `90bdd06` |
 | H4 | Proxy path segments not validated | ✓ | `invalidSegment()` in `proxmox/[...path]/route.ts` |
-| H5 | WS ticket ACL + session rebind | – | Phase 3 |
+| H5 | WS ticket ACL + session rebind | ◐ | `/api/proxmox-ws` is now behind `withCsrf` (0.9.1) and PVE's ACL refuses to mint termproxy tickets to callers without the right rights. Nexus-side `requireNode*` re-check and sessionId rotation on upgrade are still Phase 3. |
 | H6 | Zero security headers | ✓ | Now set by Nexus itself via [`next.config.ts`](../nexus/next.config.ts) |
 | H7 | TOFU ssh host-key acceptance | – | Phase 3 (needs operator runbook for known_hosts seeding) |
 | H8 | `/api/scripts/run` no timeout / AbortSignal | ✓ | `AbortController` + SIGTERM→SIGKILL escalation + `curl --max-time` in [`scripts/run/route.ts`](../nexus/src/app/api/scripts/run/route.ts) |
 | H9 | No concurrency cap on run/exec | ✓ | `RATE_LIMITS.{exec,scriptsRun}.maxConcurrent`, commit `58c4ea1` |
-| H10 | Local-exec pipeline duplicated | – | Phase 3 |
+| H10 | Local-exec pipeline duplicated | ✓ | Unified in [`run-script-job.ts`](../nexus/src/lib/run-script-job.ts) — `const file = isLocal ? 'bash' : 'ssh'` feeds one `spawnDetached` so audit/timeout/abort apply uniformly to both targets. |
 | H11 | `userHasPrivilege` fails open on transport err | ✓ | try/catch in [`permissions.ts`](../nexus/src/lib/permissions.ts), commit `2014cc4` |
 
 ### Medium (sampled — full list in commit messages)
@@ -346,10 +346,21 @@ mitigated via infrastructure (requires deployment from
 
 ### Deferred to Phase 3
 
-- H5 (WS ticket ACL + session rebind on upgrade)
-- H7 (SSH `known_hosts` pinning, `StrictHostKeyChecking=yes`)
-- H10 (unify local + ssh exec pipelines)
-- M10 (ISO upload hardening — MIME check, magic bytes, per-storage size cap)
+- H5 — WS ticket Nexus-side ACL re-check (`requireNodeSysAudit` /
+  `requireVmConsole`) and session rebind on upgrade. Partially
+  mitigated via `withCsrf` + PVE's own refusal on ticket issuance;
+  the operator-side hardening isn't in yet.
+- H7 — SSH `known_hosts` pinning + `StrictHostKeyChecking=yes`.
+  Current code uses `accept-new` (TOFU). Needs an operator runbook
+  for seeding `known_hosts` from `/etc/pve/priv/known_hosts`.
+- M10 — ISO upload hardening: MIME check, magic-byte sniff, and
+  per-storage size cap in [`api/iso-upload/route.ts`](../nexus/src/app/api/iso-upload/route.ts).
+
+### Closed in Phase 3
+
+- H10 (local-exec pipeline unification) — both local and SSH paths
+  now go through a single `spawnDetached` in `run-script-job.ts`,
+  so audit log, timeout, and SIGTERM→SIGKILL abort apply uniformly.
 
 ---
 
@@ -372,7 +383,7 @@ triaged and a fix plan exists.
 | 2.1 | One-shot installer + `nexus doctor` health probe | — | 2026-04-17 |
 | 2.2 | Security headers moved to `next.config.ts`; Caddy demoted to optional | — | 2026-04-17 |
 | 2.3 | Quick-win bundle: H8 exec timeout, M2 session rotation, M11 slug tightening | — | 2026-04-17 |
-| A–H | Codebase audit remediation: silent-failure counters, 401 back-off (H2), probe-error differentiation (H5), Redis auto-fallback (H9), critical-primitive test coverage | v0.4.5 – v0.7.0 | 2026-04-17 |
+| A–H | Remediation of the 2026-04-18 full-code review (distinct from the H-numbers in this file): silent-failure counters + `/api/system/health`, PVE renewal back-off, `userHasPrivilege` probe-error differentiation (http\_5xx / transport / parse), Redis auto-fallback, critical-primitive test coverage | v0.4.5 – v0.7.0 | 2026-04-17 |
 | 0.7.x | Tier-4 cleanup: route middleware (`withAuth`/`withCsrf`), `useCsrfMutation` hook, POLL_INTERVALS centralisation, branded phantom types (`VmId`/`NodeName`/`Userid`/`BatchId`/`Slug`/`SafeRelPath`), scored-target discriminated union | v0.7.1 – v0.8.0 | 2026-04-17 |
 | 0.8.x | Code hygiene: full lint-warning sweep, severity colour-token migration (238 sites), `BulkItem` / `ChainStepRun` / `PVETask` discriminated unions with JSON-migration sanitiser, bundle audit + dead-type trim | v0.8.1 – v0.8.6 | 2026-04-18 |
 | 0.9.x | Brand adoption on `PVEAuthSession.{ticket, csrfToken, username}` with parse-on-ingress on login + renewal; eight additional routes migrated to `withAuth`/`withCsrf`; `CsrfToken` vs `PveCsrfToken` brand split (hotfix — PVE's CSRFPreventionToken format ≠ Nexus's 64-hex shape, conflating them was breaking all logins) | v0.9.0 – v0.9.2 | 2026-04-18 |
