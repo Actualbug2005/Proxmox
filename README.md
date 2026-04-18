@@ -5,10 +5,10 @@ A fast, high-contrast web UI for [Proxmox VE](https://www.proxmox.com/) that run
 ```
 ┌──────────────────────────────────────────────────────┐
 │  nexus   Proxmox Management Overlay                  │
-│                                                       │
-│  ◆ Dashboard     ◆ Nodes    ◆ VMs/CTs     ◆ Storage   │
-│  ◆ Firewall      ◆ HA       ◆ Access      ◆ Backups   │
-│  ◆ Network       ◆ Console  ◆ Scripts                 │
+│                                                      │
+│  ◆ Dashboard     ◆ Nodes    ◆ VMs/CTs     ◆ Storage  │
+│  ◆ Firewall      ◆ HA       ◆ Access      ◆ Backups  │
+│  ◆ Network       ◆ Console  ◆ Scripts                │
 └──────────────────────────────────────────────────────┘
 ```
 
