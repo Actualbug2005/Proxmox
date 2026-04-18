@@ -63,7 +63,11 @@ export interface PushedEvent {
     /** DRS live: migration executed successfully. */
     | 'drs.migrated'
     /** DRS live: migration attempt was refused by PVE or errored mid-flight. */
-    | 'drs.migration.failed';
+    | 'drs.migration.failed'
+    /** Guest-agent probe (5.2) — a filesystem crossed the disk-pressure threshold. */
+    | 'guest.disk.filling'
+    /** Guest-agent probe (5.2) — agent has been unreachable across multiple polls. */
+    | 'guest.agent.unreachable';
   at: number;
   /** Free-form structured payload; rule matcher reads specific keys by kind. */
   payload: Record<string, string | number | boolean | null | undefined>;
@@ -98,6 +102,8 @@ export const EVENT_KINDS = [
   'drs.would.migrate',
   'drs.migrated',
   'drs.migration.failed',
+  'guest.disk.filling',
+  'guest.agent.unreachable',
   'metric.threshold.crossed',
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];

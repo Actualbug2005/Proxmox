@@ -18,6 +18,7 @@ import { StorageExhaustionWidget } from '@/components/widgets/storage-exhaustion
 import { TopOffendersWidget } from '@/components/widgets/top-offenders';
 import { RecentFailuresWidget } from '@/components/widgets/recent-failures';
 import { GuestTroubleWidget } from '@/components/widgets/guest-trouble';
+import { GuestDiskPressureWidget } from '@/components/widgets/guest-disk-pressure';
 
 let registered = false;
 
@@ -72,5 +73,11 @@ export function registerAllWidgets(): void {
     title: 'Guests needing attention',
     defaultSpan: { cols: 2, rows: 2 },
     Component: GuestTroubleWidget,
+  });
+  registerWidget({
+    id: 'guest-disk-pressure',
+    title: 'Guest disk pressure',
+    defaultSpan: { cols: 2, rows: 2 },
+    Component: GuestDiskPressureWidget,
   });
 }

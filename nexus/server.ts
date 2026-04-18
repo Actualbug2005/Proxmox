@@ -19,6 +19,7 @@ import { runChain } from './src/lib/run-chain.ts';
 import { attach as attachNotificationDispatcher } from './src/lib/notifications/dispatcher.ts';
 import { startPollSource as startNotificationPollSource } from './src/lib/notifications/poll-source.ts';
 import { runTick as runDrsTick } from './src/lib/drs/runner.ts';
+import { startPollSource as startGuestPollSource } from './src/lib/guest-agent/poll-source.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -366,4 +367,16 @@ app.prepare().then(() => {
     })();
   }, 60_000);
   drsTimer.unref?.();
+
+  // ── Guest-agent probes (5.2) ─────────────────────────────────────────────
+  // Same boot-context caveat as DRS: without a service-account session
+  // the probes no-op. Once that session seeding lands, `getSession()`
+  // returns the live PVEAuthSession and `fetchGuests` enumerates the
+  // fleet from cluster/resources. Starting the timer now keeps the
+  // snapshot shape defined (empty) for the bento widget from the first
+  // request.
+  startGuestPollSource({
+    getSession: () => undefined,
+    fetchGuests: async () => [],
+  });
 });

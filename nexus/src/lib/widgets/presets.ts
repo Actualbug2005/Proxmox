@@ -73,18 +73,19 @@ export const PRESETS: Record<BentoPreset['id'], BentoPreset> = {
 
   // ── Incidents — active firefighting ───────────────────────────────────────
   //  row 1:  [guest-trouble 2x2][recent-failures 2x2]
-  //  row 3:  [storage-exhaustion 2x2][top-offenders 2x2]
-  //  row 5:  [cluster-summary 4x1]
+  //  row 3:  [guest-disk-pressure 2x2][top-offenders 2x2]
+  //  row 5:  [storage-exhaustion 2x2][cluster-summary 2x2]
   incidents: {
     id: 'incidents',
     label: 'Incidents',
     description: 'Active firefighting — what needs attention now.',
     cells: [
-      { widgetId: 'guest-trouble',      col: 1, cols: 2, row: 1, rows: 2 },
-      { widgetId: 'recent-failures',    col: 3, cols: 2, row: 1, rows: 2 },
-      { widgetId: 'storage-exhaustion', col: 1, cols: 2, row: 3, rows: 2 },
-      { widgetId: 'top-offenders',      col: 3, cols: 2, row: 3, rows: 2 },
-      { widgetId: 'cluster-summary',    col: 1, cols: 4, row: 5, rows: 1 },
+      { widgetId: 'guest-trouble',        col: 1, cols: 2, row: 1, rows: 2 },
+      { widgetId: 'recent-failures',      col: 3, cols: 2, row: 1, rows: 2 },
+      { widgetId: 'guest-disk-pressure',  col: 1, cols: 2, row: 3, rows: 2 },
+      { widgetId: 'top-offenders',        col: 3, cols: 2, row: 3, rows: 2 },
+      { widgetId: 'storage-exhaustion',   col: 1, cols: 2, row: 5, rows: 2 },
+      { widgetId: 'cluster-summary',      col: 3, cols: 2, row: 5, rows: 2 },
     ],
   },
 };

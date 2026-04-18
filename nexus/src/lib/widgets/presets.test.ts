@@ -24,6 +24,7 @@ const EXPECTED_WIDGET_IDS = [
   'top-offenders',
   'recent-failures',
   'guest-trouble',
+  'guest-disk-pressure',
 ] as const;
 
 const stubComponent: Widget['Component'] = (() => null) as unknown as Widget['Component'];

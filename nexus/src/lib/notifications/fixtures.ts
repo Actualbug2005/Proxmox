@@ -108,6 +108,27 @@ export function fixtureEvent(kind: EventKind): NotificationEvent {
           reason: 'PVE precondition denied: guest has local disk',
         },
       };
+    case 'guest.disk.filling':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          vmid: 100,
+          node: 'pve-01',
+          mountpoint: '/var/log',
+          usedPct: 0.91,
+          daysUntilFull: 3,
+        },
+      };
+    case 'guest.agent.unreachable':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          vmid: 100,
+          node: 'pve-01',
+          consecutiveFailures: 3,
+          reason: 'QMP ping timeout (5s)',
+        },
+      };
   }
 }
 
@@ -126,6 +147,8 @@ export const KIND_LABELS: Record<EventKind, string> = {
   'drs.would.migrate':       'DRS would migrate (dry-run)',
   'drs.migrated':             'DRS migrated guest',
   'drs.migration.failed':    'DRS migration failed',
+  'guest.disk.filling':      'Guest disk filling up',
+  'guest.agent.unreachable': 'Guest agent unreachable',
   'metric.threshold.crossed': 'Metric threshold crossed',
 };
 
@@ -147,6 +170,10 @@ export const KIND_GROUPS: ReadonlyArray<{
   {
     label: 'Auto-DRS actions',
     kinds: ['drs.would.migrate', 'drs.migrated', 'drs.migration.failed'],
+  },
+  {
+    label: 'Guest health (agent)',
+    kinds: ['guest.disk.filling', 'guest.agent.unreachable'],
   },
   {
     label: 'Metric thresholds (polled)',
