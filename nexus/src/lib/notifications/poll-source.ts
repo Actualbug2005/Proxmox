@@ -27,25 +27,22 @@
 
 import type { ClusterResourcePublic, NodeStatus, PVETask } from '@/types/proxmox';
 import { emit } from './event-bus.ts';
-import type { MetricEvent } from './types.ts';
+import {
+  METRIC_NAMES,
+  type MetricEvent,
+  type MetricName,
+} from './types.ts';
 import { listRules, markRuleCleared, markRuleFired } from './store.ts';
 import { matchesEvent } from './rule-matcher.ts';
 import { shouldFireResolve } from './backoff.ts';
 
 const DEFAULT_TICK_MS = 60_000;
 
-/**
- * Canonical dotted-hierarchy metric names emitted by this source.
- * Keep in sync with the rule editor's metric dropdown in the UI.
- */
-export const METRIC_NAMES = [
-  'cluster.cpu.avg',
-  'cluster.mem.avg',
-  'node.cpu.max',
-  'node.loadavg.per_core',
-  'guests.failing.count',
-] as const;
-export type MetricName = (typeof METRIC_NAMES)[number];
+// Re-exported so test files and the server still import from this module
+// the canonical way. The list itself lives in `types.ts` now so client
+// bundles can reach it without pulling in server-only fs/store code.
+export { METRIC_NAMES };
+export type { MetricName };
 
 export interface MetricReading {
   metric: MetricName;

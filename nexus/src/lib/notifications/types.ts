@@ -93,6 +93,22 @@ export const EVENT_KINDS = [
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
+/**
+ * Canonical dotted-hierarchy metric names emitted by the polling
+ * source. Lives here (rather than in `poll-source.ts`) so client
+ * bundles — which need the list for rule-editor dropdowns — can
+ * import it without pulling in the server-only fs/store chain.
+ * Keep in sync with `computeMetrics()` in `poll-source.ts`.
+ */
+export const METRIC_NAMES = [
+  'cluster.cpu.avg',
+  'cluster.mem.avg',
+  'node.cpu.max',
+  'node.loadavg.per_core',
+  'guests.failing.count',
+] as const;
+export type MetricName = (typeof METRIC_NAMES)[number];
+
 // ─── Destinations ───────────────────────────────────────────────────────────
 
 export interface WebhookDestination {

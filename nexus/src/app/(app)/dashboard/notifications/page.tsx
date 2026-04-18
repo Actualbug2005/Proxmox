@@ -10,6 +10,8 @@ import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { Segmented } from '@/components/ui/segmented';
 import { DestinationsTab } from '@/components/notifications/destinations-tab';
+import { RulesTab } from '@/components/notifications/rules-tab';
+import { RecentTab } from '@/components/notifications/recent-tab';
 
 type TabId = 'destinations' | 'rules' | 'recent';
 
@@ -45,30 +47,8 @@ export default function NotificationsPage() {
       </header>
 
       {tab === 'destinations' && <DestinationsTab />}
-
-      {tab === 'rules' && (
-        <div className="studio-card p-10 text-center">
-          <p className="text-sm text-[var(--color-fg-faint)]">
-            Rules editor arrives in the next release. In the meantime, a
-            rule can be hand-seeded into{' '}
-            <code className="text-xs">$NEXUS_DATA_DIR/notifications.json</code>{' '}
-            and will fire on the next event that matches.
-          </p>
-        </div>
-      )}
-
-      {tab === 'recent' && (
-        <div className="studio-card p-10 text-center">
-          <p className="text-sm text-[var(--color-fg-faint)]">
-            Recent-dispatch viewer arrives in the next release. Until
-            then, watch{' '}
-            <code className="text-xs">journalctl -u nexus -f</code>{' '}
-            for the{' '}
-            <code className="text-xs">event=notification_dispatch_failed</code>{' '}
-            line.
-          </p>
-        </div>
-      )}
+      {tab === 'rules' && <RulesTab />}
+      {tab === 'recent' && <RecentTab />}
     </div>
   );
 }
