@@ -66,7 +66,7 @@ export function RolesTab() {
                     <td className="px-4 py-3 text-right">
                       <div className="flex gap-0.5 justify-end">
                         <button onClick={() => setEdit(r)} disabled={(r.special ?? false)} className="p-1 text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Edit'}><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget(r)} disabled={(r.special ?? false)} className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
+                        <button onClick={() => setDeleteTarget(r)} disabled={(r.special ?? false)} className="p-1 text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30" title={(r.special ?? false) ? 'Built-in — read only' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </td>
                   </tr>

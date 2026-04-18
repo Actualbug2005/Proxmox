@@ -44,9 +44,9 @@ function StorageRow({
     >
       <div className={cn(
         'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset',
-        active ? 'bg-emerald-500/10 ring-emerald-500/20' : 'bg-zinc-800/60 ring-white/5',
+        active ? 'bg-[var(--color-ok)]/10 ring-[var(--color-ok)]/20' : 'bg-zinc-800/60 ring-white/5',
       )}>
-        <HardDrive className={cn('w-3.5 h-3.5', active ? 'text-emerald-400' : 'text-[var(--color-fg-faint)]')} />
+        <HardDrive className={cn('w-3.5 h-3.5', active ? 'text-[var(--color-ok)]' : 'text-[var(--color-fg-faint)]')} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
@@ -99,7 +99,7 @@ function StorageRow({
             e.stopPropagation();
             onDelete(storage.storage);
           }}
-          className="p-1.5 rounded-lg text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-white/5 transition"
+          className="p-1.5 rounded-lg text-[var(--color-fg-subtle)] hover:text-[var(--color-err)] hover:bg-white/5 transition"
           aria-label={`Delete ${storage.storage}`}
           title="Delete storage"
         >

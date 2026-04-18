@@ -199,8 +199,8 @@ function Pane({
         {loading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-fg-subtle)]" />}
       </header>
       {error ? (
-        <div className="flex items-start gap-2 p-3 text-xs text-red-300">
-          <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2 p-3 text-xs text-[var(--color-err)]">
+          <AlertCircle className="w-3.5 h-3.5 text-[var(--color-err)] mt-0.5 shrink-0" />
           <span>{error.message}</span>
         </div>
       ) : (

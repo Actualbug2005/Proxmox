@@ -17,9 +17,9 @@ interface BadgeProps {
  */
 const variantClasses: Record<Variant, string> = {
   default: 'bg-[var(--color-overlay)] text-[var(--color-fg-secondary)]',
-  success: 'bg-emerald-500/10 text-[var(--color-ok)] border border-emerald-500/20',
-  warning: 'bg-amber-500/10 text-[var(--color-warn)] border border-amber-500/20',
-  danger: 'bg-red-500/10 text-[var(--color-err)] border border-red-500/20',
+  success: 'bg-[var(--color-ok)]/10 text-[var(--color-ok)] border border-[var(--color-ok)]/20',
+  warning: 'bg-[var(--color-warn)]/10 text-[var(--color-warn)] border border-[var(--color-warn)]/20',
+  danger: 'bg-[var(--color-err)]/10 text-[var(--color-err)] border border-[var(--color-err)]/20',
   info: 'bg-blue-500/10 text-[var(--color-accent)] border border-blue-500/20',
   outline: 'border border-[var(--color-border-subtle)] text-[var(--color-fg-muted)]',
 };

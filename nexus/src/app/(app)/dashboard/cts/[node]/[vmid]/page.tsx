@@ -173,8 +173,8 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', isRunning ? 'bg-emerald-500/10' : 'bg-[var(--color-overlay)]')}>
-            <Box className={cn('w-5 h-5', isRunning ? 'text-emerald-400' : 'text-[var(--color-fg-subtle)]')} />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', isRunning ? 'bg-[var(--color-ok)]/10' : 'bg-[var(--color-overlay)]')}>
+            <Box className={cn('w-5 h-5', isRunning ? 'text-[var(--color-ok)]' : 'text-[var(--color-fg-subtle)]')} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {isStopped && (
             <button onClick={() => startM.mutate()} disabled={anyPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-sm rounded-lg transition disabled:opacity-40">
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-ok)]/10 hover:bg-[var(--color-ok)]/20 text-[var(--color-ok)] text-sm rounded-lg transition disabled:opacity-40">
               {startM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               Start
             </button>
@@ -199,7 +199,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
           {isRunning && (
             <>
               <button onClick={() => shutdownM.mutate()} disabled={anyPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 text-sm rounded-lg transition disabled:opacity-40">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-warn)]/10 hover:bg-[var(--color-warn)]/20 text-[var(--color-warn)] text-sm rounded-lg transition disabled:opacity-40">
                 {shutdownM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
                 Shutdown
               </button>
@@ -209,7 +209,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                 Reboot
               </button>
               <button onClick={() => stopM.mutate()} disabled={anyPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition disabled:opacity-40">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-err)]/10 hover:bg-[var(--color-err)]/20 text-[var(--color-err)] text-sm rounded-lg transition disabled:opacity-40">
                 {stopM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
                 Stop
               </button>
@@ -241,7 +241,7 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
             Migrate
           </button>
           <button onClick={() => setShowDelete(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-err)]/10 hover:bg-[var(--color-err)]/20 text-[var(--color-err)] text-sm rounded-lg transition">
             <Trash2 className="w-4 h-4" />
             Delete
           </button>

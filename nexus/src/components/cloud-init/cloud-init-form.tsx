@@ -132,10 +132,10 @@ export function CloudInitForm({ value, onChange, sshKeyErrors }: CloudInitFormPr
             value={value.hostname}
             onChange={(e) => set('hostname', e.target.value)}
             placeholder="web01"
-            className={cn(inputCls, 'font-mono', !hostnameValid && 'border-red-500/50')}
+            className={cn(inputCls, 'font-mono', !hostnameValid && 'border-[var(--color-err)]/50')}
           />
           {!hostnameValid && (
-            <p className="text-xs text-red-400 mt-1">
+            <p className="text-xs text-[var(--color-err)] mt-1">
               Lowercase letters, digits, hyphens; max 63 chars; no leading/trailing hyphen.
             </p>
           )}
@@ -146,11 +146,11 @@ export function CloudInitForm({ value, onChange, sshKeyErrors }: CloudInitFormPr
             value={value.username}
             onChange={(e) => set('username', e.target.value)}
             placeholder="ubuntu"
-            className={cn(inputCls, 'font-mono', !usernameValid && 'border-red-500/50')}
+            className={cn(inputCls, 'font-mono', !usernameValid && 'border-[var(--color-err)]/50')}
             autoComplete="off"
           />
           {!usernameValid && (
-            <p className="text-xs text-red-400 mt-1">
+            <p className="text-xs text-[var(--color-err)] mt-1">
               Lowercase POSIX username: start with letter or underscore.
             </p>
           )}
@@ -195,7 +195,7 @@ export function CloudInitForm({ value, onChange, sshKeyErrors }: CloudInitFormPr
           spellCheck={false}
         />
         {sshKeyErrors && sshKeyErrors.length > 0 && (
-          <ul className="text-xs text-red-400 mt-1 list-disc pl-4 space-y-0.5">
+          <ul className="text-xs text-[var(--color-err)] mt-1 list-disc pl-4 space-y-0.5">
             {sshKeyErrors.map((err, i) => <li key={i}>{err}</li>)}
           </ul>
         )}
@@ -246,7 +246,7 @@ export function CloudInitForm({ value, onChange, sshKeyErrors }: CloudInitFormPr
                 value={value.nic0.ipv4Cidr ?? ''}
                 onChange={(e) => setNic({ ipv4Cidr: e.target.value })}
                 placeholder="10.0.0.5/24"
-                className={cn(inputCls, 'font-mono', !v4CidrValid && 'border-red-500/50')}
+                className={cn(inputCls, 'font-mono', !v4CidrValid && 'border-[var(--color-err)]/50')}
               />
             </div>
             <div>
@@ -255,7 +255,7 @@ export function CloudInitForm({ value, onChange, sshKeyErrors }: CloudInitFormPr
                 value={value.nic0.ipv4Gw ?? ''}
                 onChange={(e) => setNic({ ipv4Gw: e.target.value })}
                 placeholder="10.0.0.1"
-                className={cn(inputCls, 'font-mono', !v4GwValid && 'border-red-500/50')}
+                className={cn(inputCls, 'font-mono', !v4GwValid && 'border-[var(--color-err)]/50')}
               />
             </div>
           </div>

@@ -71,9 +71,9 @@ export default function HealthPage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm">
-          <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-          <span className="text-red-300">{error.message}</span>
+        <div className="flex items-start gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg text-sm">
+          <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
+          <span className="text-[var(--color-err)]">{error.message}</span>
         </div>
       )}
 
@@ -120,9 +120,9 @@ export default function HealthPage() {
                 className={cn(
                   'font-mono tabular',
                   pressure.peakLoadavgPerCore > 1
-                    ? 'text-red-400'
+                    ? 'text-[var(--color-err)]'
                     : pressure.peakLoadavgPerCore > 0.75
-                      ? 'text-amber-400'
+                      ? 'text-[var(--color-warn)]'
                       : 'text-[var(--color-fg-secondary)]',
                 )}
               >
@@ -296,7 +296,7 @@ function RecentFailuresPanel({
       </p>
       {failures.length === 0 ? (
         <p className="text-xs text-[var(--color-fg-faint)] py-4 text-center flex items-center justify-center gap-2">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> No recent task failures.
+          <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-ok)]" /> No recent task failures.
         </p>
       ) : (
         <ul className="divide-y divide-zinc-800/40">
@@ -318,7 +318,7 @@ function RecentFailuresPanel({
                 }
                 className="w-full text-left flex items-center gap-3 py-2 px-2 -mx-2 hover:bg-zinc-800/40 rounded-md transition"
               >
-                <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <XCircle className="w-4 h-4 text-[var(--color-err)] shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-[var(--color-fg)]">{f.type}</span>

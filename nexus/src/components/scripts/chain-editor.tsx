@@ -319,7 +319,7 @@ export function ChainEditor({ onClose, onSaved, initial }: ChainEditorProps) {
                       type="button"
                       onClick={() => removeStep(i)}
                       disabled={steps.length <= 1}
-                      className="rounded p-1 text-[var(--color-fg-subtle)] hover:bg-red-500/20 hover:text-red-300 disabled:opacity-30"
+                      className="rounded p-1 text-[var(--color-fg-subtle)] hover:bg-[var(--color-err)]/20 hover:text-[var(--color-err)] disabled:opacity-30"
                       aria-label="Remove"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

@@ -58,8 +58,8 @@ export function parseJournalLine(raw: string): ParsedJournalLine {
 /** Tailwind class bundle for a priority pip. Kept here so consumers
  *  render consistently; extracted from the logs page. */
 export const PRIORITY_CLASS: Record<Priority, string> = {
-  error: 'bg-red-500/10 text-red-400 border border-red-500/20',
-  warning: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  error: 'bg-[var(--color-err)]/10 text-[var(--color-err)] border border-[var(--color-err)]/20',
+  warning: 'bg-[var(--color-warn)]/10 text-[var(--color-warn)] border border-[var(--color-warn)]/20',
   info: 'bg-zinc-800/40 text-zinc-400 border border-zinc-800/60',
   debug: 'bg-zinc-800 text-zinc-500 border border-zinc-800/60',
 };

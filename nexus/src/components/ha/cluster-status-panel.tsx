@@ -58,10 +58,10 @@ export function ClusterStatusPanel() {
               key={n.name}
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 border rounded-lg text-xs',
-                n.online ?? false ? 'border-emerald-500/30 text-emerald-300' : 'border-red-500/30 text-red-300',
+                n.online ?? false ? 'border-[var(--color-ok)]/30 text-[var(--color-ok)]' : 'border-[var(--color-err)]/30 text-[var(--color-err)]',
               )}
             >
-              <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-emerald-400' : 'bg-red-400')} />
+              <span className={cn('w-1.5 h-1.5 rounded-full', n.online ?? false ? 'bg-[var(--color-ok)]' : 'bg-[var(--color-err)]')} />
               <span className="font-mono">{n.name}</span>
               {n.ip && <span className="text-[var(--color-fg-faint)] font-mono">{n.ip}</span>}
               {(n.local ?? false) ? <span className="text-indigo-400">(this node)</span> : null}

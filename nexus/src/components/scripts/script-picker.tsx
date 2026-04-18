@@ -142,7 +142,7 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
               </div>
             )}
             {error && (
-              <div className="px-3 py-4 text-xs text-red-400">
+              <div className="px-3 py-4 text-xs text-[var(--color-err)]">
                 Failed to load scripts: {error.message}
               </div>
             )}
@@ -178,7 +178,7 @@ export function ScriptPicker({ value, onChange, variant = 'compact' }: ScriptPic
                         </div>
                       )}
                     </div>
-                    {selected && <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />}
+                    {selected && <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-ok)]" />}
                   </button>
                 );
               })}

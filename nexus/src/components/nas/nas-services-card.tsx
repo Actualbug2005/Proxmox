@@ -40,8 +40,8 @@ function ServiceIndicator({
           loading
             ? 'bg-gray-600 animate-pulse'
             : running
-              ? 'bg-emerald-400 shadow-[0_0_6px] shadow-emerald-400/50'
-              : 'bg-red-400',
+              ? 'bg-[var(--color-ok)] shadow-[0_0_6px] shadow-emerald-400/50'
+              : 'bg-[var(--color-err)]',
         )}
         aria-label={running ? 'running' : 'stopped'}
       />

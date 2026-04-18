@@ -294,9 +294,9 @@ export default function NetworkPage() {
       </div>
 
       {hasPending && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-4 py-3 flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
-          <p className="text-sm text-yellow-300 flex-1">Pending network changes — not yet applied to the system.</p>
+        <div className="bg-[var(--color-warn)]/10 border border-[var(--color-warn)]/20 rounded-lg px-4 py-3 flex items-center gap-3">
+          <AlertTriangle className="w-4 h-4 text-[var(--color-warn)] shrink-0" />
+          <p className="text-sm text-[var(--color-warn)] flex-1">Pending network changes — not yet applied to the system.</p>
           <div className="flex gap-2">
             <button
               onClick={() => setShowRevertConfirm(true)}
@@ -309,7 +309,7 @@ export default function NetworkPage() {
             <button
               onClick={() => setShowApplyConfirm(true)}
               disabled={applyM.isPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-yellow-600 hover:bg-yellow-500 rounded-lg transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-[var(--color-warn)] hover:opacity-90 rounded-lg transition"
             >
               {applyM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
               Apply Configuration
@@ -335,7 +335,7 @@ export default function NetworkPage() {
                 )}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', iface.active ? 'bg-emerald-400' : 'bg-gray-600')} />
+                  <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', iface.active ? 'bg-[var(--color-ok)]' : 'bg-gray-600')} />
                   <span className="text-sm font-mono text-[var(--color-fg-secondary)] font-medium">{iface.iface}</span>
                   <Badge variant={TYPE_COLORS[iface.type] ?? 'outline'} className="ml-auto text-xs">{iface.type}</Badge>
                 </div>
@@ -368,7 +368,7 @@ export default function NetworkPage() {
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] rounded-lg transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] rounded-lg transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete

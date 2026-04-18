@@ -55,7 +55,7 @@ export function RecentFailuresWidget() {
                 <span className="shrink-0 text-[11px] text-[var(--color-fg-subtle)]">{f.node}</span>
               </div>
               <div className="mt-0.5 flex items-center gap-2">
-                <span className="truncate text-[11px] text-red-300/80">{f.exitstatus}</span>
+                <span className="truncate text-[11px] text-[var(--color-err)]/80">{f.exitstatus}</span>
                 <span className="ml-auto shrink-0 text-[11px] text-[var(--color-fg-subtle)]">
                   {formatTime(f.starttime)}
                 </span>

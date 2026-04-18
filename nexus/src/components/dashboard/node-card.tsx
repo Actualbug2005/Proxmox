@@ -57,7 +57,7 @@ export function NodeCard({ node, vmCount = 0, ctCount = 0, className, selected, 
         <span
           className={cn(
             'text-xs font-medium capitalize',
-            online ? 'text-emerald-400' : 'text-red-400',
+            online ? 'text-[var(--color-ok)]' : 'text-[var(--color-err)]',
           )}
         >
           {node.status ?? 'unknown'}

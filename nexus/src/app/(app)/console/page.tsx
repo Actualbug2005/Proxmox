@@ -199,7 +199,7 @@ export default function ConsolePage() {
                     e.stopPropagation();
                     closeTab(tab.id);
                   }}
-                  className="hover:text-red-400 transition ml-1"
+                  className="hover:text-[var(--color-err)] transition ml-1"
                 >
                   <X className="w-3 h-3" />
                 </button>

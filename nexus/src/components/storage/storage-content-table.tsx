@@ -118,7 +118,7 @@ export function StorageContentTable({
                   <button
                     onClick={() => setDeleteTarget(item.volid)}
                     disabled={deleteM.isPending}
-                    className="p-1.5 text-red-400 hover:text-red-300 hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
+                    className="p-1.5 text-[var(--color-err)] hover:text-[var(--color-err)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                     title="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

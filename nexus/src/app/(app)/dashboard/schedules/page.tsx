@@ -101,7 +101,7 @@ export default function SchedulesPage() {
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="Total" value={String(stats.total)} color="text-[var(--color-fg)]" />
-        <StatCard label="Enabled" value={String(stats.enabled)} color="text-emerald-400" />
+        <StatCard label="Enabled" value={String(stats.enabled)} color="text-[var(--color-ok)]" />
         <StatCard label="Fired in last 24h" value={String(stats.recentFires)} color="text-indigo-400" />
       </div>
 
@@ -112,14 +112,14 @@ export default function SchedulesPage() {
         </div>
       )}
       {isError && (
-        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-[var(--color-err)] shrink-0" />
           <div>
-            <p className="text-sm font-medium text-red-400">Failed to load schedules</p>
+            <p className="text-sm font-medium text-[var(--color-err)]">Failed to load schedules</p>
           </div>
           <button
             onClick={() => refetch()}
-            className="ml-auto text-xs text-red-400 hover:text-red-300 underline"
+            className="ml-auto text-xs text-[var(--color-err)] hover:text-[var(--color-err)] underline"
           >
             Retry
           </button>
@@ -200,7 +200,7 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
           <span
             className={cn(
               'inline-block w-1.5 h-1.5 rounded-full',
-              job.enabled ? 'bg-emerald-400' : 'bg-zinc-600',
+              job.enabled ? 'bg-[var(--color-ok)]' : 'bg-zinc-600',
             )}
             title={job.enabled ? 'Enabled' : 'Disabled'}
           />
@@ -235,7 +235,7 @@ function ScheduleRow({ job, onEdit }: { job: ScheduledJobDto; onEdit: () => void
         <button
           onClick={remove}
           disabled={deleteM.isPending}
-          className="p-1.5 rounded-md bg-[var(--color-overlay)] hover:bg-red-500/20 text-[var(--color-fg-secondary)] hover:text-red-300 transition disabled:opacity-40"
+          className="p-1.5 rounded-md bg-[var(--color-overlay)] hover:bg-[var(--color-err)]/20 text-[var(--color-fg-secondary)] hover:text-[var(--color-err)] transition disabled:opacity-40"
           title="Delete"
         >
           <Trash2 className="w-3.5 h-3.5" />

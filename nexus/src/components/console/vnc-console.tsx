@@ -244,9 +244,9 @@ export function VncConsole({ node, vmid, type, className }: VncConsoleProps) {
         {status === 'error' && error && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="max-w-md studio-card rounded-lg p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-[var(--color-err)] mt-0.5 shrink-0" />
               <div className="min-w-0 flex-1 space-y-2">
-                <p className="text-sm font-medium text-red-300">Console unavailable</p>
+                <p className="text-sm font-medium text-[var(--color-err)]">Console unavailable</p>
                 <p className="text-xs text-[var(--color-fg-muted)] leading-relaxed">{error}</p>
                 <button
                   onClick={connect}
@@ -287,11 +287,11 @@ function StatusChip({ status }: { status: Status }) {
   const label = status === 'idle' ? 'Ready' : status.charAt(0).toUpperCase() + status.slice(1);
   const colour =
     status === 'connected'
-      ? 'bg-emerald-500'
+      ? 'bg-[var(--color-ok)]'
       : status === 'connecting'
-        ? 'bg-amber-500 animate-pulse'
+        ? 'bg-[var(--color-warn)] animate-pulse'
         : status === 'error'
-          ? 'bg-red-500'
+          ? 'bg-[var(--color-err)]'
           : 'bg-zinc-600';
   return (
     <span className="inline-flex items-center gap-1.5">

@@ -278,11 +278,11 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
               disabled={isEdit}
               className={cn(
                 inputCls,
-                validation.errors.storageId && storageId.length > 0 && 'border-red-500/50',
+                validation.errors.storageId && storageId.length > 0 && 'border-[var(--color-err)]/50',
               )}
             />
             {validation.errors.storageId && storageId.length > 0 && (
-              <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+              <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {validation.errors.storageId}
               </p>
@@ -329,7 +329,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
               ))}
             </div>
             {validation.errors.content && (
-              <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+              <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {validation.errors.content}
               </p>
@@ -376,11 +376,11 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   disabled={isEdit}
                   className={cn(
                     inputCls,
-                    validation.errors.server && server.length > 0 && 'border-red-500/50',
+                    validation.errors.server && server.length > 0 && 'border-[var(--color-err)]/50',
                   )}
                 />
                 {validation.errors.server && server.length > 0 && (
-                  <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+                  <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                     <AlertCircle className="w-3 h-3" />
                     {validation.errors.server}
                   </p>
@@ -395,11 +395,11 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   disabled={isEdit}
                   className={cn(
                     inputCls,
-                    validation.errors.export && exportPath.length > 0 && 'border-red-500/50',
+                    validation.errors.export && exportPath.length > 0 && 'border-[var(--color-err)]/50',
                   )}
                 />
                 {validation.errors.export && exportPath.length > 0 && (
-                  <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+                  <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                     <AlertCircle className="w-3 h-3" />
                     {validation.errors.export}
                   </p>
@@ -420,7 +420,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   disabled={isEdit}
                   className={cn(
                     inputCls,
-                    validation.errors.server && server.length > 0 && 'border-red-500/50',
+                    validation.errors.server && server.length > 0 && 'border-[var(--color-err)]/50',
                   )}
                 />
               </div>
@@ -433,7 +433,7 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                   disabled={isEdit}
                   className={cn(
                     inputCls,
-                    validation.errors.share && share.length > 0 && 'border-red-500/50',
+                    validation.errors.share && share.length > 0 && 'border-[var(--color-err)]/50',
                   )}
                 />
               </div>
@@ -472,11 +472,11 @@ export function MapStorageDialog({ onClose, onMapped, nodeNames = [], existingSt
                 disabled={isEdit}
                 className={cn(
                   inputCls,
-                  validation.errors.path && path.length > 0 && 'border-red-500/50',
+                  validation.errors.path && path.length > 0 && 'border-[var(--color-err)]/50',
                 )}
               />
               {validation.errors.path && path.length > 0 && (
-                <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+                <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                   <AlertCircle className="w-3 h-3" />
                   {validation.errors.path}
                 </p>

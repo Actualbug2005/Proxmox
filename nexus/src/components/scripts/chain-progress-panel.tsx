@@ -100,9 +100,9 @@ function ChainProgressRow({ chain }: { chain: ChainDto }) {
 function StepDot({ run }: { run: ChainStepRun }) {
   switch (run.status) {
     case 'success':
-      return <CheckCircle2 className="h-3 w-3 text-emerald-400" />;
+      return <CheckCircle2 className="h-3 w-3 text-[var(--color-ok)]" />;
     case 'failed':
-      return <XCircle className="h-3 w-3 text-red-400" />;
+      return <XCircle className="h-3 w-3 text-[var(--color-err)]" />;
     case 'running':
       return <Loader2 className="h-3 w-3 animate-spin text-indigo-400" />;
     case 'skipped':

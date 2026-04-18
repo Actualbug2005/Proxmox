@@ -319,7 +319,7 @@ export function SnapshotsTab({ kind, node, vmid }: SnapshotsTabProps) {
                           <button
                             onClick={() => setDeleteTarget(s.name)}
                             disabled={deleteM.isPending}
-                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
+                            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                             title="Delete snapshot"
                           >
                             <Trash2 className="w-3 h-3" />

@@ -317,7 +317,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
                           disabled={protectM.isPending}
                           className={cn(
                             'flex items-center gap-1.5 px-2.5 py-1 text-xs bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40',
-                            f.protected ? 'text-yellow-400' : 'text-[var(--color-fg-muted)]',
+                            f.protected ? 'text-[var(--color-warn)]' : 'text-[var(--color-fg-muted)]',
                           )}
                           title={f.protected ? 'Unprotect' : 'Protect'}
                         >
@@ -326,7 +326,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
                         <button
                           onClick={() => setDeleteTarget(f)}
                           disabled={!!f.protected || deleteM.isPending}
-                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                           title={f.protected ? 'Unprotect before delete' : 'Delete'}
                         >
                           <Trash2 className="w-3 h-3" />

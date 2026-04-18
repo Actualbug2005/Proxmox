@@ -41,11 +41,11 @@ function StatusDot({ status }: { status: JobSummary['status'] }) {
     case 'running':
       return <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400 shrink-0" />;
     case 'success':
-      return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+      return <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-ok)] shrink-0" />;
     case 'aborted':
-      return <StopCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+      return <StopCircle className="w-3.5 h-3.5 text-[var(--color-warn)] shrink-0" />;
     case 'failed':
-      return <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
+      return <XCircle className="w-3.5 h-3.5 text-[var(--color-err)] shrink-0" />;
   }
 }
 

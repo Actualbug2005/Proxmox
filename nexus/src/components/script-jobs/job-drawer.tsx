@@ -37,9 +37,9 @@ function formatDuration(ms: number): string {
 function StatusBadge({ status, exitCode }: { status: JobSummary['status']; exitCode?: number | null }) {
   const styles: Record<JobSummary['status'], { bg: string; text: string; icon: typeof Loader2 }> = {
     running: { bg: 'bg-indigo-500/15', text: 'text-indigo-200', icon: Loader2 },
-    success: { bg: 'bg-emerald-500/15', text: 'text-emerald-200', icon: CheckCircle2 },
-    aborted: { bg: 'bg-amber-500/15', text: 'text-amber-200', icon: StopCircle },
-    failed: { bg: 'bg-red-500/15', text: 'text-red-200', icon: XCircle },
+    success: { bg: 'bg-[var(--color-ok)]/15', text: 'text-emerald-200', icon: CheckCircle2 },
+    aborted: { bg: 'bg-[var(--color-warn)]/15', text: 'text-amber-200', icon: StopCircle },
+    failed: { bg: 'bg-[var(--color-err)]/15', text: 'text-[var(--color-err)]', icon: XCircle },
   };
   const s = styles[status];
   const Icon = s.icon;
@@ -165,9 +165,9 @@ export function JobDrawer({
                 onClick={handleAbort}
                 disabled={abort.isPending}
                 className="inline-flex items-center gap-1 px-2 py-1 rounded-md
-                           text-[11px] text-red-300 hover:text-red-200
-                           hover:bg-red-500/10 border border-red-500/30
-                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                           text-[11px] text-[var(--color-err)] hover:text-[var(--color-err)]
+                           hover:bg-[var(--color-err)]/10 border border-[var(--color-err)]/30
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-err)]
                            disabled:opacity-60"
               >
                 <StopCircle className="w-3 h-3" />
@@ -186,10 +186,10 @@ export function JobDrawer({
         </header>
 
         {error && (
-          <div className="m-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10
+          <div className="m-5 p-3 rounded-lg border border-[var(--color-err)]/30 bg-[var(--color-err)]/10
                           flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-red-300">{error.message}</p>
+            <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
+            <p className="text-xs text-[var(--color-err)]">{error.message}</p>
           </div>
         )}
 
@@ -221,7 +221,7 @@ export function JobDrawer({
           >
             {copied ? (
               <>
-                <Check className="w-3 h-3 text-emerald-400" />
+                <Check className="w-3 h-3 text-[var(--color-ok)]" />
                 Copied
               </>
             ) : (

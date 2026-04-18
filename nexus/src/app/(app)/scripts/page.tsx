@@ -223,11 +223,11 @@ function SidebarError({ err }: { err: ScriptsApiError }) {
   const h = humanizeError(err);
   const Icon = h.icon === 'timeout' ? Clock : AlertCircle;
   return (
-    <div className="flex items-start gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10">
-      <Icon className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+    <div className="flex items-start gap-2 p-3 rounded-lg border border-[var(--color-err)]/30 bg-[var(--color-err)]/10">
+      <Icon className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-xs font-medium text-red-300">{h.title}</p>
-        <p className="text-[11px] text-red-300/80 mt-0.5 leading-relaxed">{h.message}</p>
+        <p className="text-xs font-medium text-[var(--color-err)]">{h.title}</p>
+        <p className="text-[11px] text-[var(--color-err)]/80 mt-0.5 leading-relaxed">{h.message}</p>
       </div>
     </div>
   );
@@ -476,8 +476,8 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
           {/* Post-start banner — persists until the user edits inputs or
            * starts another job. Full log + abort live in the status bar. */}
           {justStartedId && !startJob.isPending && !startJob.isError && (
-            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-[var(--color-ok)]/30 bg-[var(--color-ok)]/10 text-xs">
+              <CheckCircle2 className="w-4 h-4 text-[var(--color-ok)] mt-0.5 shrink-0" />
               <p className="text-emerald-200">
                 Started on <span className="font-mono">{effectiveNode}</span>. Track progress in the
                 <span className="font-medium"> bottom-right status bar</span> — it opens a live log
@@ -487,9 +487,9 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
           )}
 
           {startJob.isError && (
-            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-xs">
-              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-              <p className="text-red-300">{startJob.error.message}</p>
+            <div className="flex items-start gap-2 p-2.5 rounded-lg border border-[var(--color-err)]/30 bg-[var(--color-err)]/10 text-xs">
+              <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
+              <p className="text-[var(--color-err)]">{startJob.error.message}</p>
             </div>
           )}
         </section>
@@ -505,7 +505,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
             >
               {copyState === 'copied' ? (
                 <>
-                  <Check className="w-3 h-3 text-emerald-400" />
+                  <Check className="w-3 h-3 text-[var(--color-ok)]" />
                   Copied
                 </>
               ) : (
@@ -525,8 +525,8 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
         {/* Default credentials */}
         {manifest.default_credentials &&
           (manifest.default_credentials.username || manifest.default_credentials.password) && (
-            <section className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-              <p className="text-[11px] uppercase tracking-widest text-amber-400 mb-1.5 flex items-center gap-1.5">
+            <section className="rounded-lg border border-[var(--color-warn)]/30 bg-[var(--color-warn)]/5 p-3">
+              <p className="text-[11px] uppercase tracking-widest text-[var(--color-warn)] mb-1.5 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Default credentials
               </p>
@@ -810,14 +810,14 @@ function NoteCallout({ note }: { note: ScriptNote }) {
       icon: Info,
     },
     warning: {
-      border: 'border-amber-500/30',
-      bg: 'bg-amber-500/5',
+      border: 'border-[var(--color-warn)]/30',
+      bg: 'bg-[var(--color-warn)]/5',
       text: 'text-amber-100',
       icon: AlertTriangle,
     },
     danger: {
-      border: 'border-red-500/30',
-      bg: 'bg-red-500/5',
+      border: 'border-[var(--color-err)]/30',
+      bg: 'bg-[var(--color-err)]/5',
       text: 'text-red-100',
       icon: AlertCircle,
     },

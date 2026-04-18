@@ -21,9 +21,9 @@ function guestHref(g: TopGuest): string {
 
 function valueBadge(fraction: number): string {
   const pct = Math.round(fraction * 100);
-  if (pct > 85) return 'text-red-300';
-  if (pct > 65) return 'text-amber-300';
-  return 'text-emerald-300';
+  if (pct > 85) return 'text-[var(--color-err)]';
+  if (pct > 65) return 'text-[var(--color-warn)]';
+  return 'text-[var(--color-ok)]';
 }
 
 export function TopOffendersWidget() {

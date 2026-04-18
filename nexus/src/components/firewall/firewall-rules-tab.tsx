@@ -155,7 +155,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
                       </button>
                       <button
                         onClick={() => setDeleteTarget(r)}
-                        className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
+                        className="p-1 text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                         title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />

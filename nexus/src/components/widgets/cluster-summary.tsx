@@ -22,7 +22,7 @@ export function ClusterSummaryWidget() {
   const runningCTs = cts.filter((c) => c.status === 'running').length;
 
   const tiles = [
-    { label: 'Nodes Online', value: `${onlineNodes}/${nodes.length}`, color: 'text-emerald-400' },
+    { label: 'Nodes Online', value: `${onlineNodes}/${nodes.length}`, color: 'text-[var(--color-ok)]' },
     { label: 'VMs Running', value: `${runningVMs}/${vms.length}`, color: 'text-blue-400' },
     { label: 'CTs Running', value: `${runningCTs}/${cts.length}`, color: 'text-purple-400' },
     { label: 'Total Guests', value: String(vms.length + cts.length), color: 'text-indigo-400' },

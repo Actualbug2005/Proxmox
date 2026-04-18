@@ -138,9 +138,9 @@ export default function LoginPage() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                <p className="text-sm text-red-400">{error}</p>
+              <div className="flex items-center gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg">
+                <AlertCircle className="w-4 h-4 text-[var(--color-err)] shrink-0" />
+                <p className="text-sm text-[var(--color-err)]">{error}</p>
               </div>
             )}
 

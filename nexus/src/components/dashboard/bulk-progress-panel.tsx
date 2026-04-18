@@ -44,9 +44,9 @@ function itemIcon(status: BulkBatchDto['items'][number]['status']) {
     case 'running':
       return <Loader2 className="w-3.5 h-3.5 text-indigo-300 animate-spin" />;
     case 'success':
-      return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
+      return <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-ok)]" />;
     case 'failed':
-      return <XCircle className="w-3.5 h-3.5 text-red-400" />;
+      return <XCircle className="w-3.5 h-3.5 text-[var(--color-err)]" />;
     case 'skipped':
       return <SkipForward className="w-3.5 h-3.5 text-[var(--color-fg-subtle)]" />;
     default:
@@ -102,9 +102,9 @@ export function BulkProgressPanel() {
               </span>
               {finished ? (
                 hasFailures ? (
-                  <span className="text-red-400 ml-1">· {summary.failed} failed</span>
+                  <span className="text-[var(--color-err)] ml-1">· {summary.failed} failed</span>
                 ) : (
-                  <span className="text-emerald-400 ml-1">· complete</span>
+                  <span className="text-[var(--color-ok)] ml-1">· complete</span>
                 )
               ) : (
                 <span className="text-indigo-300 ml-1">· in progress</span>
@@ -141,7 +141,7 @@ export function BulkProgressPanel() {
                 key={`${item.node}-${item.vmid}-${idx}`}
                 className={cn(
                   'flex items-center gap-2 px-3 py-1.5 text-xs border-b border-zinc-800/40 last:border-0',
-                  item.status === 'failed' && 'bg-red-500/5',
+                  item.status === 'failed' && 'bg-[var(--color-err)]/5',
                 )}
               >
                 {itemIcon(item.status)}
@@ -153,7 +153,7 @@ export function BulkProgressPanel() {
                 </span>
                 {item.error && (
                   <span
-                    className="text-red-400 truncate max-w-[40%]"
+                    className="text-[var(--color-err)] truncate max-w-[40%]"
                     title={item.error}
                   >
                     {item.error}

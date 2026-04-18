@@ -393,7 +393,7 @@ export default function CertificatesPage() {
           ) : activeCert ? (
             <div className="studio-card p-5 space-y-3">
               <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <ShieldCheck className="w-5 h-5 text-[var(--color-ok)]" />
                 <h3 className="text-sm font-semibold text-white">Active Certificate</h3>
                 <CertBadge days={days} />
               </div>
@@ -413,7 +413,7 @@ export default function CertificatesPage() {
               </dl>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="text-xs text-red-400 hover:text-red-300 transition"
+                className="text-xs text-[var(--color-err)] hover:text-[var(--color-err)] transition"
               >
                 Delete custom certificate
               </button>
@@ -519,7 +519,7 @@ export default function CertificatesPage() {
           </p>
 
           {tunnelStatusError instanceof ProxmoxAPIError && tunnelStatusError.status === 403 && (
-            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 text-red-300 text-xs px-4 py-2 rounded-lg">
+            <div className="flex items-start gap-2 bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 text-[var(--color-err)] text-xs px-4 py-2 rounded-lg">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>Permission Denied: requires Sys.Audit on /nodes/{node} to view tunnel status.</span>
             </div>

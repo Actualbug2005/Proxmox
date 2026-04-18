@@ -44,7 +44,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
           onClick={(e) => { e.stopPropagation(); start.mutate(); }}
           disabled={pending}
           title="Start"
-          className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-emerald-400 hover:bg-emerald-500/10 transition disabled:opacity-40"
+          className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-[var(--color-ok)] hover:bg-[var(--color-ok)]/10 transition disabled:opacity-40"
         >
           {start.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
         </button>
@@ -55,7 +55,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); shutdown.mutate(); }}
             disabled={pending}
             title="Shutdown"
-            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-amber-400 hover:bg-amber-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-[var(--color-warn)] hover:bg-[var(--color-warn)]/10 transition disabled:opacity-40"
           >
             {shutdown.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
           </button>
@@ -71,7 +71,7 @@ function CTActions({ ct, onDone }: { ct: ClusterResourcePublic; onDone: () => vo
             onClick={(e) => { e.stopPropagation(); stop.mutate(); }}
             disabled={pending}
             title="Force Stop"
-            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-500/10 transition disabled:opacity-40"
+            className="p-1.5 rounded-md text-[var(--color-fg-subtle)] hover:text-[var(--color-err)] hover:bg-[var(--color-err)]/10 transition disabled:opacity-40"
           >
             {stop.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Square className="w-3.5 h-3.5" />}
           </button>

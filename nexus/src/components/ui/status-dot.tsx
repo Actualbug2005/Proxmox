@@ -55,12 +55,12 @@ const sizeClasses: Record<DotSize, string> = {
  *   - zinc-600 → disconnected / no data (unknown)
  */
 const statusStyles: Record<DotStatus, { fill: string; ring: string; pulse: boolean }> = {
-  running:   { fill: 'bg-emerald-400', ring: 'ring-emerald-400/25', pulse: false },
+  running:   { fill: 'bg-[var(--color-ok)]', ring: 'ring-[var(--color-ok)]/25', pulse: false },
   stopped:   { fill: 'bg-zinc-500',    ring: 'ring-zinc-500/25',    pulse: false },
-  paused:    { fill: 'bg-amber-400',   ring: 'ring-amber-400/25',   pulse: false },
-  suspended: { fill: 'bg-amber-600',   ring: 'ring-amber-600/25',   pulse: false },
-  warning:   { fill: 'bg-amber-500',   ring: 'ring-amber-500/30',   pulse: false },
-  error:     { fill: 'bg-red-400',     ring: 'ring-red-400/30',     pulse: false },
+  paused:    { fill: 'bg-[var(--color-warn)]',   ring: 'ring-[var(--color-warn)]/25',   pulse: false },
+  suspended: { fill: 'bg-[var(--color-warn)]',   ring: 'ring-[var(--color-warn)]/25',   pulse: false },
+  warning:   { fill: 'bg-[var(--color-warn)]',   ring: 'ring-[var(--color-warn)]/30',   pulse: false },
+  error:     { fill: 'bg-[var(--color-err)]',     ring: 'ring-[var(--color-err)]/30',     pulse: false },
   unknown:   { fill: 'bg-zinc-600',    ring: 'ring-zinc-600/25',    pulse: false },
 };
 

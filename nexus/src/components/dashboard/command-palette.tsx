@@ -201,7 +201,7 @@ export function CommandPalette() {
                         <span
                           className={cn(
                             'text-xs shrink-0',
-                            vm.status === 'running' ? 'text-emerald-400' : 'text-[var(--color-fg-faint)]',
+                            vm.status === 'running' ? 'text-[var(--color-ok)]' : 'text-[var(--color-fg-faint)]',
                           )}
                         >
                           {vm.status}
@@ -258,7 +258,7 @@ export function CommandPalette() {
                         <span
                           className={cn(
                             'text-xs shrink-0',
-                            ct.status === 'running' ? 'text-emerald-400' : 'text-[var(--color-fg-faint)]',
+                            ct.status === 'running' ? 'text-[var(--color-ok)]' : 'text-[var(--color-fg-faint)]',
                           )}
                         >
                           {ct.status}
@@ -317,7 +317,7 @@ function CommandItem({
       className={cn(
         'flex items-center gap-3 px-4 py-2 cursor-pointer transition',
         'data-[selected=true]:bg-[var(--color-overlay)]',
-        danger ? 'text-red-400 data-[selected=true]:text-red-400' : 'text-[var(--color-fg-secondary)]',
+        danger ? 'text-[var(--color-err)] data-[selected=true]:text-[var(--color-err)]' : 'text-[var(--color-fg-secondary)]',
       )}
     >
       <span className="text-[var(--color-fg-subtle)]">{icon}</span>
@@ -345,7 +345,7 @@ function ActionButton({
       className={cn(
         'p-1 rounded transition text-xs',
         danger
-          ? 'text-red-500 hover:bg-red-500/20'
+          ? 'text-[var(--color-err)] hover:bg-[var(--color-err)]/20'
           : 'text-[var(--color-fg-subtle)] hover:bg-[var(--color-overlay)] hover:text-[var(--color-fg-secondary)]',
       )}
     >

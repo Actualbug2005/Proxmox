@@ -223,7 +223,7 @@ export default function HAPage() {
                             </button>
                             <button
                               onClick={() => setMigrateTarget({ r, kind: 'relocate' })}
-                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-yellow-400 hover:text-yellow-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
+                              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[var(--color-warn)] hover:text-[var(--color-warn)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Relocate (offline)"
                             >
                               <Shuffle className="w-3 h-3" /> Relocate
@@ -237,7 +237,7 @@ export default function HAPage() {
                             </button>
                             <button
                               onClick={() => setDeleteRes(r)}
-                              className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
+                              className="p-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                               title="Remove from HA"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -301,7 +301,7 @@ export default function HAPage() {
                           <button onClick={() => setEditGroup(g)} className="p-1 text-xs text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Edit">
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button onClick={() => setDeleteGroup(g)} className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Delete">
+                          <button onClick={() => setDeleteGroup(g)} className="p-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Delete">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>

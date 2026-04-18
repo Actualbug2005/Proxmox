@@ -211,9 +211,9 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-surface)] border-b border-[var(--color-border-subtle)] shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-err)]/60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warn)]/60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-ok)]/60" />
           <span className="text-xs text-[var(--color-fg-subtle)] ml-2">
             {type === 'node' ? `${node} — Shell` : `${node}/${type}/${vmid} — Console`}
           </span>
@@ -223,11 +223,11 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
             className={cn(
               'text-xs px-2 py-0.5 rounded-full',
               status === 'connected'
-                ? 'text-emerald-400 bg-emerald-500/10'
+                ? 'text-[var(--color-ok)] bg-[var(--color-ok)]/10'
                 : status === 'connecting'
                   ? 'text-blue-400 bg-blue-500/10'
                   : status === 'error'
-                    ? 'text-red-400 bg-red-500/10'
+                    ? 'text-[var(--color-err)] bg-[var(--color-err)]/10'
                     : 'text-[var(--color-fg-subtle)] bg-[var(--color-overlay)]',
             )}
           >
@@ -281,17 +281,17 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
         {status === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="flex flex-col items-center gap-3 text-center max-w-md">
-              <AlertCircle className="w-8 h-8 text-red-400" />
-              <p className="text-sm text-red-400 break-words">{error}</p>
+              <AlertCircle className="w-8 h-8 text-[var(--color-err)]" />
+              <p className="text-sm text-[var(--color-err)] break-words">{error}</p>
               {hint && (
-                <p className="flex items-start gap-1.5 text-xs text-yellow-300/90">
+                <p className="flex items-start gap-1.5 text-xs text-[var(--color-warn)]/90">
                   <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                   <span>{hint.message}</span>
                 </p>
               )}
               <button
                 onClick={connect}
-                className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-lg hover:bg-red-500/20 transition"
+                className="px-3 py-1.5 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 text-[var(--color-err)] text-xs rounded-lg hover:bg-[var(--color-err)]/20 transition"
               >
                 Retry
               </button>

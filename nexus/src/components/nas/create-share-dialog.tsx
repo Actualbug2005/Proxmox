@@ -100,10 +100,10 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder="media"
               maxLength={NAME_MAX + 8}
-              className={cn(inputCls, validation.errors.name && name.length > 0 && 'border-red-500/50')}
+              className={cn(inputCls, validation.errors.name && name.length > 0 && 'border-[var(--color-err)]/50')}
             />
             {validation.errors.name && name.length > 0 && (
-              <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+              <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {validation.errors.name}
               </p>
@@ -117,10 +117,10 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
               value={path}
               onChange={(e) => setPath(e.target.value)}
               placeholder="/mnt/tank/media"
-              className={cn(inputCls, validation.errors.path && path.length > 0 && 'border-red-500/50')}
+              className={cn(inputCls, validation.errors.path && path.length > 0 && 'border-[var(--color-err)]/50')}
             />
             {validation.errors.path && path.length > 0 && (
-              <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+              <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {validation.errors.path}
               </p>
@@ -151,7 +151,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
               </label>
             </div>
             {validation.errors.protocols && (
-              <p className="flex items-center gap-1 text-[11px] text-red-400 mt-1">
+              <p className="flex items-center gap-1 text-[11px] text-[var(--color-err)] mt-1">
                 <AlertCircle className="w-3 h-3" />
                 {validation.errors.protocols}
               </p>
@@ -173,7 +173,7 @@ export function CreateShareDialog({ node, onClose, onCreated }: Props) {
               onClick={() => setReadOnly((v) => !v)}
               className={cn(
                 'relative w-10 h-6 rounded-full transition shrink-0',
-                readOnly ? 'bg-emerald-500' : 'bg-[var(--color-overlay)]',
+                readOnly ? 'bg-[var(--color-ok)]' : 'bg-[var(--color-overlay)]',
               )}
             >
               <span

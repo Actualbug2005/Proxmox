@@ -27,9 +27,9 @@ const HEALTH_DOT: Record<SmartHealth, 'running' | 'error' | 'warning'> = {
 };
 
 const HEALTH_TEXT: Record<SmartHealth, string> = {
-  PASSED: 'text-emerald-400',
-  FAILED: 'text-red-400',
-  UNKNOWN: 'text-amber-400',
+  PASSED: 'text-[var(--color-ok)]',
+  FAILED: 'text-[var(--color-err)]',
+  UNKNOWN: 'text-[var(--color-warn)]',
 };
 
 function diskTypeBadge(type: DiskListEntryPublic['type']): 'info' | 'outline' {
@@ -113,7 +113,7 @@ export function PhysicalDisksTable() {
       )}
 
       {error && (
-        <div className="text-sm text-red-400 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="text-sm text-[var(--color-err)] px-4 py-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg">
           Failed to list disks: {error instanceof Error ? error.message : String(error)}
         </div>
       )}

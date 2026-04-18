@@ -216,7 +216,7 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
             onClick={handleLogout}
             title="Sign out"
             aria-label="Sign out"
-            className="rounded-md p-1 text-[var(--color-fg-subtle)] transition hover:text-red-400
+            className="rounded-md p-1 text-[var(--color-fg-subtle)] transition hover:text-[var(--color-err)]
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
           >
             <LogOut className="h-4 w-4" />

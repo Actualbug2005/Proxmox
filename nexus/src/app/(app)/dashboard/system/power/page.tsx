@@ -95,16 +95,16 @@ export default function PowerPage() {
           </button>
         </div>
 
-        <div className="bg-[var(--color-surface)] border border-red-900/30 rounded-lg p-5">
+        <div className="bg-[var(--color-surface)] border border-[var(--color-err)]/30 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
-            <PowerOff className="w-4 h-4 text-red-400" />
+            <PowerOff className="w-4 h-4 text-[var(--color-err)]" />
             <span className="text-xs text-[var(--color-fg-subtle)] font-medium uppercase tracking-widest">Shutdown</span>
           </div>
           <p className="text-xs text-[var(--color-fg-subtle)] mb-4">Power off the node completely. Requires physical or IPMI access to bring it back online.</p>
           <button
             onClick={() => setPending('shutdown')}
             disabled={powerM.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--color-err)]/10 hover:bg-[var(--color-err)]/20 text-[var(--color-err)] text-sm rounded-lg transition disabled:opacity-40"
           >
             {powerM.isPending && pending === 'shutdown' ? (
               <Loader2 className="w-4 h-4 animate-spin" />

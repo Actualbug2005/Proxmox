@@ -25,9 +25,9 @@ const HEALTH_VARIANT: Record<SmartHealth, 'success' | 'danger' | 'warning'> = {
 };
 
 function HealthIcon({ health }: { health: SmartHealth }) {
-  if (health === 'PASSED') return <ShieldCheck className="w-5 h-5 text-emerald-400" />;
-  if (health === 'FAILED') return <ShieldAlert className="w-5 h-5 text-red-400" />;
-  return <ShieldQuestion className="w-5 h-5 text-yellow-400" />;
+  if (health === 'PASSED') return <ShieldCheck className="w-5 h-5 text-[var(--color-ok)]" />;
+  if (health === 'FAILED') return <ShieldAlert className="w-5 h-5 text-[var(--color-err)]" />;
+  return <ShieldQuestion className="w-5 h-5 text-[var(--color-warn)]" />;
 }
 
 /** Highlight rows whose normalised value has dropped to / below the failure
@@ -105,7 +105,7 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
           )}
 
           {error && (
-            <div className="flex items-start gap-2 m-5 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-300">
+            <div className="flex items-start gap-2 m-5 p-4 bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg text-sm text-[var(--color-err)]">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
                 Failed to read S.M.A.R.T. data: {error instanceof Error ? error.message : String(error)}
@@ -146,7 +146,7 @@ export function SmartDetails({ node, disk, onClose }: SmartDetailsProps) {
                       key={`${a.id ?? a.name}-${i}`}
                       className={
                         failing
-                          ? 'border-b border-[var(--color-border-subtle)] bg-red-500/5'
+                          ? 'border-b border-[var(--color-border-subtle)] bg-[var(--color-err)]/5'
                           : 'border-b border-zinc-800/40 hover:bg-zinc-800/30'
                       }
                     >

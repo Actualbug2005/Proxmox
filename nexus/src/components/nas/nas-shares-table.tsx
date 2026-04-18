@@ -85,7 +85,7 @@ export function NasSharesTable({ node }: Props) {
       )}
 
       {error && (
-        <div className="text-sm text-red-400 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="text-sm text-[var(--color-err)] px-4 py-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg">
           Failed to list shares: {error instanceof Error ? error.message : String(error)}
         </div>
       )}
@@ -136,7 +136,7 @@ export function NasSharesTable({ node }: Props) {
                     <span
                       className={cn(
                         'inline-flex items-center gap-1 text-xs',
-                        s.readOnly ? 'text-[var(--color-fg-muted)]' : 'text-emerald-400',
+                        s.readOnly ? 'text-[var(--color-fg-muted)]' : 'text-[var(--color-ok)]',
                       )}
                     >
                       {s.readOnly ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
@@ -159,7 +159,7 @@ export function NasSharesTable({ node }: Props) {
                         onClick={() => setPendingDelete(s)}
                         disabled={deleteM.isPending}
                         aria-label={`Delete ${s.name}`}
-                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-red-400 hover:bg-red-500/10 rounded-md transition disabled:opacity-40"
+                        className="p-1.5 text-[var(--color-fg-subtle)] hover:text-[var(--color-err)] hover:bg-[var(--color-err)]/10 rounded-md transition disabled:opacity-40"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

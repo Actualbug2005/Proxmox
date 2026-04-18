@@ -78,7 +78,7 @@ export function RealmsTab() {
                           <button onClick={() => syncM.mutate(r)} disabled={syncM.isPending} className="p-1 text-blue-400 hover:text-blue-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition" title="Sync users"><RefreshCw className="w-3 h-3" /></button>
                         )}
                         <button onClick={() => setEdit(r)} className="p-1 text-[var(--color-fg-secondary)] hover:text-white bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"><Pencil className="w-3 h-3" /></button>
-                        <button onClick={() => setDeleteTarget(r)} disabled={!canDelete(r)} className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30" title={!canDelete(r) ? 'Cannot delete built-in realm' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
+                        <button onClick={() => setDeleteTarget(r)} disabled={!canDelete(r)} className="p-1 text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-30" title={!canDelete(r) ? 'Cannot delete built-in realm' : 'Delete'}><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </td>
                   </tr>

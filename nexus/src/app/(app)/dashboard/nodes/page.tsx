@@ -66,7 +66,7 @@ export default function NodesPage() {
                     <span
                       className={cn(
                         'text-xs font-medium capitalize',
-                        online ? 'text-emerald-400' : 'text-red-400',
+                        online ? 'text-[var(--color-ok)]' : 'text-[var(--color-err)]',
                       )}
                     >
                       {node.status}

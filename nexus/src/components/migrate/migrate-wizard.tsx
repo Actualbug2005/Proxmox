@@ -348,11 +348,11 @@ function StepTarget({
   }
   if (error) {
     return (
-      <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm">
-        <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg text-sm">
+        <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
         <div>
-          <p className="text-red-300 font-medium">Could not load precondition</p>
-          <p className="text-red-400/80 text-xs mt-0.5">{error.message}</p>
+          <p className="text-[var(--color-err)] font-medium">Could not load precondition</p>
+          <p className="text-[var(--color-err)]/80 text-xs mt-0.5">{error.message}</p>
         </div>
       </div>
     );
@@ -422,7 +422,7 @@ function TargetRow({
             <span>Mem headroom <span className="text-[var(--color-fg-secondary)] tabular">{row.fit.memHeadroomPct}%</span></span>
           </div>
         ) : (
-          <div className="text-xs text-red-400/80 mt-0.5 truncate" title={row.reasons.join('; ')}>
+          <div className="text-xs text-[var(--color-err)]/80 mt-0.5 truncate" title={row.reasons.join('; ')}>
             {row.reasons[0] ?? 'not allowed'}
           </div>
         )}
@@ -499,9 +499,9 @@ function StepConfirm({
       )}
 
       {pveError && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm">
-          <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-          <div className="text-red-300">{pveError}</div>
+        <div className="flex items-start gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg text-sm">
+          <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
+          <div className="text-[var(--color-err)]">{pveError}</div>
         </div>
       )}
     </div>

@@ -4,10 +4,10 @@ import { useClusterTasks } from '@/hooks/use-cluster';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
 function TaskStatusIcon({ status }: { status?: string }) {
-  if (status === 'OK') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
+  if (status === 'OK') return <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-ok)]" />;
   if (status === 'running') return <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin" />;
-  if (status?.startsWith('WARNINGS')) return <CheckCircle2 className="w-3.5 h-3.5 text-yellow-400" />;
-  if (status) return <XCircle className="w-3.5 h-3.5 text-red-400" />;
+  if (status?.startsWith('WARNINGS')) return <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-warn)]" />;
+  if (status) return <XCircle className="w-3.5 h-3.5 text-[var(--color-err)]" />;
   return <Clock className="w-3.5 h-3.5 text-[var(--color-fg-faint)]" />;
 }
 

@@ -31,10 +31,10 @@ function statusVariant(task: PVETask): 'success' | 'danger' | 'warning' | 'info'
 
 function TaskStatusIcon({ task }: { task: PVETask }) {
   const s = task.exitstatus ?? task.status ?? '';
-  if (s === 'OK') return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
+  if (s === 'OK') return <CheckCircle2 className="w-4 h-4 text-[var(--color-ok)]" />;
   if (s === 'running' || s === '') return <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />;
-  if (s.startsWith('WARNINGS')) return <CheckCircle2 className="w-4 h-4 text-yellow-400" />;
-  if (s) return <XCircle className="w-4 h-4 text-red-400" />;
+  if (s.startsWith('WARNINGS')) return <CheckCircle2 className="w-4 h-4 text-[var(--color-warn)]" />;
+  if (s) return <XCircle className="w-4 h-4 text-[var(--color-err)]" />;
   return <Clock className="w-4 h-4 text-[var(--color-fg-faint)]" />;
 }
 
@@ -167,7 +167,7 @@ export default function TasksPage() {
                       const hint = hintForTask(task);
                       if (!hint) return null;
                       return (
-                        <p className="flex items-start gap-1.5 text-xs text-yellow-300/90 mt-1">
+                        <p className="flex items-start gap-1.5 text-xs text-[var(--color-warn)]/90 mt-1">
                           <Lightbulb className="w-3 h-3 mt-0.5 shrink-0" />
                           <span>{hint.message}</span>
                         </p>

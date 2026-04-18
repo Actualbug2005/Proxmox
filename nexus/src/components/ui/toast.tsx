@@ -74,9 +74,9 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   const Icon = item.variant === 'success' ? CheckCircle2 : item.variant === 'error' ? AlertCircle : Info;
   const tone =
     item.variant === 'success'
-      ? 'border-emerald-500/30 text-[var(--color-ok)]'
+      ? 'border-[var(--color-ok)]/30 text-[var(--color-ok)]'
       : item.variant === 'error'
-        ? 'border-red-500/30 text-[var(--color-err)]'
+        ? 'border-[var(--color-err)]/30 text-[var(--color-err)]'
         : 'border-blue-500/30 text-[var(--color-accent)]';
 
   return (

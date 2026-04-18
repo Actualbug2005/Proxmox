@@ -44,7 +44,7 @@ export function BentoGrid({ preset }: BentoGridProps) {
             {widget ? (
               <widget.Component />
             ) : (
-              <div className="flex h-full items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-300">
+              <div className="flex h-full items-center gap-2 rounded-xl border border-[var(--color-warn)]/30 bg-[var(--color-warn)]/5 p-4 text-sm text-[var(--color-warn)]">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 Widget <span className="font-mono">{cell.widgetId}</span> not registered.
               </div>

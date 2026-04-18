@@ -184,7 +184,7 @@ export function FileBrowserSheet({ node, shareId, shareName, onClose }: Props) {
           )}
 
           {error && (
-            <div className="flex items-start gap-2 m-5 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-300">
+            <div className="flex items-start gap-2 m-5 p-4 bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg text-sm text-[var(--color-err)]">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
                 Failed to list directory:{' '}

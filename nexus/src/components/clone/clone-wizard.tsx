@@ -544,11 +544,11 @@ function StepReview({
       )}
 
       {(cloneError || configError) && (
-        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm">
-          <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg text-sm">
+          <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
           <div>
-            {cloneError && <p className="text-red-300 font-medium">{cloneError}</p>}
-            {configError && <p className="text-red-300 font-medium">Cloud-init: {configError}</p>}
+            {cloneError && <p className="text-[var(--color-err)] font-medium">{cloneError}</p>}
+            {configError && <p className="text-[var(--color-err)] font-medium">Cloud-init: {configError}</p>}
           </div>
         </div>
       )}
@@ -579,7 +579,7 @@ function ProgressStep({
   return (
     <div className="flex items-center gap-2 text-sm">
       {done ? (
-        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+        <Check className="w-3.5 h-3.5 text-[var(--color-ok)] shrink-0" />
       ) : active ? (
         <Loader2 className="w-3.5 h-3.5 text-indigo-300 animate-spin shrink-0" />
       ) : (

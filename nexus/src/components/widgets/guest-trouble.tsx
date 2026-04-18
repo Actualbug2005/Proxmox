@@ -33,7 +33,7 @@ export function GuestTroubleWidget() {
       </div>
 
       {trouble.length === 0 ? (
-        <p className="py-6 text-center text-xs text-emerald-400/80">
+        <p className="py-6 text-center text-xs text-[var(--color-ok)]/80">
           {isLoading ? 'Scanning guests…' : 'All guests are running.'}
         </p>
       ) : (
@@ -47,14 +47,14 @@ export function GuestTroubleWidget() {
                 href={href}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition hover:bg-white/[0.03]"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]" />
                 <span className="min-w-0 flex-1 truncate text-[var(--color-fg-secondary)]">
                   {g.name ?? `${g.type}/${g.vmid}`}
                 </span>
                 <span className="shrink-0 font-mono text-[11px] uppercase text-[var(--color-fg-subtle)]">
                   {g.type}
                 </span>
-                <span className="shrink-0 text-[11px] text-amber-300">{g.status}</span>
+                <span className="shrink-0 text-[11px] text-[var(--color-warn)]">{g.status}</span>
               </Link>
             );
           })}

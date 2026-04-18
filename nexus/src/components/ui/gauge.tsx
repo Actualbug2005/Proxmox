@@ -20,9 +20,9 @@ interface GaugeProps {
 }
 
 function colorFor(pct: number): string {
-  if (pct > 85) return 'bg-red-500';
-  if (pct > 65) return 'bg-amber-500';
-  return 'bg-emerald-500';
+  if (pct > 85) return 'bg-[var(--color-err)]';
+  if (pct > 65) return 'bg-[var(--color-warn)]';
+  return 'bg-[var(--color-ok)]';
 }
 
 export function Gauge({ value, className, label }: GaugeProps) {

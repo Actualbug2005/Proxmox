@@ -104,7 +104,7 @@ export default function ChainsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <StatCard label="Total" value={String(stats.total)} color="text-[var(--color-fg)]" />
         <StatCard label="In flight" value={String(stats.inFlight)} color="text-indigo-400" />
-        <StatCard label="Scheduled" value={String(stats.scheduled)} color="text-emerald-400" />
+        <StatCard label="Scheduled" value={String(stats.scheduled)} color="text-[var(--color-ok)]" />
       </div>
 
       {isLoading && (
@@ -113,12 +113,12 @@ export default function ChainsPage() {
         </div>
       )}
       {isError && (
-        <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-          <p className="text-sm font-medium text-red-400">Failed to load chains</p>
+        <div className="flex items-center gap-3 p-4 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-[var(--color-err)] shrink-0" />
+          <p className="text-sm font-medium text-[var(--color-err)]">Failed to load chains</p>
           <button
             onClick={() => refetch()}
-            className="ml-auto text-xs text-red-400 hover:text-red-300 underline"
+            className="ml-auto text-xs text-[var(--color-err)] hover:text-[var(--color-err)] underline"
           >
             Retry
           </button>
@@ -202,7 +202,7 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
             <span
               className={cn(
                 'inline-block w-1.5 h-1.5 rounded-full',
-                chain.enabled ? 'bg-emerald-400' : 'bg-zinc-600',
+                chain.enabled ? 'bg-[var(--color-ok)]' : 'bg-zinc-600',
               )}
               title={chain.enabled ? 'Enabled' : 'Disabled'}
             />
@@ -245,7 +245,7 @@ function ChainRow({ chain, onEdit }: { chain: ChainDto; onEdit: () => void }) {
           <button
             onClick={remove}
             disabled={deleteM.isPending}
-            className="rounded-md bg-[var(--color-overlay)] p-1.5 text-[var(--color-fg-secondary)] transition hover:bg-red-500/20 hover:text-red-300 disabled:opacity-40"
+            className="rounded-md bg-[var(--color-overlay)] p-1.5 text-[var(--color-fg-secondary)] transition hover:bg-[var(--color-err)]/20 hover:text-[var(--color-err)] disabled:opacity-40"
             title="Delete"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -269,9 +269,9 @@ function StepPip({ run, step }: { run: ChainStepRun; step?: string }) {
   const icon = (() => {
     switch (run.status) {
       case 'success':
-        return <CheckCircle2 className="h-3 w-3 text-emerald-400" />;
+        return <CheckCircle2 className="h-3 w-3 text-[var(--color-ok)]" />;
       case 'failed':
-        return <XCircle className="h-3 w-3 text-red-400" />;
+        return <XCircle className="h-3 w-3 text-[var(--color-err)]" />;
       case 'running':
         return <Loader2 className="h-3 w-3 animate-spin text-indigo-400" />;
       case 'skipped':
@@ -285,8 +285,8 @@ function StepPip({ run, step }: { run: ChainStepRun; step?: string }) {
       title={label}
       className={cn(
         'flex h-5 min-w-5 items-center justify-center rounded-full px-1',
-        run.status === 'failed' && 'bg-red-500/10',
-        run.status === 'success' && 'bg-emerald-500/10',
+        run.status === 'failed' && 'bg-[var(--color-err)]/10',
+        run.status === 'success' && 'bg-[var(--color-ok)]/10',
         run.status === 'running' && 'bg-indigo-500/10',
       )}
     >

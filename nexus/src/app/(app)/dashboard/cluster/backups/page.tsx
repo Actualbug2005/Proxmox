@@ -245,7 +245,7 @@ export default function BackupsPage() {
                         <button
                           onClick={() => protectM.mutate({ f, next: !f.protected })}
                           disabled={protectM.isPending}
-                          className={cn('p-1 text-xs bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40', f.protected ? 'text-yellow-400' : 'text-[var(--color-fg-muted)]')}
+                          className={cn('p-1 text-xs bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40', f.protected ? 'text-[var(--color-warn)]' : 'text-[var(--color-fg-muted)]')}
                           title={f.protected ? 'Unprotect' : 'Protect'}
                         >
                           <Lock className="w-3 h-3" />
@@ -253,7 +253,7 @@ export default function BackupsPage() {
                         <button
                           onClick={() => setDeleteTarget(f)}
                           disabled={!!f.protected || deleteFileM.isPending}
-                          className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
+                          className="p-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                           title={f.protected ? 'Unprotect before delete' : 'Delete'}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -331,7 +331,7 @@ export default function BackupsPage() {
                           </button>
                           <button
                             onClick={() => setDeleteJob(j)}
-                            className="p-1 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
+                            className="p-1 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"
                             title="Delete"
                           >
                             <Trash2 className="w-3 h-3" />

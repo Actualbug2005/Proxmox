@@ -113,7 +113,7 @@ function StepGeneral({ state, set, nextid }: { state: WizardState; set: (p: Part
         </Field>
       </div>
       {state.password && state.confirmPassword && state.password !== state.confirmPassword && (
-        <p className="text-xs text-red-400">Passwords do not match</p>
+        <p className="text-xs text-[var(--color-err)]">Passwords do not match</p>
       )}
       <label className="flex items-center gap-2 text-sm text-[var(--color-fg-secondary)] cursor-pointer">
         <input type="checkbox" checked={state.unprivileged} onChange={(e) => set({ unprivileged: e.target.checked })}
@@ -386,7 +386,7 @@ export default function CreateCTPage() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">{error}</p>
+        <p className="text-sm text-[var(--color-err)] bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg px-4 py-3">{error}</p>
       )}
 
       <div className="flex justify-between">

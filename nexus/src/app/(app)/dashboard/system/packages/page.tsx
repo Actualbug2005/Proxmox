@@ -248,7 +248,7 @@ export default function PackagesPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-[var(--color-fg-secondary)]">{pkg.Package}</td>
                       <td className="px-4 py-3 font-mono text-[var(--color-fg-subtle)] text-xs">{pkg.OldVersion}</td>
-                      <td className="px-4 py-3 font-mono text-amber-400 text-xs">{pkg.Version}</td>
+                      <td className="px-4 py-3 font-mono text-[var(--color-warn)] text-xs">{pkg.Version}</td>
                       <td className="px-4 py-3 text-[var(--color-fg-subtle)] text-xs">{pkg.Section ?? '—'}</td>
                     </tr>
                   ))}

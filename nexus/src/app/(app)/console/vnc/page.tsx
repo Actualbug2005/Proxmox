@@ -41,9 +41,9 @@ export default function VncConsolePage() {
     return (
       <div className="p-6 max-w-xl mx-auto">
         <div className="studio-card rounded-lg p-5 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
+          <AlertCircle className="w-5 h-5 text-[var(--color-err)] mt-0.5 shrink-0" />
           <div>
-            <h1 className="text-sm font-semibold text-red-300 mb-1">Cannot open graphical console</h1>
+            <h1 className="text-sm font-semibold text-[var(--color-err)] mb-1">Cannot open graphical console</h1>
             <p className="text-xs text-[var(--color-fg-muted)] leading-relaxed">
               Missing or invalid <span className="font-mono">node</span>,{' '}
               <span className="font-mono">vmid</span>, or <span className="font-mono">type</span>{' '}

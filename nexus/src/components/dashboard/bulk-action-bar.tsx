@@ -132,7 +132,7 @@ export function BulkActionBar({
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300',
                   enabled
                     ? danger
-                      ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30'
+                      ? 'bg-[var(--color-err)]/15 hover:bg-[var(--color-err)]/25 text-[var(--color-err)] border border-[var(--color-err)]/30'
                       : 'bg-[var(--color-overlay)] hover:bg-zinc-700 text-[var(--color-fg-secondary)] border border-zinc-700/60'
                     : 'bg-[var(--color-surface)] text-[var(--color-fg-faint)] border border-[var(--color-border-subtle)] cursor-not-allowed',
                 )}
@@ -239,10 +239,10 @@ function SnapshotPrompt({
               value={snapname}
               onChange={(e) => setSnapname(e.target.value)}
               placeholder="before-update"
-              className={cn(inputCls, !valid && trimmed.length > 0 && 'border-red-500/50')}
+              className={cn(inputCls, !valid && trimmed.length > 0 && 'border-[var(--color-err)]/50')}
             />
             {!valid && trimmed.length > 0 && (
-              <p className="text-xs text-red-400 mt-1">
+              <p className="text-xs text-[var(--color-err)] mt-1">
                 Must start with a letter; letters, digits, <code>_</code>, <code>-</code> only; 1–40 chars.
               </p>
             )}

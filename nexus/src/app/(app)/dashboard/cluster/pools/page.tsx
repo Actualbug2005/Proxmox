@@ -257,7 +257,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
           <button onClick={onEdit} className="px-3 py-1.5 text-xs text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition flex items-center gap-1.5">
             <Pencil className="w-3 h-3" /> Edit
           </button>
-          <button onClick={onDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 bg-[var(--color-overlay)] rounded-lg transition">
+          <button onClick={onDelete} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] rounded-lg transition">
             <Trash2 className="w-3.5 h-3.5" /> Delete
           </button>
         </div>
@@ -284,7 +284,7 @@ function PoolDetail({ pool, onEdit, onDelete }: { pool: PVEPool; onEdit: () => v
                     <button
                       onClick={() => removeM.mutate(m)}
                       disabled={removeM.isPending}
-                      className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
+                      className="p-1 text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
                       title="Remove from pool"
                     >
                       <Trash2 className="w-3 h-3" />

@@ -82,7 +82,7 @@ export function ACLTab() {
                     <td className="px-4 py-3 font-mono text-xs text-[var(--color-fg-muted)]">{a.roleid}</td>
                     <td className="px-4 py-3 text-xs text-[var(--color-fg-subtle)]">{(a.propagate ?? false) ? 'yes' : 'no'}</td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => setDeleteTarget(a)} className="p-1 text-red-400 hover:text-red-300 bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => setDeleteTarget(a)} className="p-1 text-[var(--color-err)] hover:text-[var(--color-err)] bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] rounded-lg transition"><Trash2 className="w-3 h-3" /></button>
                     </td>
                   </tr>
                 ))}
