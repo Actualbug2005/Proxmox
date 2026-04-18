@@ -201,7 +201,7 @@ export function MigrateWizard({
             <button
               onClick={() => setStep(((step + 1) as 0 | 1 | 2))}
               disabled={(step === 0 ? !canGoToTarget : false) || (step === 1 ? !canGoToConfirm : false)}
-              className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
+              className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] rounded-lg transition disabled:opacity-40"
             >
               Next
               <ChevronRight className="w-4 h-4" />

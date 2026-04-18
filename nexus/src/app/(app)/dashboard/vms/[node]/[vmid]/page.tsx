@@ -97,7 +97,7 @@ function CloneDialog({
           <button
             onClick={() => onConfirm(Number(newid) || (nextid ?? 0), name, full)}
             disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] rounded-lg transition disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Clone'}
           </button>
@@ -426,7 +426,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                         Cancel
                       </button>
                       <button onClick={() => saveConfigM.mutate()} disabled={saveConfigM.isPending}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-50">
+                        className="flex items-center gap-1.5 text-xs px-3 py-1 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] rounded-lg transition disabled:opacity-50">
                         {saveConfigM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         Save
                       </button>

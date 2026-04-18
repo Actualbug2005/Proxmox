@@ -51,7 +51,7 @@ export function ACLTab() {
 
       <div className="space-y-4">
         <div className="flex justify-end">
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition">
             <Plus className="w-4 h-4" /> New entry
           </button>
         </div>
@@ -165,7 +165,7 @@ function ACLEditor({ users, groups, roles, onClose, onSaved }: {
         </div>
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">Cancel</button>
-          <button onClick={() => saveM.mutate()} disabled={!path || !roleid || (who === 'user' ? !userid : !groupid) || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40">
+          <button onClick={() => saveM.mutate()} disabled={!path || !roleid || (who === 'user' ? !userid : !groupid) || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40">
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Create
           </button>

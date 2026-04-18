@@ -195,7 +195,7 @@ export function ScheduleJobEditor({
             disabled={!canSubmit}
             className={cn(
               'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition',
-              'bg-zinc-300 hover:bg-zinc-200 text-zinc-900 disabled:opacity-40',
+              'bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] disabled:opacity-40',
             )}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

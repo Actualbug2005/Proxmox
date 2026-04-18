@@ -172,7 +172,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewRes(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               Add resource
@@ -259,7 +259,7 @@ export default function HAPage() {
           <div className="flex justify-end">
             <button
               onClick={() => setShowNewGroup(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition"
             >
               <Plus className="w-4 h-4" />
               New group
