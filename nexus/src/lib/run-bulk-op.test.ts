@@ -130,8 +130,9 @@ describe('runBulkOp — worker pool', () => {
     });
     runBulkOp(batch, fakeSession, deps);
     await waitFor(() => getBatch(batch.id)!.finishedAt !== undefined);
-    assert.equal(getBatch(batch.id)!.items[0].status, 'failed');
-    assert.match(getBatch(batch.id)!.items[0].error ?? '', /VM is locked/);
+    const finalItem = getBatch(batch.id)!.items[0];
+    assert.equal(finalItem.status, 'failed');
+    if (finalItem.status === 'failed') assert.match(finalItem.error, /VM is locked/);
   });
 });
 

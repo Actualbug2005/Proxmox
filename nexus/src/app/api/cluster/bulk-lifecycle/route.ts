@@ -132,16 +132,19 @@ export function toDto(b: BulkBatch): BulkBatchDto {
     createdAt: b.createdAt,
     finishedAt: b.finishedAt,
     maxConcurrent: b.maxConcurrent,
+    // Flatten the discriminated-union item into the loose DTO shape.
+    // Each field is pulled only from states where it's guaranteed to exist,
+    // so the DTO stays fully optional but the producer is compile-checked.
     items: b.items.map((i) => ({
       guestType: i.guestType,
       node: i.node,
       vmid: i.vmid,
       name: i.name,
       status: i.status,
-      upid: i.upid,
-      error: i.error,
-      startedAt: i.startedAt,
-      finishedAt: i.finishedAt,
+      upid: 'upid' in i ? i.upid : undefined,
+      error: i.status === 'failed' ? i.error : undefined,
+      startedAt: i.status === 'pending' || i.status === 'skipped' ? undefined : i.startedAt,
+      finishedAt: i.status === 'pending' || i.status === 'running' ? undefined : i.finishedAt,
     })),
   };
 }

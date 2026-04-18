@@ -20,8 +20,11 @@
 
 import { pveFetch } from './pve-fetch.ts';
 import {
+  attachUpid,
+  failItem,
+  startItem,
+  succeedItem,
   tryFinaliseBatch,
-  updateItem,
   type BulkBatch,
   type BulkItem,
   type BulkOp,
@@ -107,7 +110,7 @@ async function processItem(
   session: PVEAuthSession,
   deps: Deps,
 ): Promise<void> {
-  updateItem(batch.id, index, { status: 'running', startedAt: deps.now() });
+  startItem(batch.id, index, deps.now());
 
   // Small jitter so synchronized waves don't all hit PVE at the same
   // millisecond — keeps pveproxy's per-node queue happier.
@@ -119,14 +122,15 @@ async function processItem(
   try {
     upid = await deps.dispatch(session, item, batch.op, batch.snapshot);
   } catch (err) {
-    updateItem(batch.id, index, {
-      status: 'failed',
-      error: err instanceof Error ? err.message : String(err),
-      finishedAt: deps.now(),
-    });
+    failItem(
+      batch.id,
+      index,
+      err instanceof Error ? err.message : String(err),
+      deps.now(),
+    );
     return;
   }
-  updateItem(batch.id, index, { upid });
+  attachUpid(batch.id, index, upid);
 
   // Poll until terminal or watchdog. On watchdog expiry we mark the
   // item failed even though PVE may still be chewing — the user can
@@ -134,11 +138,13 @@ async function processItem(
   const started = deps.now();
   for (;;) {
     if (deps.now() - started > ITEM_WATCHDOG_MS) {
-      updateItem(batch.id, index, {
-        status: 'failed',
-        error: `Timed out waiting for task (${Math.round(ITEM_WATCHDOG_MS / 60000)} min)`,
-        finishedAt: deps.now(),
-      });
+      failItem(
+        batch.id,
+        index,
+        `Timed out waiting for task (${Math.round(ITEM_WATCHDOG_MS / 60000)} min)`,
+        deps.now(),
+        upid,
+      );
       return;
     }
     await deps.sleep(TASK_POLL_INTERVAL_MS);
@@ -156,11 +162,11 @@ async function processItem(
       continue;
     }
     if (!res.terminal) continue;
-    updateItem(batch.id, index, {
-      status: res.ok ? 'success' : 'failed',
-      error: res.ok ? undefined : res.error ?? 'Task failed',
-      finishedAt: deps.now(),
-    });
+    if (res.ok) {
+      succeedItem(batch.id, index, upid, deps.now());
+    } else {
+      failItem(batch.id, index, res.error ?? 'Task failed', deps.now(), upid);
+    }
     return;
   }
 }

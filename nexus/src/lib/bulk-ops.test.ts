@@ -4,10 +4,12 @@ import { describe, it, beforeEach } from 'node:test';
 import {
   cancelBatch,
   createBatch,
+  failItem,
   getBatch,
   listBatchesForUser,
+  startItem,
+  succeedItem,
   tryFinaliseBatch,
-  updateItem,
 } from './bulk-ops';
 
 beforeEach(() => {
@@ -52,28 +54,37 @@ describe('createBatch', () => {
   });
 });
 
-describe('updateItem + tryFinaliseBatch', () => {
+describe('item transitions + tryFinaliseBatch', () => {
   it('advances items and finalises when all terminal', () => {
     const batch = createBatch({ user: 'u@pam', op: 'reboot', items: sampleItems(2) });
-    updateItem(batch.id, 0, { status: 'success', finishedAt: 1 });
+    startItem(batch.id, 0, 0);
+    succeedItem(batch.id, 0, 'UPID:0', 1);
     tryFinaliseBatch(batch.id);
     assert.equal(getBatch(batch.id)!.finishedAt, undefined, 'still one pending');
-    updateItem(batch.id, 1, { status: 'failed', error: 'boom', finishedAt: 2 });
+    startItem(batch.id, 1, 1);
+    failItem(batch.id, 1, 'boom', 2);
     tryFinaliseBatch(batch.id);
     assert.ok(getBatch(batch.id)!.finishedAt);
+    const items = getBatch(batch.id)!.items;
+    assert.equal(items[0].status, 'success');
+    assert.equal(items[1].status, 'failed');
+    // Discriminated narrowing — compiler knows failed has `.error`.
+    if (items[1].status === 'failed') assert.equal(items[1].error, 'boom');
   });
 
   it('ignores unknown batchId / index silently', () => {
-    updateItem('nope', 0, { status: 'success' }); // must not throw
-    updateItem('nope', 999, {}); // must not throw
+    startItem('nope', 0, 0); // must not throw
+    succeedItem('nope', 999, 'UPID:x', 0); // must not throw
+    failItem('nope', 0, 'e', 0); // must not throw
   });
 });
 
 describe('cancelBatch', () => {
   it('marks pending items as skipped, leaves running items alone, finalises', () => {
     const batch = createBatch({ user: 'u@pam', op: 'shutdown', items: sampleItems(3) });
-    updateItem(batch.id, 0, { status: 'running' });
-    updateItem(batch.id, 1, { status: 'success', finishedAt: 1 });
+    startItem(batch.id, 0, 0);
+    startItem(batch.id, 1, 0);
+    succeedItem(batch.id, 1, 'UPID:1', 1);
     // index 2 stays pending
     const changed = cancelBatch(batch.id);
     assert.equal(changed, true);
