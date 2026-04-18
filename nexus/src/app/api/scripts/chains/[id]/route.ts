@@ -4,10 +4,10 @@
  * Access model: only the chain's owner may read, update, or delete it.
  * Non-owners get 404 to prevent id-probing — same pattern as schedules.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
+import type { PVEAuthSession } from '@/types/proxmox';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { validateCron } from '@/lib/cron-match';
 import {
@@ -87,42 +87,33 @@ function validateStep(raw: unknown, index: number): ValidationResult {
   };
 }
 
+/** 404 for "not found" and "not yours" alike — prevents id-probing. */
 async function loadOwned(
   id: string,
+  session: PVEAuthSession,
 ): Promise<
-  | { kind: 'ok'; chain: Chain; user: string }
+  | { kind: 'ok'; chain: Chain }
   | { kind: 'err'; response: NextResponse }
 > {
-  const session = await getSession();
-  if (!session) {
-    return { kind: 'err', response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
   const chain = await store.get(id);
   if (!chain || chain.owner !== session.username) {
     return { kind: 'err', response: NextResponse.json({ error: 'Not found' }, { status: 404 }) };
   }
-  return { kind: 'ok', chain, user: session.username };
+  return { kind: 'ok', chain };
 }
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const res = await loadOwned(id);
+export const GET = withAuth<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
   return NextResponse.json({ chain: toDto(res.chain) });
-}
+});
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const res = await loadOwned(id);
+export const PATCH = withCsrf<{ id: string }>(async (req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
   const existing = res.chain;
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = (await req.json()) as PatchBody;
   const patch: Partial<Omit<Chain, 'id' | 'owner' | 'createdAt'>> = {};
@@ -196,19 +187,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const updated = await store.update(id, patch);
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ chain: toDto(updated) });
-}
+});
 
-export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const res = await loadOwned(id);
+export const DELETE = withCsrf<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
 
   const removed = await store.remove(id);
   if (!removed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ removed: true });
-}
+});

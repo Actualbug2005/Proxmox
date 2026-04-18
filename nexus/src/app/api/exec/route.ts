@@ -19,10 +19,9 @@
  * amount of shell metacharacters in it can affect how ssh/bash itself is
  * invoked.
  */
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { hostname } from 'node:os';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
 import { NODE_RE, runScriptOnNode } from '@/lib/remote-shell';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
@@ -35,15 +34,7 @@ interface ExecRequest {
   timeoutMs?: number;
 }
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session, sessionId }) => {
   const body = (await req.json()) as ExecRequest;
   if (!body?.command || typeof body.command !== 'string') {
     return NextResponse.json({ error: 'Missing or invalid "command"' }, { status: 400 });
@@ -141,4 +132,4 @@ export async function POST(req: NextRequest) {
       noteAuditWriteFailure('exec', session.username, auditErr);
     }
   }
-}
+});

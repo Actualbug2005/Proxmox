@@ -5,10 +5,10 @@
  * There is no "admin override" today; that lands when the UI grows a
  * team/organisation concept.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
+import type { PVEAuthSession } from '@/types/proxmox';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { validateCron } from '@/lib/cron-match';
 import {
@@ -32,41 +32,36 @@ interface PatchBody {
   enabled?: boolean;
 }
 
+/**
+ * Look up a schedule by id and ensure the caller owns it. Returns 404 for
+ * both "not found" and "not yours" so a non-owner can't probe for schedule
+ * ids by status code. Now takes the resolved session so callers don't pay
+ * a second `getSession` round-trip.
+ */
 async function loadOwned(
   id: string,
+  session: PVEAuthSession,
 ): Promise<
-  | { kind: 'ok'; job: store.ScheduledJob; user: string }
+  | { kind: 'ok'; job: store.ScheduledJob }
   | { kind: 'err'; response: NextResponse }
 > {
-  const session = await getSession();
-  if (!session) {
-    return { kind: 'err', response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
   const job = await store.get(id);
-  // Deliberately return 404 for both "not found" and "not yours" so a
-  // non-owner can't probe for schedule ids.
   if (!job || job.owner !== session.username) {
     return { kind: 'err', response: NextResponse.json({ error: 'Not found' }, { status: 404 }) };
   }
-  return { kind: 'ok', job, user: session.username };
+  return { kind: 'ok', job };
 }
 
-export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const res = await loadOwned(id);
+export const GET = withAuth<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
   return NextResponse.json({ job: toDto(res.job) });
-}
+});
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-
-  const res = await loadOwned(id);
+export const PATCH = withCsrf<{ id: string }>(async (req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
   const existing = res.job;
 
@@ -132,8 +127,6 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     patch.node = targetNode;
   }
   if (patch.node && patch.node !== existing.node) {
-    const session = await getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (!(await requireNodeSysModify(session, targetNode))) {
       return NextResponse.json(
         { error: 'Forbidden: Sys.Modify required on /nodes/' + targetNode },
@@ -145,20 +138,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const updated = await store.update(id, patch);
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ job: toDto(updated) });
-}
+});
 
-export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-
-  const res = await loadOwned(id);
+export const DELETE = withCsrf<{ id: string }>(async (_req, { params, session }) => {
+  const { id } = await params;
+  const res = await loadOwned(id, session);
   if (res.kind === 'err') return res.response;
 
   const removed = await store.remove(id);
   if (!removed) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ removed: true });
-}
+});

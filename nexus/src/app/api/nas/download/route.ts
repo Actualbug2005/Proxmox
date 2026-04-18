@@ -9,8 +9,8 @@
  * Auth: session + Sys.Audit on /nodes/<node>. Same gate as the browse
  * endpoint — this is a read, not a mutation.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/route-middleware';
 import { requireNodeSysAudit } from '@/lib/permissions';
 import { NODE_RE } from '@/lib/remote-shell';
 import { getNasProvider } from '@/lib/nas/registry';
@@ -27,10 +27,7 @@ function formatContentDisposition(filename: string): string {
   return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
 }
 
-export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const GET = withAuth(async (req, { session }) => {
   const node = req.nextUrl.searchParams.get('node') ?? '';
   const shareId = req.nextUrl.searchParams.get('shareId') ?? '';
   const path = req.nextUrl.searchParams.get('path') ?? '';
@@ -63,7 +60,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { stream, filename, size } = handoff;
-  return new Response(stream, {
+  return new NextResponse(stream as unknown as BodyInit, {
     status: 200,
     headers: {
       'Content-Type': 'application/octet-stream',
@@ -71,4 +68,4 @@ export async function GET(req: NextRequest) {
       'Content-Length': String(size),
     },
   });
-}
+});

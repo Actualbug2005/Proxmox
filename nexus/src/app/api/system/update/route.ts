@@ -18,11 +18,10 @@
  *     restart 3 seconds in the future. That gives this response time to
  *     flush before the process is killed.
  */
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { withCsrf } from '@/lib/route-middleware';
 
 const execFileAsync = promisify(execFile);
 
@@ -36,19 +35,7 @@ interface UpdateRequest {
   version?: string;
 }
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withCsrf(async (req) => {
   let body: UpdateRequest = {};
   // Accept empty bodies (install latest). Tolerate malformed JSON to keep the
   // endpoint trivially callable from the UI without fussy content-type headers.
@@ -94,4 +81,4 @@ export async function POST(req: NextRequest) {
       { status: 500, headers: { 'Cache-Control': 'no-store, private' } },
     );
   }
-}
+});

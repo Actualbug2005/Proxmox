@@ -9,9 +9,8 @@
  * create time so a malformed or untrusted request never becomes a stored
  * record in the first place.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { RATE_LIMITS, takeToken } from '@/lib/rate-limit';
@@ -27,17 +26,14 @@ import { toDto } from '@/lib/scheduled-jobs-dto';
 
 // ─── GET ─────────────────────────────────────────────────────────────────────
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const GET = withAuth(async (_req, { session }) => {
   const jobs = await store.listForUser(session.username);
   return NextResponse.json({
     jobs: jobs
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map(toDto),
   });
-}
+});
 
 // ─── POST ────────────────────────────────────────────────────────────────────
 
@@ -53,15 +49,7 @@ interface CreateBody {
   enabled?: boolean;
 }
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session, sessionId }) => {
   const body = (await req.json()) as CreateBody;
 
   if (!body.node || !body.scriptUrl || !body.scriptName || !body.schedule) {
@@ -144,4 +132,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ job: toDto(created) }, { status: 201 });
-}
+});

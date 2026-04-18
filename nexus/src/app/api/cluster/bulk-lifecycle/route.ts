@@ -7,9 +7,8 @@
  * GET  — list recent batches owned by the current session user.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
 import { RATE_LIMITS, takeToken } from '@/lib/rate-limit';
 import {
@@ -149,24 +148,14 @@ export function toDto(b: BulkBatch): BulkBatchDto {
 
 // ─── GET ─────────────────────────────────────────────────────────────────────
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const GET = withAuth(async (_req, { session }) => {
   const batches = listBatchesForUser(session.username, 20);
   return NextResponse.json({ batches: batches.map(toDto) });
-}
+});
 
 // ─── POST ────────────────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session, sessionId }) => {
   const body = (await req.json().catch(() => ({}))) as CreateBody;
 
   let op: BulkOp;
@@ -246,4 +235,4 @@ export async function POST(req: NextRequest) {
     { batchId: batch.id, itemCount: batch.items.length, batch: toDto(batch) },
     { status: 202 },
   );
-}
+});

@@ -11,23 +11,14 @@
  * Everything past that — URL/origin revalidation, spawn, audit — is the
  * shared runner's job so the scheduler tick has identical semantics.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { RATE_LIMITS, acquireSlot, takeToken } from '@/lib/rate-limit';
 import { RunScriptJobError, runScriptJob } from '@/lib/run-script-job';
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session, sessionId }) => {
   const body = (await req.json()) as {
     node?: string;
     scriptUrl?: string;
@@ -108,4 +99,4 @@ export async function POST(req: NextRequest) {
     }
     throw err;
   }
-}
+});

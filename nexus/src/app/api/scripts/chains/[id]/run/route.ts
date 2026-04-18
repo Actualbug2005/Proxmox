@@ -8,24 +8,15 @@
  * ACL-check here so a non-owner or a user who lost Sys.Modify since
  * chain creation can't trigger a run.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysModify } from '@/lib/permissions';
 import { RATE_LIMITS, takeToken } from '@/lib/rate-limit';
 import * as store from '@/lib/chains-store';
 import { runChain } from '@/lib/run-chain';
 
-export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params;
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf<{ id: string }>(async (_req, { params, session, sessionId }) => {
+  const { id } = await params;
   const chain = await store.get(id);
   if (!chain || chain.owner !== session.username) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -61,4 +52,4 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   runChain(chain);
 
   return NextResponse.json({ started: true, chainId: id }, { status: 202 });
-}
+});

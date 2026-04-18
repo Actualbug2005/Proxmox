@@ -16,16 +16,13 @@
  *   • Provider: same check + realpath-prefix verification inside the
  *               remote shell script.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/route-middleware';
 import { requireNodeSysAudit } from '@/lib/permissions';
 import { NODE_RE } from '@/lib/remote-shell';
 import { getNasProvider } from '@/lib/nas/registry';
 
-export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const GET = withAuth(async (req, { session }) => {
   const node = req.nextUrl.searchParams.get('node') ?? '';
   const shareId = req.nextUrl.searchParams.get('shareId') ?? '';
   const path = req.nextUrl.searchParams.get('path') ?? '';
@@ -57,4 +54,4 @@ export async function GET(req: NextRequest) {
       { status: 502 },
     );
   }
-}
+});

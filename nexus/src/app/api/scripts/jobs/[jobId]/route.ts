@@ -7,22 +7,14 @@
  *   stores session.username on each record; we compare that to the current
  *   session to decide 403 vs serve.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { abortJob, getJob, readJobLog } from '@/lib/script-jobs';
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-interface Ctx {
-  params: Promise<{ jobId: string }>;
-}
-
-export async function GET(req: NextRequest, ctx: Ctx) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { jobId } = await ctx.params;
+export const GET = withAuth<{ jobId: string }>(async (req, { params, session }) => {
+  const { jobId } = await params;
   if (!JOB_ID_RE.test(jobId)) {
     return NextResponse.json({ error: 'Invalid job id' }, { status: 400 });
   }
@@ -59,18 +51,10 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     tail: job.tail,
     log,
   });
-}
+});
 
-export async function DELETE(req: NextRequest, ctx: Ctx) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { jobId } = await ctx.params;
+export const DELETE = withCsrf<{ jobId: string }>(async (_req, { params, session }) => {
+  const { jobId } = await params;
   if (!JOB_ID_RE.test(jobId)) {
     return NextResponse.json({ error: 'Invalid job id' }, { status: 400 });
   }
@@ -85,4 +69,4 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
   const ok = abortJob(jobId);
   return NextResponse.json({ aborted: ok });
-}
+});

@@ -9,9 +9,8 @@
  *   GET  — Session + Sys.Audit on /nodes/<node>     (read-only listing)
  *   POST — Session + CSRF + Sys.Modify on /nodes/<node>  (mutating)
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withAuth, withCsrf } from '@/lib/route-middleware';
 import { requireNodeSysAudit, requireNodeSysModify } from '@/lib/permissions';
 import { NODE_RE } from '@/lib/remote-shell';
 import { getNasProvider } from '@/lib/nas/registry';
@@ -19,10 +18,7 @@ import type { CreateNasSharePayload, NasProtocol } from '@/types/nas';
 
 // ─── GET /api/nas/shares?node=<name> ────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const GET = withAuth(async (req, { session }) => {
   const node = req.nextUrl.searchParams.get('node') ?? '';
   if (!NODE_RE.test(node)) {
     return NextResponse.json({ error: 'Invalid or missing node' }, { status: 400 });
@@ -44,7 +40,7 @@ export async function GET(req: NextRequest) {
       { status: 502 },
     );
   }
-}
+});
 
 // ─── POST /api/nas/shares ───────────────────────────────────────────────────
 
@@ -95,15 +91,7 @@ function validateCreatePayload(body: CreateRequestBody): [CreateNasSharePayload,
   return [{ name, path, protocols: finalProtocols, readOnly: finalReadOnly }, null];
 }
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session }) => {
   const body = (await req.json().catch(() => ({}))) as CreateRequestBody;
   const node = body.node ?? '';
   if (!NODE_RE.test(node)) {
@@ -131,19 +119,11 @@ export async function POST(req: NextRequest) {
       { status: 502 },
     );
   }
-}
+});
 
 // ─── DELETE /api/nas/shares?node=<name>&id=<b64url> ─────────────────────────
 
-export async function DELETE(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const DELETE = withCsrf(async (req, { session }) => {
   const node = req.nextUrl.searchParams.get('node') ?? '';
   const id = req.nextUrl.searchParams.get('id') ?? '';
   if (!NODE_RE.test(node)) {
@@ -171,4 +151,4 @@ export async function DELETE(req: NextRequest) {
       { status: 502 },
     );
   }
-}
+});
