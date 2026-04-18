@@ -17,7 +17,7 @@ import {
 } from '@/lib/session-store';
 import { deriveCsrfToken, CSRF_COOKIE } from '@/lib/csrf';
 import { pveFetch } from '@/lib/pve-fetch';
-import { parseSessionTicket, parseCsrfToken } from '@/types/brands';
+import { parseSessionTicket, parsePveCsrfToken } from '@/types/brands';
 
 export const SESSION_COOKIE = 'nexus_session';
 
@@ -157,7 +157,7 @@ export async function refreshPVESessionIfStale(
       // string. A malformed PVE response would otherwise propagate into
       // the session store where every subsequent request reads it back.
       ticket: parseSessionTicket(fresh.ticket),
-      csrfToken: parseCsrfToken(fresh.CSRFPreventionToken),
+      csrfToken: parsePveCsrfToken(fresh.CSRFPreventionToken),
       ticketIssuedAt: Date.now(),
       // Clear on success so a recovered PVE resumes normal behaviour.
       lastRenewalAttemptAt: undefined,

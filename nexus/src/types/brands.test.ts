@@ -14,6 +14,7 @@ import {
   parseUserid,
   parseSessionTicket,
   parseCsrfToken,
+  parsePveCsrfToken,
   parseBatchId,
   parseSlug,
   parseSafeRelPath,
@@ -79,6 +80,22 @@ describe('parseCsrfToken', () => {
   it('rejects wrong length, uppercase, non-hex', () => {
     for (const bad of ['a'.repeat(63), 'a'.repeat(65), 'A'.repeat(64), 'g'.repeat(64), '', null]) {
       assert.throws(() => parseCsrfToken(bad), /Invalid CsrfToken/);
+    }
+  });
+});
+
+describe('parsePveCsrfToken', () => {
+  // PVE's CSRFPreventionToken format is version-dependent (PVE 7 used
+  // `<hex>:<base64>`, PVE 8+ varies). The parser is intentionally lenient:
+  // only reject the things that can't possibly be valid (empty / oversized).
+  it('accepts realistic PVE-shaped tokens and arbitrary non-empty strings', () => {
+    for (const ok of ['68F1A35B:H0m8P2l4YJbXYN7q', 'pve-csrf-new', 'a', 'A'.repeat(300)]) {
+      assert.equal(unbrand(parsePveCsrfToken(ok)), ok);
+    }
+  });
+  it('rejects empty / oversized / non-string input', () => {
+    for (const bad of ['', 'a'.repeat(513), 0, null, undefined, {}]) {
+      assert.throws(() => parsePveCsrfToken(bad), /Invalid PveCsrfToken/);
     }
   });
 });

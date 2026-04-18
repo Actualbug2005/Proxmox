@@ -4,11 +4,11 @@ import { describe, it, beforeEach } from 'node:test';
 import { createBatch, getBatch } from './bulk-ops';
 import { __internals, runBulkOp, type Deps } from './run-bulk-op';
 import type { PVEAuthSession } from '../types/proxmox';
-import { parseSessionTicket, parseCsrfToken, parseUserid } from '../types/brands';
+import { parseSessionTicket, parsePveCsrfToken, parseUserid } from '../types/brands';
 
 const fakeSession: PVEAuthSession = {
   ticket: parseSessionTicket('fake'),
-  csrfToken: parseCsrfToken('a'.repeat(64)),
+  csrfToken: parsePveCsrfToken('fake-csrf'),
   username: parseUserid('u@pam'),
   proxmoxHost: '127.0.0.1',
   ticketIssuedAt: Date.now(),

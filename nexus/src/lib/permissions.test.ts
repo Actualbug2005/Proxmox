@@ -14,11 +14,11 @@ import {
 } from './permissions.ts';
 import type { PVEAuthSession } from '@/types/proxmox';
 import type { pveFetch } from '@/lib/pve-fetch';
-import { parseSessionTicket, parseCsrfToken, parseUserid } from '@/types/brands';
+import { parseSessionTicket, parsePveCsrfToken, parseUserid } from '@/types/brands';
 
 const session: PVEAuthSession = {
   ticket: parseSessionTicket('fake-ticket'),
-  csrfToken: parseCsrfToken('a'.repeat(64)),
+  csrfToken: parsePveCsrfToken('fake-csrf'),
   username: parseUserid('root@pam'),
   proxmoxHost: 'localhost',
   ticketIssuedAt: Date.now(),

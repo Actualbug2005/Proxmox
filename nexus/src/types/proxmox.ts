@@ -34,7 +34,7 @@ export type UnwireBool<T, K extends keyof T> = {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-import type { CsrfToken, SessionTicket, Userid } from '@/types/brands';
+import type { PveCsrfToken, SessionTicket, Userid } from '@/types/brands';
 
 export interface PVETicketResponse {
   ticket: string;
@@ -47,14 +47,19 @@ export interface PVETicketResponse {
  * Server-side session envelope. The three brand-typed fields (`ticket`,
  * `csrfToken`, `username`) are structurally identical to `string` at
  * runtime but refuse raw-string assignment at compile time — the only
- * sanctioned producers are `parseSessionTicket` / `parseCsrfToken` /
+ * sanctioned producers are `parseSessionTicket` / `parsePveCsrfToken` /
  * `parseUserid` in `@/types/brands`. This catches accidental
  * field-swap bugs (e.g. passing `csrfToken` where a PVE ticket was
  * expected) before they ship.
+ *
+ * Note: `csrfToken` here is PVE's CSRFPreventionToken (their format,
+ * sent back to PVE on mutating calls), NOT the Nexus-internal CSRF
+ * cookie — those are separate brands with separate shapes. See
+ * `brands.ts::PveCsrfToken` vs `brands.ts::CsrfToken`.
  */
 export interface PVEAuthSession {
   ticket: SessionTicket;
-  csrfToken: CsrfToken;
+  csrfToken: PveCsrfToken;
   username: Userid;
   proxmoxHost: string;
   /** Unix ms when the PVE ticket was issued (or last refreshed). Used by the

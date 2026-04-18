@@ -19,15 +19,15 @@ import {
 import { putSession, getStoredSession } from './session-store.ts';
 import type { PVEAuthSession } from '@/types/proxmox';
 import type { pveFetch } from '@/lib/pve-fetch';
-import { parseSessionTicket, parseCsrfToken, parseUserid } from '@/types/brands';
+import { parseSessionTicket, parsePveCsrfToken, parseUserid } from '@/types/brands';
 
 type Fetcher = typeof pveFetch;
 
-// Valid CsrfToken is exactly 64 hex chars. Two distinct fixtures so
-// the "advance" assertion below verifies the field changed across
-// a renewal, not that it stayed constant.
-const CSRF_OLD = 'a'.repeat(64);
-const CSRF_NEW = 'b'.repeat(64);
+// PVE's CSRFPreventionToken format (timestamp:base64sig-ish). Two
+// distinct fixtures so the "advance" assertion below verifies the
+// field changed across a renewal.
+const CSRF_OLD = 'pve-csrf-old';
+const CSRF_NEW = 'pve-csrf-new';
 
 function fakeOk(body: unknown): Awaited<ReturnType<Fetcher>> {
   return {
@@ -52,7 +52,7 @@ function fakeFail(status: number): Awaited<ReturnType<Fetcher>> {
 
 const baseSession = (): PVEAuthSession => ({
   ticket: parseSessionTicket('ticket-old'),
-  csrfToken: parseCsrfToken(CSRF_OLD),
+  csrfToken: parsePveCsrfToken(CSRF_OLD),
   username: parseUserid('root@pam'),
   proxmoxHost: 'pve',
   ticketIssuedAt: Date.now() - PVE_TICKET_REFRESH_AFTER_MS - 1,
@@ -143,16 +143,16 @@ describe('refreshPVESessionIfStale', () => {
     assert.equal(result.ticket, 'ticket-recovered');
   });
 
-  it('treats a malformed CSRF token from PVE as a renewal failure', async () => {
-    // If PVE (or a MITM) ever returns a CSRFPreventionToken that doesn't
-    // match the 64-hex shape, the parseCsrfToken call inside the renewal
-    // path throws. The function must catch it like any other renewal error
-    // rather than letting a garbage value land in the session store.
+  it('treats a malformed ticket from PVE as a renewal failure', async () => {
+    // If PVE (or a MITM) ever returns an empty/oversized ticket string,
+    // parseSessionTicket throws inside the renewal path. The function
+    // must catch it like any other renewal error rather than letting a
+    // garbage value land in the session store.
     const session = baseSession();
-    const sid = 'sid-garbage-csrf';
+    const sid = 'sid-garbage-ticket';
     await putSession(sid, session);
     const fetcher: Fetcher = async () =>
-      fakeOk({ data: { ticket: 'ticket-ok', CSRFPreventionToken: 'not-a-hex-digest', username: session.username } });
+      fakeOk({ data: { ticket: '', CSRFPreventionToken: CSRF_NEW, username: session.username } });
 
     const before = getRenewalFailureCount();
     const result = await refreshPVESessionIfStale(sid, session, fetcher);

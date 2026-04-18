@@ -86,6 +86,24 @@ export function parseCsrfToken(s: unknown): CsrfToken {
   return s as CsrfToken;
 }
 
+/**
+ * PVE CSRFPreventionToken — the token PVE's own API expects in the
+ * `CSRFPreventionToken` request header. Format is unspecified in the PVE
+ * docs and varies across major versions (PVE 7 used `timestamp:base64sig`,
+ * PVE 8+ mixes in other prefixes). Validate only the load-bearing bit:
+ * non-empty string, reasonable length. DO NOT conflate with `CsrfToken`
+ * above — that's the Nexus-internal double-submit cookie and has a fixed
+ * HMAC-SHA-256 hex shape; they share a name but not a format.
+ */
+export type PveCsrfToken = Branded<string, 'PveCsrfToken'>;
+
+export function parsePveCsrfToken(s: unknown): PveCsrfToken {
+  if (typeof s !== 'string' || s.length === 0 || s.length > 512) {
+    throw new TypeError('Invalid PveCsrfToken');
+  }
+  return s as PveCsrfToken;
+}
+
 // ─── Domain identifiers ─────────────────────────────────────────────────────
 
 /** Bulk-lifecycle batch id (randomUUID). */
