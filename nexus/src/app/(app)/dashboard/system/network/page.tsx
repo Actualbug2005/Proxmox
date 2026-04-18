@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Trash2, Save, AlertTriangle, CheckCircle, RotateCcw, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NetworkIfacePublic, NetworkIfaceParamsPublic } from '@/types/proxmox';
+import type { NetworkIfaceParamsPublic } from '@/types/proxmox';
 
 type IfaceType = 'bridge' | 'bond' | 'vlan' | 'eth';
 

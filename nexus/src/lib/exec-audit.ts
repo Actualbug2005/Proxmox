@@ -206,7 +206,7 @@ export const AUDIT_PATHS = {
 // `event=audit_write_failed`, or reading /api/system/health).
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusAuditWriteFailures: number | undefined;
 }
 

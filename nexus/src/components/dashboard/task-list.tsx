@@ -1,7 +1,6 @@
 'use client';
 
 import { useClusterTasks } from '@/hooks/use-cluster';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
 function TaskStatusIcon({ status }: { status?: string }) {

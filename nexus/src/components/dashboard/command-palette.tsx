@@ -32,7 +32,6 @@ export function CommandPalette() {
 
   const vms = resources?.filter((r) => r.type === 'qemu') ?? [];
   const cts = resources?.filter((r) => r.type === 'lxc') ?? [];
-  const nodes = resources?.filter((r) => r.type === 'node') ?? [];
 
   // Listen for CMD+K / Ctrl+K
   useEffect(() => {

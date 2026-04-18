@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNodes, POLL_INTERVALS } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
@@ -122,7 +122,10 @@ export default function StoragePage() {
   const toast = useToast();
   const { data: nodes, isLoading: nodesLoading } = useNodes();
 
-  const nodeNames = nodes?.map((n) => n.node ?? n.id ?? '') ?? [];
+  const nodeNames = useMemo(
+    () => nodes?.map((n) => n.node ?? n.id ?? '') ?? [],
+    [nodes],
+  );
 
   // Fetch full config for the row the user clicked Edit on, then open the
   // dialog once the config lands. PVE's per-node list endpoint lacks the

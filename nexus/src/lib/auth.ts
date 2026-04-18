@@ -75,7 +75,7 @@ export const PVE_RENEWAL_BACKOFF_MS = 30 * 1000;
  * Lives on globalThis so HMR in dev doesn't reset it between reloads.
  */
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusRenewalFailures: number | undefined;
 }
 function incRenewalFailureCounter(): void {

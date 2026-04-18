@@ -263,7 +263,6 @@ const VZDUMP_BOOL_KEYS = ['all', 'protected', 'remove'] as const satisfies reado
 const SNAPSHOT_BOOL_KEYS = ['vmstate', 'running'] as const satisfies readonly (keyof PVESnapshot)[];
 const CREATE_SNAPSHOT_BOOL_KEYS = ['vmstate'] as const satisfies readonly (keyof CreateSnapshotParams)[];
 const FIREWALL_RULE_BOOL_KEYS = ['enable'] as const satisfies readonly (keyof FirewallRule)[];
-const IPSET_ENTRY_BOOL_KEYS = ['nomatch'] as const satisfies readonly (keyof FirewallIPSetEntry)[];
 const CREATE_CT_BOOL_KEYS = ['unprivileged'] as const satisfies readonly (keyof CreateCTParams)[];
 const NETWORK_IFACE_BOOL_KEYS = ['autostart', 'active'] as const satisfies readonly (keyof NetworkIface)[];
 const NETWORK_IFACE_PARAMS_BOOL_KEYS = ['autostart'] as const satisfies readonly (keyof NetworkIfaceParams)[];
@@ -286,9 +285,6 @@ const decodeFirewallRule = (raw: FirewallRule): FirewallRulePublic =>
   decodeBoolFields(raw, FIREWALL_RULE_BOOL_KEYS) as FirewallRulePublic;
 const encodeFirewallRuleParams = (p: FirewallRuleParamsPublic): Record<string, unknown> =>
   encodeBoolFields(p, FIREWALL_RULE_BOOL_KEYS) as Record<string, unknown>;
-const decodeIPSetEntry = (raw: FirewallIPSetEntry): FirewallIPSetEntryPublic =>
-  decodeBoolFields(raw, IPSET_ENTRY_BOOL_KEYS) as FirewallIPSetEntryPublic;
-
 const encodeCreateCT = (p: Omit<CreateCTParamsPublic, 'node'>): Record<string, unknown> =>
   encodeBoolFields(p, CREATE_CT_BOOL_KEYS) as Record<string, unknown>;
 
@@ -467,7 +463,6 @@ import type {
   CreateSnapshotParamsPublic,
   BackupJob,
   BackupJobPublic,
-  BackupJobParams,
   BackupJobParamsPublic,
   BackupFile,
   BackupFilePublic,
@@ -479,12 +474,10 @@ import type {
   StorageContentType,
   FirewallRule,
   FirewallRulePublic,
-  FirewallRuleParams,
   FirewallRuleParamsPublic,
   FirewallAlias,
   FirewallIPSet,
   FirewallIPSetEntry,
-  FirewallIPSetEntryPublic,
   FirewallGroup,
   FirewallOptions,
   FirewallOptionsPublic,
@@ -522,7 +515,6 @@ import type {
   DiskListEntry,
   SmartData,
   StorageCreatePayload,
-  StorageUpdatePayload,
   PVEStorageConfig,
 } from '@/types/proxmox';
 import type {

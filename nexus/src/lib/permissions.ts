@@ -21,7 +21,7 @@ type PermissionsResponse = { data?: Record<string, Record<string, number>> };
  * the count. Lives on globalThis so HMR doesn't reset it in dev.
  */
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusPermissionProbeErrors: number | undefined;
 }
 type ProbeErrorKind = 'http_5xx' | 'transport' | 'parse';

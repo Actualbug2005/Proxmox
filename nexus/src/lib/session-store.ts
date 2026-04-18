@@ -113,9 +113,9 @@ interface MemoryEntry {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusSessionMap: Map<string, MemoryEntry> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __nexusSessionGc: NodeJS.Timeout | undefined;
 }
 
@@ -160,7 +160,7 @@ function buildMemoryBackend(): SessionBackend {
 // ─── Singleton wiring ───────────────────────────────────────────────────────
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusSessionBackend: SessionBackend | undefined;
 }
 

@@ -66,7 +66,7 @@ export interface SchedulerSource<T> {
 declare global {
   var __nexusSchedulerTimers: Record<string, NodeJS.Timeout> | undefined;
   var __nexusSchedulerTickRunning: Record<string, boolean> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __nexusSchedulerFireFailures: number | undefined;
 }
 

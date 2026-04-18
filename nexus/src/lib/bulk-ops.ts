@@ -60,9 +60,9 @@ export interface CreateBatchInput {
 // ─── Storage ────────────────────────────────────────────────────────────────
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusBulkBatches: Map<string, BulkBatch> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __nexusBulkBatchesGc: NodeJS.Timeout | undefined;
 }
 

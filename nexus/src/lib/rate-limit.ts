@@ -121,11 +121,11 @@ interface SlotEntry {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusRateLimitTokens: Map<string, TokenEntry> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __nexusRateLimitSlots: Map<string, SlotEntry> | undefined;
-  // eslint-disable-next-line no-var
+   
   var __nexusRateLimitGc: NodeJS.Timeout | undefined;
 }
 
@@ -196,7 +196,7 @@ function buildMemoryBackend(): RateLimitBackend {
 // ─── Singleton + public API ────────────────────────────────────────────────
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __nexusRateLimitBackend: RateLimitBackend | undefined;
 }
 
