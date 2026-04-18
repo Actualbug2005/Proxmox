@@ -16,9 +16,8 @@
  * the RFB handshake reaches noVNC unmodified. The PVE endpoint path also
  * swaps (vncwebsocket already; termproxy → vncproxy for the ticket call).
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { NextResponse } from 'next/server';
+import { withCsrf } from '@/lib/route-middleware';
 import { pveFetch } from '@/lib/pve-fetch';
 // createRelaySession is injected into globalThis by server.ts at startup.
 // Both run in the same Node.js process so the reference is always live.
@@ -50,15 +49,7 @@ type WsTargetType = 'qemu' | 'lxc' | 'node';
 const MODE_SET = new Set(['shell', 'vnc'] as const);
 type ConsoleMode = 'shell' | 'vnc';
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session }) => {
   const { node, vmid, type, mode: rawMode } = (await req.json()) as {
     node: unknown;
     vmid: unknown;
@@ -173,4 +164,4 @@ export async function POST(req: NextRequest) {
     mode,
     ...(mode === 'vnc' ? { vncTicket: ticket } : {}),
   });
-}
+});

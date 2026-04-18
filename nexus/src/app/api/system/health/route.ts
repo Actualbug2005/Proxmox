@@ -15,11 +15,12 @@
  */
 import { NextResponse } from 'next/server';
 import { readFile } from 'node:fs/promises';
-import { getSession, getRenewalFailureCount } from '@/lib/auth';
+import { getRenewalFailureCount } from '@/lib/auth';
 import { getPermissionProbeErrorCount } from '@/lib/permissions';
 import { getAuditWriteFailureCount } from '@/lib/exec-audit';
 import { getSchedulerFireFailureCount } from '@/lib/scheduler';
 import { getSessionBackendKind, type SessionBackendKind } from '@/lib/session-store';
+import { withAuth } from '@/lib/route-middleware';
 
 const VERSION_FILE = process.env.NEXUS_VERSION_FILE ?? '/opt/nexus/current/VERSION';
 
@@ -46,12 +47,7 @@ export interface HealthResponse {
   };
 }
 
-export async function GET(): Promise<NextResponse> {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async () => {
   const body: HealthResponse = {
     status: 'ok',
     uptimeMs: Math.floor(process.uptime() * 1000),
@@ -68,4 +64,4 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json(body, {
     headers: { 'Cache-Control': 'no-store, private' },
   });
-}
+});

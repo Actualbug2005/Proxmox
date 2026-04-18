@@ -9,8 +9,8 @@
  *   - Filtered by session.username so one user can't see another's jobs.
  *   - Default limit 20, capped at 100 via ?limit=.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/route-middleware';
 import { listJobsForUser, type JobRecord } from '@/lib/script-jobs';
 
 /**
@@ -43,12 +43,7 @@ function toSummary(j: JobRecord): JobSummary {
   };
 }
 
-export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (req, { session }) => {
   const rawLimit = req.nextUrl.searchParams.get('limit');
   const parsedLimit = rawLimit ? Number.parseInt(rawLimit, 10) : 20;
   const limit =
@@ -58,4 +53,4 @@ export async function GET(req: NextRequest) {
 
   const jobs = listJobsForUser(session.username, limit).map(toSummary);
   return NextResponse.json({ jobs });
-}
+});

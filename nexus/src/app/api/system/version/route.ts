@@ -11,7 +11,7 @@
  */
 import { NextResponse } from 'next/server';
 import { readFile } from 'node:fs/promises';
-import { getSession } from '@/lib/auth';
+import { withAuth } from '@/lib/route-middleware';
 
 const REPO = process.env.NEXUS_REPO ?? 'Actualbug2005/Proxmox';
 const VERSION_FILE = process.env.NEXUS_VERSION_FILE ?? '/opt/nexus/current/VERSION';
@@ -74,12 +74,7 @@ async function fetchLatestRelease(): Promise<LatestRelease | null> {
   }
 }
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async () => {
   const [current, latest] = await Promise.all([readCurrentVersion(), fetchLatestRelease()]);
 
   const updateAvailable =
@@ -96,4 +91,4 @@ export async function GET() {
     },
     { headers: { 'Cache-Control': 'no-store, private' } },
   );
-}
+});

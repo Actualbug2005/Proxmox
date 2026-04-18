@@ -16,7 +16,7 @@ import {
   UpstreamFetchError,
   type ScriptManifest,
 } from '@/lib/community-scripts';
-import { getSession } from '@/lib/auth';
+import { withAuth } from '@/lib/route-middleware';
 
 // Slug must match the upstream filename convention. The community-scripts
 // repo uses strict lowercase kebab-case (e.g. `adguard-home`, `ubuntu-22-04`),
@@ -25,16 +25,7 @@ import { getSession } from '@/lib/auth';
 // could bloat logs or downstream error messages.
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
-interface Ctx {
-  params: Promise<{ slug: string }>;
-}
-
-export async function GET(_req: Request, ctx: Ctx) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth<{ slug: string }>(async (_req, ctx) => {
   const { slug } = await ctx.params;
   if (!SLUG_RE.test(slug)) {
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
@@ -68,4 +59,4 @@ export async function GET(_req: Request, ctx: Ctx) {
     );
   }
   return NextResponse.json(manifest);
-}
+});

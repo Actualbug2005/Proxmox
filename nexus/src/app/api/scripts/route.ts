@@ -11,7 +11,7 @@
  * The response body always carries a diagnostic detail so the UI can
  * render a specific failure message rather than a generic "fetch failed".
  */
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   fetchScriptIndex,
   groupByCategory,
@@ -19,7 +19,7 @@ import {
   type CommunityScript,
   type ScriptCategory,
 } from '@/lib/community-scripts';
-import { getSession } from '@/lib/auth';
+import { withAuth } from '@/lib/route-middleware';
 
 // Exported so the UI can `import type` this instead of re-declaring the
 // envelope shape. The categorised envelope is the canonical v2 contract;
@@ -56,12 +56,7 @@ function errorResponse(err: unknown) {
   );
 }
 
-export async function GET(req: NextRequest) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const GET = withAuth(async (req) => {
   let scripts: CommunityScript[];
   try {
     scripts = await fetchScriptIndex();
@@ -89,4 +84,4 @@ export async function GET(req: NextRequest) {
     },
   };
   return NextResponse.json(envelope);
-}
+});

@@ -14,10 +14,9 @@
  *
  * Response: JSON from PVE (typically a task UPID string wrapped in { data }).
  */
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { FormData as UndiciFormData } from 'undici';
-import { getSession, getSessionId } from '@/lib/auth';
-import { validateCsrf } from '@/lib/csrf';
+import { withCsrf } from '@/lib/route-middleware';
 import { pveFetch } from '@/lib/pve-fetch';
 
 // TLS verification for PVE's self-signed cert is scoped to pveFetch.
@@ -27,15 +26,7 @@ const PVE_BASE = process.env.PROXMOX_HOST
   ? `https://${process.env.PROXMOX_HOST}:8006/api2/json`
   : 'https://localhost:8006/api2/json';
 
-export async function POST(req: NextRequest) {
-  const sessionId = await getSessionId();
-  if (!sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!validateCsrf(req, sessionId)) {
-    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
-  }
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export const POST = withCsrf(async (req, { session }) => {
   const inbound = await req.formData();
   const node = String(inbound.get('node') ?? '');
   const storage = String(inbound.get('storage') ?? '');
@@ -82,7 +73,7 @@ export async function POST(req: NextRequest) {
       { status: 502 },
     );
   }
-}
+});
 
 // Next.js config: increase body size for large ISO uploads.
 export const config = {
