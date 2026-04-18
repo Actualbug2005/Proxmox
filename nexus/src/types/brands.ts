@@ -133,9 +133,10 @@ export type CronExpr = Branded<string, 'CronExpr'>;
 
 /**
  * Construct a CronExpr WITHOUT validation — use only when you've already
- * called `validateCron(s)` and know it's safe. Public callers should
- * import `parseCronExpr` from `lib/cron-match` (which calls validateCron
- * internally) to avoid an import cycle here.
+ * called `validateCron(s)` from `lib/cron-match` and know it's safe. The
+ * brand module can't re-export a validating parser because that would
+ * pull the cron grammar into every brand consumer; callers should
+ * `validateCron` first, then wrap with `unsafeCronExpr`.
  */
 export function unsafeCronExpr(s: string): CronExpr {
   return s as CronExpr;
