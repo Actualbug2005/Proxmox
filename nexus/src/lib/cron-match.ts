@@ -55,7 +55,7 @@ interface ParsedCron {
   dom: Set<number>;
   month: Set<number>;
   dow: Set<number>;
-  /** True when the raw field was exactly `*` — drives vixie OR-semantics. */
+  /** True when the raw field is anything other than `*` — drives vixie OR-semantics. */
   domRestricted: boolean;
   dowRestricted: boolean;
 }

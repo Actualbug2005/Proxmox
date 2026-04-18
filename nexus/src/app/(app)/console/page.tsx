@@ -23,6 +23,9 @@ export default function ConsolePage() {
 
   const searchParams = useSearchParams();
 
+  // URL → tabs sync. searchParams is external state; opening a console via a
+  // deep link must add a tab. Local tabs[] is also user-mutable (sidebar
+  // clicks add tabs), so a derived approach won't work here.
   useEffect(() => {
     const node = searchParams.get('node');
     const vmidStr = searchParams.get('vmid');
@@ -30,6 +33,7 @@ export default function ConsolePage() {
     if (!node || !type) return;
     const vmid = vmidStr ? parseInt(vmidStr, 10) : undefined;
     const id = type === 'node' ? `node/${node}` : `${type}/${node}/${vmid}`;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTabs((prev) => {
       if (prev.find((t) => t.id === id)) return prev;
       return [

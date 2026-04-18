@@ -14,7 +14,7 @@
  * picked so the initial page payload stays small (just the index).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search,
@@ -423,14 +423,13 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
     [clusterResources],
   );
   const defaultNode = useDefaultNode();
+  // Explicit user choice; falls back through derivation (default node →
+  // first online node) so we don't seed state from async inputs.
   const [selectedNode, setSelectedNode] = useState('');
-  useEffect(() => {
-    if (!selectedNode && defaultNode && nodes.some((n) => (n.node ?? n.id) === defaultNode)) {
-      setSelectedNode(defaultNode);
-    } else if (!selectedNode && nodes.length > 0) {
-      setSelectedNode(nodes[0].node ?? nodes[0].id);
-    }
-  }, [defaultNode, nodes, selectedNode]);
+  const fallbackNode = defaultNode && nodes.some((n) => (n.node ?? n.id) === defaultNode)
+    ? defaultNode
+    : nodes[0]?.node ?? nodes[0]?.id ?? '';
+  const effectiveNode = selectedNode || fallbackNode;
 
   // Advanced config: caller-supplied env overrides. Empty strings are
   // treated as "use the script's default" and stripped before send.
@@ -459,7 +458,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
   }
 
   function handleRun() {
-    if (!selectedNode || startJob.isPending) return;
+    if (!effectiveNode || startJob.isPending) return;
     // Strip empty overrides so the server doesn't receive "CT_ID=" lines
     // that override the community script's default with an empty string.
     const env = Object.fromEntries(
@@ -467,7 +466,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
     );
     startJob.mutate(
       {
-        node: selectedNode,
+        node: effectiveNode,
         scriptUrl,
         scriptName: manifest.name,
         slug: manifest.slug,
@@ -552,10 +551,10 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
           {activeMethod && <ResourceGrid method={activeMethod} />}
 
           <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-            <NodePicker nodes={nodes} value={selectedNode} onChange={setSelectedNode} />
+            <NodePicker nodes={nodes} value={effectiveNode} onChange={setSelectedNode} />
             <button
               onClick={handleRun}
-              disabled={startJob.isPending || !selectedNode}
+              disabled={startJob.isPending || !effectiveNode}
               className="h-9 px-4 rounded-lg bg-indigo-500 hover:bg-indigo-400
                          disabled:bg-indigo-500/40 disabled:cursor-not-allowed
                          text-white text-sm font-medium transition
@@ -576,7 +575,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
             </button>
             <button
               onClick={() => setScheduleOpen(true)}
-              disabled={!selectedNode}
+              disabled={!effectiveNode}
               className="h-9 px-4 rounded-lg bg-[var(--color-overlay)] hover:bg-zinc-700
                          disabled:bg-zinc-800/40 disabled:cursor-not-allowed
                          text-[var(--color-fg-secondary)] text-sm font-medium transition
@@ -603,7 +602,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
             <div className="flex items-start gap-2 p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
               <p className="text-emerald-200">
-                Started on <span className="font-mono">{selectedNode}</span>. Track progress in the
+                Started on <span className="font-mono">{effectiveNode}</span>. Track progress in the
                 <span className="font-medium"> bottom-right status bar</span> — it opens a live log
                 when clicked.
               </p>
@@ -698,7 +697,7 @@ function ScriptDetailBody({ manifest }: { manifest: ScriptManifest }) {
             scriptUrl,
             scriptName: manifest.name,
             method: activeMethod?.type,
-            node: selectedNode || undefined,
+            node: effectiveNode || undefined,
           }}
         />
       )}

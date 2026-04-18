@@ -24,7 +24,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
-import { readCsrfCookie } from '@/lib/proxmox-client';
 import {
   scoreTargets,
   type GuestResourceAsk,
@@ -181,12 +180,6 @@ export function useMigrateGuest() {
   const qc = useQueryClient();
   return useMutation<MigrateResponse, Error, MigrateInput>({
     mutationFn: async (input) => {
-      // Using the browser-side api wrapper which threads through
-      // /api/proxmox/... with CSRF + ticket headers. Read CSRF defensively
-      // — the wrapper reads it too, but older callers sometimes needed
-      // to set it explicitly.
-      readCsrfCookie();
-
       let upid: string;
       if (input.guestType === 'qemu') {
         const params: MigrateVMParamsPublic = { target: input.target };

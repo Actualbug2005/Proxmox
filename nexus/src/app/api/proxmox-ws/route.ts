@@ -46,7 +46,7 @@ import { randomUUID } from 'crypto';
 
 const NODE_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-_]{0,62}$/;
 const TYPE_SET = new Set(['qemu', 'lxc', 'node'] as const);
-type ValidType = 'qemu' | 'lxc' | 'node';
+type WsTargetType = 'qemu' | 'lxc' | 'node';
 const MODE_SET = new Set(['shell', 'vnc'] as const);
 type ConsoleMode = 'shell' | 'vnc';
 
@@ -69,10 +69,10 @@ export async function POST(req: NextRequest) {
   if (typeof node !== 'string' || !NODE_RE.test(node)) {
     return NextResponse.json({ error: 'Invalid node name' }, { status: 400 });
   }
-  if (typeof type !== 'string' || !TYPE_SET.has(type as ValidType)) {
+  if (typeof type !== 'string' || !TYPE_SET.has(type as WsTargetType)) {
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
   }
-  const validType = type as ValidType;
+  const validType = type as WsTargetType;
   // Default is shell so existing xterm callers that never set `mode` keep
   // working unchanged.
   const mode: ConsoleMode =

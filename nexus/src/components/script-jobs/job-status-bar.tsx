@@ -23,7 +23,7 @@ import {
   StopCircle,
 } from 'lucide-react';
 import { useScriptJobs, type JobSummary } from '@/hooks/use-script-jobs';
-import { JobDrawer } from './JobDrawer';
+import { JobDrawer } from './job-drawer';
 
 const RECENT_WINDOW_MS = 5 * 60 * 1000;
 

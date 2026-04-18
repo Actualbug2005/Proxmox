@@ -3,7 +3,8 @@
  *
  * Combines:
  *   - cluster.resources (current cpu/mem/status per node + guest, 10s poll)
- *   - per-node status (loadavg parsed from NodeStatus.loadavg tuple, 10s)
+ *   - per-node status (loadavg parsed from NodeStatus.loadavg tuple,
+ *     5s staleTime; refetched on mount, no fixed interval)
  *   - per-storage RRD (week-timeframe, 5-min poll) → daysUntilFull
  *   - cluster.tasks (15s poll) → recentFailures
  *

@@ -12,9 +12,6 @@ import type { PveBool } from '@/types/proxmox';
 // Proxmox's HTTP API accepts integer 0/1 for boolean flags. Consumers should
 // express these as native `boolean` and call through the codec only at the
 // HTTP boundary — never in UI state or JSX equality checks.
-//
-// These helpers are exported but not yet wired into request methods; Phase B
-// of the migration will thread them through per-domain request builders.
 
 export function toPveBool(v: boolean): PveBool;
 export function toPveBool(v: boolean | undefined): PveBool | undefined;

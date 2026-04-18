@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useDefaultNode } from '@/hooks/use-cluster';
@@ -39,22 +39,20 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
   const nodes = (resources ?? []).filter((r) => r.type === 'node');
   const defaultNode = useDefaultNode();
 
-  // Seed the node field with the local/main node on first render of a new job.
-  useEffect(() => {
-    if (!isEdit && !node && defaultNode) setNode(defaultNode);
-  }, [isEdit, node, defaultNode]);
-
-  const effectiveNode = node || defaultNode || nodes[0]?.node;
+  // Derived selection: explicit user choice first, then defaultNode (new
+  // jobs only — edits preserve whatever the stored job has), then the first
+  // discovered node. No setState-in-effect seeding needed.
+  const effectiveNode = node || (!isEdit ? defaultNode ?? '' : '') || nodes[0]?.node || '';
   const { data: storages } = useQuery({
     queryKey: ['storage', effectiveNode, 'list'],
-    queryFn: () => api.storage.list(effectiveNode ?? ''),
+    queryFn: () => api.storage.list(effectiveNode),
     enabled: !!effectiveNode,
   });
   const backupStorages = (storages ?? []).filter((s: PVEStoragePublic) => s.content?.split(',').includes('backup'));
 
-  useEffect(() => {
-    if (!storage && backupStorages.length > 0) setStorage(backupStorages[0].storage);
-  }, [backupStorages, storage]);
+  // Same derive-instead-of-seed pattern for storage. Use the user's pick if
+  // set, otherwise default to the first backup-capable storage.
+  const effectiveStorage = storage || backupStorages[0]?.storage || '';
 
   const saveM = useMutation({
     mutationFn: (params: BackupJobParamsPublic) =>
@@ -70,11 +68,11 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
     const params: BackupJobParamsPublic = {
       schedule,
       enabled,
-      storage,
+      storage: effectiveStorage,
       mode,
       compress,
       mailnotification,
-      ...(node ? { node } : {}),
+      ...(effectiveNode ? { node: effectiveNode } : {}),
       ...(all ? { all: true } : vmid ? { vmid } : {}),
       ...(pool ? { pool } : {}),
       ...(mailto ? { mailto } : {}),
@@ -104,7 +102,7 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Node (optional)</label>
-              <select value={node} onChange={(e) => setNode(e.target.value)} className={inputCls}>
+              <select value={effectiveNode} onChange={(e) => setNode(e.target.value)} className={inputCls}>
                 <option value="">All nodes</option>
                 {nodes.map((n) => (
                   <option key={n.node} value={n.node}>{n.node}</option>
@@ -113,7 +111,7 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
             </div>
             <div>
               <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Storage</label>
-              <select value={storage} onChange={(e) => setStorage(e.target.value)} className={inputCls}>
+              <select value={effectiveStorage} onChange={(e) => setStorage(e.target.value)} className={inputCls}>
                 <option value="">Select…</option>
                 {backupStorages.map((s) => (
                   <option key={s.storage} value={s.storage}>{s.storage}</option>
@@ -219,7 +217,7 @@ export function BackupJobEditor({ initial, onClose, onSaved }: BackupJobEditorPr
           </button>
           <button
             onClick={submit}
-            disabled={!storage || saveM.isPending}
+            disabled={!effectiveStorage || saveM.isPending}
             className={cn('flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40')}
           >
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
@@ -35,9 +35,10 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
     (s) => s.active && s.content?.split(',').includes(kind === 'qemu' ? 'images' : 'rootdir'),
   );
 
-  useEffect(() => {
-    if (targetVmid === '' && typeof nextid === 'number') setTargetVmid(nextid);
-  }, [nextid, targetVmid]);
+  // Derive from explicit user choice, falling back to PVE's nextid once
+  // it loads. Derivation replaces a setState-in-effect default-seeding.
+  const effectiveTargetVmid: number | '' =
+    targetVmid !== '' ? targetVmid : (typeof nextid === 'number' ? nextid : '');
 
   const restoreM = useMutation({
     mutationFn: (params: RestoreParamsPublic) =>
@@ -45,7 +46,7 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
         ? api.backups.restoreVM(node, params)
         : api.backups.restoreCT(node, params),
     onSuccess: () => {
-      toast.success(`Restore queued to ${kind === 'qemu' ? 'VM' : 'CT'} ${targetVmid}`, 'Track progress on the Tasks page.');
+      toast.success(`Restore queued to ${kind === 'qemu' ? 'VM' : 'CT'} ${effectiveTargetVmid}`, 'Track progress on the Tasks page.');
       onComplete?.();
       onClose();
     },
@@ -53,9 +54,9 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
   });
 
   const submit = () => {
-    if (typeof targetVmid !== 'number') return;
+    if (typeof effectiveTargetVmid !== 'number') return;
     restoreM.mutate({
-      vmid: targetVmid,
+      vmid: effectiveTargetVmid,
       archive: backup.volid,
       storage: targetStorage,
       force,
@@ -84,7 +85,7 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
             <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Target VMID</label>
             <input
               type="number"
-              value={targetVmid}
+              value={effectiveTargetVmid}
               onChange={(e) => setTargetVmid(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder={String(nextid ?? '')}
               className={inputCls}
@@ -123,7 +124,7 @@ export function RestoreDialog({ backup, node, storage, onClose, onComplete }: Re
           </button>
           <button
             onClick={submit}
-            disabled={restoreM.isPending || typeof targetVmid !== 'number' || !targetStorage}
+            disabled={restoreM.isPending || typeof effectiveTargetVmid !== 'number' || !targetStorage}
             className={cn(
               'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition text-zinc-900',
               'bg-zinc-300 hover:bg-zinc-200 disabled:opacity-40',

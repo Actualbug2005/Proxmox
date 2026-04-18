@@ -8,10 +8,11 @@ import { api } from '@/lib/proxmox-client';
 import { useClusterResources } from '@/hooks/use-cluster';
 import { Gauge } from '@/components/ui/gauge';
 import { StatusDot } from '@/components/ui/status-dot';
-import { cn, cpuPercent, formatBytes, memPercent, formatUptime } from '@/lib/utils';
+import { SortTh } from '@/components/dashboard/sort-th';
+import { cpuPercent, formatBytes, memPercent, formatUptime } from '@/lib/utils';
 import {
   Play, Square, RotateCcw, PowerOff, Plus, Loader2,
-  Box, ChevronDown, Search,
+  Box, Search,
 } from 'lucide-react';
 import type { ClusterResourcePublic } from '@/types/proxmox';
 
@@ -121,23 +122,6 @@ export default function CTsPage() {
     return 0;
   });
 
-  function SortTh({ label, k, align = 'left' }: { label: string; k: SortKey; align?: 'left' | 'right' }) {
-    const active = sortKey === k;
-    return (
-      <th
-        onClick={() => toggleSort(k)}
-        className={cn(
-          'px-3 py-3 text-[11px] font-semibold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap',
-          align === 'right' ? 'text-right' : 'text-left',
-          active ? 'text-[var(--color-fg-secondary)]' : 'text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)]',
-        )}
-      >
-        {label}
-        {active && <ChevronDown className={cn('inline w-3 h-3 ml-1', sortDir === 'desc' && 'rotate-180')} />}
-      </th>
-    );
-  }
-
   const runningCount = cts.filter((c) => c.status === 'running').length;
   const stoppedCount = cts.filter((c) => c.status === 'stopped').length;
 
@@ -184,10 +168,10 @@ export default function CTsPage() {
           <table className="w-full">
             <thead className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
               <tr>
-                <SortTh label="ID" k="vmid" align="right" />
-                <SortTh label="Name" k="name" />
-                <SortTh label="Status" k="status" />
-                <SortTh label="Node" k="node" />
+                <SortTh label="ID" k="vmid" align="right" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
+                <SortTh label="Name" k="name" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
+                <SortTh label="Status" k="status" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
+                <SortTh label="Node" k="node" sortKey={sortKey} sortDir={sortDir} onToggle={toggleSort} />
                 <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">CPU</th>
                 <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Memory</th>
                 <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-widest text-[var(--color-fg-subtle)]">Disk</th>

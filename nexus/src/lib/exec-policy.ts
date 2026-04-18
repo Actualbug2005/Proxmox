@@ -30,7 +30,7 @@ export const EXEC_LIMITS = {
   /**
    * Maximum number of in-flight executions per session (summed across
    * /api/exec + /api/scripts/run). Enforced via
-   * {@link ../../lib/rate-limit.ts#acquireConcurrencySlot}.
+   * {@link ../../lib/rate-limit.ts#acquireSlot}.
    */
   maxConcurrentPerSession: 5,
 } as const;

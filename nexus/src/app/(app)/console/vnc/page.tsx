@@ -21,7 +21,7 @@ import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { VncConsole } from '@/components/console/vnc-console';
 
 const VALID_TYPES = new Set(['qemu', 'lxc'] as const);
-type ValidType = 'qemu' | 'lxc';
+type VncTargetType = 'qemu' | 'lxc';
 
 export default function VncConsolePage() {
   const params = useSearchParams();
@@ -35,7 +35,7 @@ export default function VncConsolePage() {
     !vmidRaw ||
     Number.isNaN(vmid) ||
     !typeRaw ||
-    !VALID_TYPES.has(typeRaw as ValidType);
+    !VALID_TYPES.has(typeRaw as VncTargetType);
 
   if (missing) {
     return (
@@ -63,7 +63,7 @@ export default function VncConsolePage() {
     );
   }
 
-  const type = typeRaw as ValidType;
+  const type = typeRaw as VncTargetType;
 
   return (
     <div className="h-[calc(100dvh-theme(spacing.16))] flex flex-col p-4 gap-3">

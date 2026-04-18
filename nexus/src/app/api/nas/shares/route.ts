@@ -66,7 +66,7 @@ interface CreateRequestBody {
  *   • protocols — non-empty subset of {smb, nfs}, deduplicated, lowercased.
  *   • readOnly  — defaults to true (security-first).
  */
-function validateCreatePayload(body: any): [CreateNasSharePayload, null] | [null, string] {
+function validateCreatePayload(body: CreateRequestBody): [CreateNasSharePayload, null] | [null, string] {
   const { name, path, protocols, readOnly } = body;
 
   if (typeof name !== 'string' || !/^[a-zA-Z0-9_.-]{1,64}$/.test(name)) {

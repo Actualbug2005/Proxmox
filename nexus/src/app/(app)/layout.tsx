@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { AppShell } from '@/components/dashboard/app-shell';
 import { CommandPalette } from '@/components/dashboard/command-palette';
-import { JobStatusBar } from '@/components/script-jobs/JobStatusBar';
+import { JobStatusBar } from '@/components/script-jobs/job-status-bar';
 import { ChainProgressPanel } from '@/components/scripts/chain-progress-panel';
 
 /**

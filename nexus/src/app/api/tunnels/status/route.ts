@@ -16,9 +16,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireNodeSysAudit } from '@/lib/permissions';
 import { NODE_RE, runScriptOnNode } from '@/lib/remote-shell';
+import type { TunnelProviderId, TunnelStatus } from '@/types/tunnels';
 
-type ProviderId = 'cloudflared' | 'ngrok';
-type TunnelStatus = 'not-installed' | 'not-configured' | 'stopped' | 'active' | 'unknown';
+// Re-aliased locally so the rest of this file (probes map, parser) reads
+// naturally; the canonical definitions live in `@/types/tunnels`.
+type ProviderId = TunnelProviderId;
 
 /**
  * Hardcoded bash literals — one per supported provider. The client cannot

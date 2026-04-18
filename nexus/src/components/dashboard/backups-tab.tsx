@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
@@ -50,9 +50,9 @@ function BackupNowDialog({
   const [notes, setNotes] = useState('');
   const [markProtected, setMarkProtected] = useState(false);
 
-  useEffect(() => {
-    if (!storage && backupStorages.length > 0) setStorage(backupStorages[0].storage);
-  }, [backupStorages, storage]);
+  // Derived default — user's explicit pick wins; otherwise first storage that
+  // accepts backup content. Avoids a setState-in-effect seed.
+  const effectiveStorage = storage || backupStorages[0]?.storage || '';
 
   const backupM = useMutation({
     mutationFn: (params: VzdumpParamsPublic) => api.backups.vzdump(node, params),
@@ -64,10 +64,10 @@ function BackupNowDialog({
   });
 
   const submit = () => {
-    if (!storage) return;
+    if (!effectiveStorage) return;
     backupM.mutate({
       vmid,
-      storage,
+      storage: effectiveStorage,
       mode,
       compress,
       ...(notes ? { 'notes-template': notes } : {}),
@@ -89,7 +89,7 @@ function BackupNowDialog({
         <div className="space-y-3">
           <div>
             <label className="text-xs text-[var(--color-fg-subtle)] block mb-1">Storage</label>
-            <select value={storage} onChange={(e) => setStorage(e.target.value)} className={inputCls}>
+            <select value={effectiveStorage} onChange={(e) => setStorage(e.target.value)} className={inputCls}>
               <option value="">Select…</option>
               {backupStorages.map((s) => (
                 <option key={s.storage} value={s.storage}>{s.storage} ({s.type})</option>
@@ -134,7 +134,7 @@ function BackupNowDialog({
           </button>
           <button
             onClick={submit}
-            disabled={!storage || backupM.isPending}
+            disabled={!effectiveStorage || backupM.isPending}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
           >
             {backupM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, ShieldCheck, AlertTriangle, Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
+import type { TunnelProviderId, TunnelStatus, TunnelStatusResponse } from '@/types/tunnels';
 
 type ToastApi = ReturnType<typeof useToast>;
 
@@ -27,7 +28,7 @@ function CertBadge({ days }: { days: number | null }) {
 }
 
 interface TunnelProvider {
-  id: string;
+  id: TunnelProviderId;
   name: string;
   binary: string;
   service: string;
@@ -73,11 +74,8 @@ ngrok --version`,
   },
 ] as const;
 
-type TunnelStatus = 'not-installed' | 'not-configured' | 'stopped' | 'active' | 'unknown';
-
-interface TunnelStatusResponse {
-  providers: Partial<Record<string, TunnelStatus>>;
-}
+// TunnelStatus + TunnelStatusResponse moved to '@/types/tunnels' so the
+// route handler and this page share the canonical wire-shape.
 
 const TUNNEL_STATUS_KEY = ['tunnel-status'] as const;
 

@@ -22,6 +22,10 @@ export function FirewallOptionsTab({ scope }: FirewallOptionsTabProps) {
   });
 
   const [draft, setDraft] = useState<FirewallOptionsPublic>({});
+  // Sync server data into editable draft on fetch. Explicit setState-in-effect
+  // because the user may edit fields and we don't want each keystroke to be
+  // overwritten by a refetch; only the latest server snapshot seeds the draft.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (data) setDraft(data); }, [data]);
 
   const saveM = useMutation({

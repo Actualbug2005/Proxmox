@@ -63,6 +63,19 @@ function invalidSegment(seg: string): boolean {
   return false;
 }
 
+/**
+ * Distinguish PVE's ticket-expiry 401 from a per-operation privilege denial.
+ *
+ * pveproxy returns plain-text "401 No ticket" / "Invalid ticket" /
+ * "ticket expired" for ticket failures. Privilege denials are mostly 403,
+ * but a few endpoints emit JSON 401 with privilege errors in the body —
+ * those should not nuke the session (H10).
+ */
+function isTicketExpiryBody(contentType: string | null, body: string): boolean {
+  if (contentType?.toLowerCase().includes('json')) return false;
+  return /\b(no\s+ticket|invalid\s+ticket|ticket\s+expired)\b/i.test(body);
+}
+
 // ── Response builder with standard hardening headers ───────────────────────
 
 function hardenedJson(
@@ -168,22 +181,37 @@ async function handler(
 
   try {
     const pveRes = await pveFetch(targetUrl, { method, headers, body });
-    const responseText = await pveRes.text();
 
-    const response = new NextResponse(responseText, {
+    // 401 path is rare and the body is always small (PVE's "No ticket"
+    // text is ~16 bytes; privilege errors are small JSON). Read it
+    // eagerly so we can decide whether to clear our session cookies (H10).
+    if (pveRes.status === 401) {
+      const text = await pveRes.text();
+      const response = new NextResponse(text, {
+        status: 401,
+        headers: {
+          'Content-Type': pveRes.headers.get('Content-Type') ?? 'application/json',
+          'Cache-Control': 'no-store, private',
+        },
+      });
+      if (isTicketExpiryBody(pveRes.headers.get('Content-Type'), text)) {
+        response.cookies.set('nexus_session', '', { httpOnly: true, maxAge: 0, path: '/' });
+        response.cookies.set('nexus_csrf', '', { httpOnly: false, maxAge: 0, path: '/' });
+      }
+      return response;
+    }
+
+    // Forward the raw bytes — arrayBuffer() preserves binary payloads
+    // (VNC tickets, raw task-log bytes, vzdump manifests) that .text()
+    // would have UTF-8-mangled into U+FFFD (H8).
+    const buf = Buffer.from(await pveRes.arrayBuffer());
+    return new NextResponse(buf, {
       status: pveRes.status,
       headers: {
         'Content-Type': pveRes.headers.get('Content-Type') ?? 'application/json',
         'Cache-Control': 'no-store, private',
       },
     });
-
-    if (pveRes.status === 401) {
-      response.cookies.set('nexus_session', '', { httpOnly: true, maxAge: 0, path: '/' });
-      response.cookies.set('nexus_csrf', '', { httpOnly: false, maxAge: 0, path: '/' });
-    }
-
-    return response;
   } catch (err) {
     console.error('[Proxmox Proxy Error]', err);
     return hardenedJson(

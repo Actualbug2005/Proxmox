@@ -49,6 +49,10 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
   const [minute, hour, dom, month, dow] = splitCron(value || '0 2 * * *');
   const [raw, setRaw] = useState(value);
 
+  // Sync external `value` prop into local `raw` state. Local state is needed
+  // so the user can type freely without every keystroke calling `onChange`
+  // (which only fires onBlur). Legitimate controlled/uncontrolled hybrid.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setRaw(value), [value]);
 
   const update = (partial: Partial<Record<'minute' | 'hour' | 'dom' | 'month' | 'dow', string>>) => {

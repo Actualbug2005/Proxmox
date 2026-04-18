@@ -38,7 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { api, readCsrfCookie } from '@/lib/proxmox-client';
+import { api } from '@/lib/proxmox-client';
 import { useToast } from '@/components/ui/toast';
 import { useTaskCompletion } from '@/hooks/use-task-completion';
 import {
@@ -127,9 +127,6 @@ export function CloneWizard({
 
   const cloneMutation = useMutation({
     mutationFn: async () => {
-      // Read CSRF defensively — proxmox-client handles it, but legacy call
-      // sites sometimes relied on touching the cookie here.
-      readCsrfCookie();
       return api.vms.clone(sourceNode, sourceVmid, {
         newid,
         name: name.trim(),

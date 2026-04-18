@@ -116,7 +116,17 @@ export function createRelaySession(params: {
       createdAt: Date.now(),
     };
 
+    // H7: timer cleared on success/error so a late-OPEN doesn't terminate a
+    // live socket and a settled error doesn't fire a spurious terminate.
+    const connectTimeout = setTimeout(() => {
+      if (pveWs.readyState !== WebSocket.OPEN) {
+        pveWs.terminate();
+        reject(new Error('PVE WebSocket timed out'));
+      }
+    }, 8_000);
+
     pveWs.on('open', () => {
+      clearTimeout(connectTimeout);
       if (mode === 'shell') {
         // termproxy protocol preamble — see the mode JSDoc above for why
         // this is required here but MUST be skipped in VNC mode.
@@ -132,14 +142,13 @@ export function createRelaySession(params: {
       }
     });
 
-    pveWs.on('error', reject);
-
-    setTimeout(() => {
-      if (pveWs.readyState !== WebSocket.OPEN) {
-        pveWs.terminate();
-        reject(new Error('PVE WebSocket timed out'));
-      }
-    }, 8_000);
+    pveWs.on('error', (err) => {
+      clearTimeout(connectTimeout);
+      // Drop any half-registered session so a late join doesn't attach to a
+      // dead socket (M18). Safe even if 'open' never fired.
+      relaySessions.delete(sessionId);
+      reject(err);
+    });
   });
 }
 
