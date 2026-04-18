@@ -42,6 +42,13 @@ export interface ScheduledJob {
   lastFiredAt?: number;
   /** jobId of the last fire — follow this into /api/scripts/jobs/[id] for logs. */
   lastJobId?: string;
+  /** Error string from the most recent fire, if that fire failed. Cleared
+   *  on the next successful fire. Surfaced by /api/system/health and the
+   *  schedules UI so operators can see failing schedules at a glance. */
+  lastFireError?: string;
+  /** Count of consecutive failed fires. Cleared to 0 on a success. Drives
+   *  the scheduler's auto-disable threshold (see scheduler.ts). */
+  consecutiveFailures?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -197,18 +204,39 @@ export async function remove(id: string): Promise<boolean> {
 /**
  * Record that a fire happened for `id` — sets lastFiredAt + lastJobId and
  * bumps updatedAt. Atomic with the readFile/writeFile pair.
+ *
+ * Pass `error` to mark the fire as failed: the error message is recorded
+ * and `consecutiveFailures` increments. A successful fire (omit `error`)
+ * clears both error fields and resets the counter to 0.
  */
-export async function markFired(id: string, jobId: string | undefined, at: number): Promise<void> {
+export async function markFired(
+  id: string,
+  jobId: string | undefined,
+  at: number,
+  error?: string,
+): Promise<void> {
   await serialize(async () => {
     const state = await readFile();
     const idx = state.jobs.findIndex((j) => j.id === id);
     if (idx === -1) return;
-    state.jobs[idx] = {
-      ...state.jobs[idx],
-      lastFiredAt: at,
-      lastJobId: jobId,
-      updatedAt: at,
-    };
+    const prev = state.jobs[idx];
+    state.jobs[idx] = error
+      ? {
+          ...prev,
+          lastFiredAt: at,
+          lastJobId: jobId ?? prev.lastJobId,
+          lastFireError: error,
+          consecutiveFailures: (prev.consecutiveFailures ?? 0) + 1,
+          updatedAt: at,
+        }
+      : {
+          ...prev,
+          lastFiredAt: at,
+          lastJobId: jobId,
+          lastFireError: undefined,
+          consecutiveFailures: 0,
+          updatedAt: at,
+        };
     await writeFile(state);
   });
 }

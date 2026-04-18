@@ -280,7 +280,12 @@ app.prepare().then(() => {
     getSchedule: (j) => j.schedule,
     isEnabled: (j) => j.enabled,
     getLastFiredAt: (j) => j.lastFiredAt,
-    onFired: (id, at, result) => scheduledJobsStore.markFired(id, result.jobId, at),
+    getConsecutiveFailures: (j) => j.consecutiveFailures,
+    onFired: (id, at, result) =>
+      scheduledJobsStore.markFired(id, result.jobId, at, result.error),
+    disable: async (id) => {
+      await scheduledJobsStore.update(id, { enabled: false });
+    },
   };
   startSchedulerSource(scriptsSource, async (job) => {
     const result = await runScriptJob({
@@ -306,7 +311,11 @@ app.prepare().then(() => {
     getSchedule: (c) => c.schedule,
     isEnabled: (c) => c.enabled,
     getLastFiredAt: (c) => c.lastFiredAt,
-    onFired: (id, at) => chainsStore.markFired(id, at),
+    getConsecutiveFailures: (c) => c.consecutiveFailures,
+    onFired: (id, at, result) => chainsStore.markFired(id, at, result.error),
+    disable: async (id) => {
+      await chainsStore.update(id, { enabled: false });
+    },
   };
   startSchedulerSource(chainsSource, async (chain) => {
     runChain(chain);

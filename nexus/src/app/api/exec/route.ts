@@ -27,7 +27,7 @@ import { requireNodeSysModify } from '@/lib/permissions';
 import { NODE_RE, runScriptOnNode } from '@/lib/remote-shell';
 import { EXEC_LIMITS } from '@/lib/exec-policy';
 import { RATE_LIMITS, acquireSlot, takeToken } from '@/lib/rate-limit';
-import { writeAuditEntry } from '@/lib/exec-audit';
+import { writeAuditEntry, noteAuditWriteFailure } from '@/lib/exec-audit';
 
 interface ExecRequest {
   command: string;
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         durationMs: Date.now() - started,
       });
     } catch (auditErr) {
-      console.error('[api/exec] audit write failed:', auditErr);
+      noteAuditWriteFailure('exec', session.username, auditErr);
     }
   }
 }

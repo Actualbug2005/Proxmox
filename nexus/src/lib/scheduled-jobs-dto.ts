@@ -23,6 +23,8 @@ export interface ScheduledJobDto {
   enabled: boolean;
   lastFiredAt?: number;
   lastJobId?: string;
+  lastFireError?: string;
+  consecutiveFailures?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -42,6 +44,8 @@ export function toDto(job: ScheduledJob): ScheduledJobDto {
     enabled: job.enabled,
     lastFiredAt: job.lastFiredAt,
     lastJobId: job.lastJobId,
+    lastFireError: job.lastFireError,
+    consecutiveFailures: job.consecutiveFailures,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };

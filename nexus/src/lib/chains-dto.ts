@@ -29,6 +29,8 @@ export interface ChainDto {
   enabled: boolean;
   lastFiredAt?: number;
   lastRun?: ChainStepRun[];
+  lastFireError?: string;
+  consecutiveFailures?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -45,6 +47,8 @@ export function toDto(c: Chain): ChainDto {
     enabled: c.enabled,
     lastFiredAt: c.lastFiredAt,
     lastRun: c.lastRun,
+    lastFireError: c.lastFireError,
+    consecutiveFailures: c.consecutiveFailures,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
   };

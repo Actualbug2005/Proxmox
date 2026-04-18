@@ -130,4 +130,79 @@ describe('scheduler tick', () => {
     const after = await store.get(job.id);
     assert.ok(after?.lastFiredAt, 'lastFiredAt should be advanced even on fire failure');
   });
+
+  // ── H4: failure tracking + auto-disable ─────────────────────────────────
+
+  it('records lastFireError and bumps consecutiveFailures when fire throws', async () => {
+    const job = await store.create({
+      owner: 'test@pam',
+      scriptUrl: 'https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/x.sh',
+      scriptName: 'x',
+      node: 'pve',
+      schedule: '* * * * *',
+      enabled: true,
+    });
+
+    await runTick(async () => {
+      throw new Error('boom one');
+    });
+    const after1 = await store.get(job.id);
+    assert.equal(after1?.lastFireError, 'boom one');
+    assert.equal(after1?.consecutiveFailures, 1);
+
+    // Force the dedup gate to let the next tick fire.
+    await store.update(job.id, { lastFiredAt: 0 });
+    await runTick(async () => {
+      throw new Error('boom two');
+    });
+    const after2 = await store.get(job.id);
+    assert.equal(after2?.lastFireError, 'boom two');
+    assert.equal(after2?.consecutiveFailures, 2);
+  });
+
+  it('clears lastFireError + resets counter on a successful fire', async () => {
+    const job = await store.create({
+      owner: 'test@pam',
+      scriptUrl: 'https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/x.sh',
+      scriptName: 'x',
+      node: 'pve',
+      schedule: '* * * * *',
+      enabled: true,
+    });
+
+    await runTick(async () => {
+      throw new Error('first failure');
+    });
+    await store.update(job.id, { lastFiredAt: 0 });
+    await runTick(async () => ({ jobId: 'recovered-job' }));
+
+    const after = await store.get(job.id);
+    assert.equal(after?.lastFireError, undefined, 'lastFireError cleared after success');
+    assert.equal(after?.consecutiveFailures, 0, 'counter reset to 0');
+    assert.equal(after?.lastJobId, 'recovered-job');
+  });
+
+  it('auto-disables the job after MAX_CONSECUTIVE_FAILURES failed fires', async () => {
+    const { MAX_CONSECUTIVE_FAILURES } = await import('./scheduler');
+
+    const job = await store.create({
+      owner: 'test@pam',
+      scriptUrl: 'https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/x.sh',
+      scriptName: 'x',
+      node: 'pve',
+      schedule: '* * * * *',
+      enabled: true,
+    });
+
+    for (let i = 0; i < MAX_CONSECUTIVE_FAILURES; i++) {
+      await store.update(job.id, { lastFiredAt: 0 });
+      await runTick(async () => {
+        throw new Error(`failure ${i + 1}`);
+      });
+    }
+
+    const after = await store.get(job.id);
+    assert.equal(after?.consecutiveFailures, MAX_CONSECUTIVE_FAILURES);
+    assert.equal(after?.enabled, false, 'should be auto-disabled at the threshold');
+  });
 });

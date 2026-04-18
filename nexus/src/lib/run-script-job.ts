@@ -20,7 +20,7 @@ import { hostname } from 'node:os';
 
 // Explicit .ts extensions — this module is reached from server.ts which
 // runs under Node's --experimental-strip-types (no bundler resolver).
-import { writeAuditEntry } from './exec-audit.ts';
+import { writeAuditEntry, noteAuditWriteFailure } from './exec-audit.ts';
 import { resolveNodeAddress } from './remote-shell.ts';
 import {
   appendTail,
@@ -294,10 +294,11 @@ export async function runScriptJob(input: RunScriptJobInput): Promise<RunScriptJ
           durationMs: Date.now() - started,
         });
       } catch (err) {
-        console.error('[run-script-job] audit write failed:', {
-          jobId: job.id,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        // H1: structured event + counter. Keep the jobId hint in a tail
+        // line so a grep starting from the event name still ties back to
+        // a specific job.
+        noteAuditWriteFailure('scripts.run', input.user, err);
+        console.error('[run-script-job] audit write failed for jobId=%s', job.id);
       }
     },
   });

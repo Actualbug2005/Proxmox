@@ -62,6 +62,12 @@ export interface Chain {
   lastFiredAt?: number;
   /** Per-step run state from the last fire, same length + order as `steps`. */
   lastRun?: ChainStepRun[];
+  /** Error string from the most recent fire, if that fire failed. Cleared
+   *  on the next successful fire. */
+  lastFireError?: string;
+  /** Count of consecutive failed fires. Drives the scheduler's auto-disable
+   *  threshold (see scheduler.ts). */
+  consecutiveFailures?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -227,17 +233,32 @@ export async function setLastRun(id: string, runSteps: ChainStepRun[]): Promise<
  * Mark the fire timestamp. Sibling of setLastRun so the scheduler can
  * update just the `lastFiredAt` for dedup without touching the in-flight
  * step state.
+ *
+ * Pass `error` to mark the fire as failed: the error message is recorded
+ * and `consecutiveFailures` increments. A successful fire (omit `error`)
+ * clears both error fields and resets the counter to 0.
  */
-export async function markFired(id: string, at: number): Promise<void> {
+export async function markFired(id: string, at: number, error?: string): Promise<void> {
   await serialize(async () => {
     const state = await readFile();
     const idx = state.chains.findIndex((c) => c.id === id);
     if (idx === -1) return;
-    state.chains[idx] = {
-      ...state.chains[idx],
-      lastFiredAt: at,
-      updatedAt: at,
-    };
+    const prev = state.chains[idx];
+    state.chains[idx] = error
+      ? {
+          ...prev,
+          lastFiredAt: at,
+          lastFireError: error,
+          consecutiveFailures: (prev.consecutiveFailures ?? 0) + 1,
+          updatedAt: at,
+        }
+      : {
+          ...prev,
+          lastFiredAt: at,
+          lastFireError: undefined,
+          consecutiveFailures: 0,
+          updatedAt: at,
+        };
     await writeFile(state);
   });
 }

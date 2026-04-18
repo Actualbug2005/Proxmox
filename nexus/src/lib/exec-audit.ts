@@ -195,3 +195,36 @@ export const AUDIT_PATHS = {
   secret: SECRET_LOG_PATH,
   pubkey: PUBKEY_PATH,
 } as const;
+
+// ─── Failure observability (H1) ─────────────────────────────────────────────
+//
+// Audit writes are best-effort sinks; both call sites (api/exec/route.ts and
+// run-script-job.ts) catch failures so an unwritable log doesn't block the
+// command itself. That's correct for availability — but a silently-broken
+// audit pipeline is a compliance hazard. The counter + structured log line
+// surface the failure to operators (tailing journald, grepping for
+// `event=audit_write_failed`, or reading /api/system/health).
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __nexusAuditWriteFailures: number | undefined;
+}
+
+export function noteAuditWriteFailure(
+  endpoint: string,
+  user: string,
+  err: unknown,
+): void {
+  globalThis.__nexusAuditWriteFailures = (globalThis.__nexusAuditWriteFailures ?? 0) + 1;
+  const reason = err instanceof Error ? err.message : String(err);
+  console.error(
+    '[nexus event=audit_write_failed] endpoint=%s user=%s reason=%s',
+    endpoint,
+    user,
+    reason,
+  );
+}
+
+export function getAuditWriteFailureCount(): number {
+  return globalThis.__nexusAuditWriteFailures ?? 0;
+}
