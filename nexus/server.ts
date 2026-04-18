@@ -18,6 +18,7 @@ import * as chainsStore from './src/lib/chains-store.ts';
 import { runChain } from './src/lib/run-chain.ts';
 import { attach as attachNotificationDispatcher } from './src/lib/notifications/dispatcher.ts';
 import { startPollSource as startNotificationPollSource } from './src/lib/notifications/poll-source.ts';
+import { runTick as runDrsTick } from './src/lib/drs/runner.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -340,4 +341,29 @@ app.prepare().then(() => {
   startNotificationPollSource({
     fetchState: async () => ({ resources: [], nodeStatuses: {}, tasks: [] }),
   });
+
+  // ── Auto-DRS (5.3) ───────────────────────────────────────────────────────
+  // Standalone 60s ticker. Uses the same "inject a fetchState seam"
+  // pattern as the notification poll source because server-side PVE
+  // queries need an authenticated session that this boot context
+  // doesn't yet have. Until the service-account session wiring lands,
+  // the DRS tick runs but can't reach PVE — it'll record each tick
+  // as `skipped: fetchCluster failed …` in the history, visible in
+  // the /dashboard/cluster/drs UI, so the operator has a single
+  // place to see "DRS is trying but can't auth" on a fresh install.
+  const drsTimer = setInterval(() => {
+    void (async () => {
+      try {
+        await runDrsTick({
+          fetchCluster: async () => ({ resources: [], nodeStatuses: {} }),
+        });
+      } catch (err) {
+        console.error(
+          '[nexus event=drs_tick_failed] reason=%s',
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    })();
+  }, 60_000);
+  drsTimer.unref?.();
 });

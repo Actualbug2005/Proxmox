@@ -57,7 +57,13 @@ export interface PushedEvent {
     | 'scheduler.fire.failed'
     | 'scheduler.auto.disabled'
     | 'session.store.fallback'
-    | 'permission.probe.error';
+    | 'permission.probe.error'
+    /** DRS dry-run: planner would migrate but mode=dry-run, no move executed. */
+    | 'drs.would.migrate'
+    /** DRS live: migration executed successfully. */
+    | 'drs.migrated'
+    /** DRS live: migration attempt was refused by PVE or errored mid-flight. */
+    | 'drs.migration.failed';
   at: number;
   /** Free-form structured payload; rule matcher reads specific keys by kind. */
   payload: Record<string, string | number | boolean | null | undefined>;
@@ -89,6 +95,9 @@ export const EVENT_KINDS = [
   'scheduler.auto.disabled',
   'session.store.fallback',
   'permission.probe.error',
+  'drs.would.migrate',
+  'drs.migrated',
+  'drs.migration.failed',
   'metric.threshold.crossed',
 ] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];

@@ -31,19 +31,62 @@ const SERVER_ENTRY = resolve(REPO_ROOT, 'server.ts');
 // the chain Node's raw loader walks. If a future module adds a
 // `@/`-aliased dep in that chain, this test catches it before the
 // production crash.
+// Strategy: split the source into line-strings first, then anchor the
+// regex to each line independently. That avoids the failure mode where
+// `[^'"]*?` stretches lazily across unrelated type-alias exports on
+// preceding lines and eventually hits a real `from '@/...'` clause 10
+// lines down — a regex correct in isolation but wrong at file scope.
+// Multi-line imports (e.g. destructured member lists that wrap) are
+// joined via a preprocess step so the matching stays line-bounded.
+
+function joinContinuations(source: string): string[] {
+  // Collapse `import {` + subsequent lines + `} from '…'` into one
+  // logical line. Cheap heuristic: if a line ends inside an open brace
+  // that has no matching close yet, concatenate.
+  const raw = source.split('\n');
+  const out: string[] = [];
+  let buf = '';
+  let depth = 0;
+  for (const line of raw) {
+    buf = buf ? buf + ' ' + line : line;
+    for (const ch of line) {
+      if (ch === '{') depth += 1;
+      else if (ch === '}') depth -= 1;
+    }
+    if (depth <= 0) {
+      out.push(buf);
+      buf = '';
+      depth = 0;
+    }
+  }
+  if (buf) out.push(buf);
+  return out;
+}
+
 function relativeImportsFrom(source: string): string[] {
   const out: string[] = [];
-  const re = /(?:^|\n)\s*(?:import(?:\s+type)?\s+[^'"]*?from\s+|export\s+[^'"]*?from\s+)['"]((?:\.\.?\/)[^'"]+)['"]/g;
-  for (const m of source.matchAll(re)) out.push(m[1]);
+  // Per-line: `import … from '<rel>'` or `export … from '<rel>'`,
+  // including `import type`. We allow type re-exports for walking
+  // purposes — the resolved file is still a real file on disk.
+  const re = /^\s*(?:import(?:\s+type)?\s+[^;'"]*?from\s+|export(?:\s+type)?\s+[^;'"]*?from\s+)['"]((?:\.\.?\/)[^'"]+)['"]/;
+  for (const line of joinContinuations(source)) {
+    const m = line.match(re);
+    if (m) out.push(m[1]);
+  }
   return out;
 }
 
 function aliasRuntimeImportsFrom(source: string): string[] {
-  // Match VALUE imports + re-exports only. `import type` is erased
-  // by --experimental-strip-types so alias-typed imports are safe.
+  // Value imports + re-exports only — `import type` is erased by
+  // --experimental-strip-types so it's safe even with `@/` aliases.
+  // The negative lookahead on `type` comes BEFORE the member list so
+  // `import type { X } from '@/…'` doesn't match.
   const out: string[] = [];
-  const re = /(?:^|\n)\s*(?:import\s+(?!type\b)[^'"]*?from\s+|export\s+[^'"]*?from\s+)['"](@\/[^'"]+)['"]/g;
-  for (const m of source.matchAll(re)) out.push(m[1]);
+  const re = /^\s*(?:import\s+(?!type\b)[^;'"]*?from\s+|export\s+(?!type\b)[^;'"]*?from\s+)['"](@\/[^'"]+)['"]/;
+  for (const line of joinContinuations(source)) {
+    const m = line.match(re);
+    if (m) out.push(m[1]);
+  }
   return out;
 }
 

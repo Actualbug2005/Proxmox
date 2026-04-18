@@ -28,6 +28,7 @@ import {
   Workflow,
   FileLock2,
   Bell,
+  Sliders,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -70,6 +71,7 @@ const sections: NavSection[] = [
       { href: '/dashboard/cluster/firewall', label: 'Firewall', icon: Shield },
       { href: '/dashboard/cluster/pools', label: 'Pools', icon: FolderTree },
       { href: '/dashboard/cluster/backups', label: 'Backups', icon: Archive },
+      { href: '/dashboard/cluster/drs', label: 'Auto-DRS', icon: Sliders },
     ],
   },
   {

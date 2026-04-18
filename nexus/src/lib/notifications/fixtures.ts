@@ -88,6 +88,26 @@ export function fixtureEvent(kind: EventKind): NotificationEvent {
         value: 0.92,
         scope: 'node:pve-01',
       };
+    case 'drs.would.migrate':
+      return {
+        kind, at: AT_FIXED,
+        payload: { vmid: 100, sourceNode: 'pve-01', targetNode: 'pve-02', scoreDelta: 37 },
+      };
+    case 'drs.migrated':
+      return {
+        kind, at: AT_FIXED,
+        payload: { vmid: 100, sourceNode: 'pve-01', targetNode: 'pve-02', scoreDelta: 37 },
+      };
+    case 'drs.migration.failed':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          vmid: 100,
+          sourceNode: 'pve-01',
+          targetNode: 'pve-02',
+          reason: 'PVE precondition denied: guest has local disk',
+        },
+      };
   }
 }
 
@@ -103,6 +123,9 @@ export const KIND_LABELS: Record<EventKind, string> = {
   'scheduler.fire.failed':   'Scheduled job fire failed',
   'scheduler.auto.disabled': 'Scheduled job auto-disabled (5 fails)',
   'session.store.fallback':  'Redis session store → memory fallback',
+  'drs.would.migrate':       'DRS would migrate (dry-run)',
+  'drs.migrated':             'DRS migrated guest',
+  'drs.migration.failed':    'DRS migration failed',
   'metric.threshold.crossed': 'Metric threshold crossed',
 };
 
@@ -120,6 +143,10 @@ export const KIND_GROUPS: ReadonlyArray<{
       'scheduler.auto.disabled',
       'session.store.fallback',
     ],
+  },
+  {
+    label: 'Auto-DRS actions',
+    kinds: ['drs.would.migrate', 'drs.migrated', 'drs.migration.failed'],
   },
   {
     label: 'Metric thresholds (polled)',
