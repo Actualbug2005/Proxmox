@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Clock,
   Workflow,
+  FileLock2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -72,6 +73,7 @@ const sections: NavSection[] = [
     label: 'System',
     items: [
       { href: '/dashboard/cluster/access', label: 'Users & ACL', icon: Users },
+      { href: '/dashboard/cluster/audit', label: 'Audit Log', icon: FileLock2 },
       { href: '/dashboard/system/power', label: 'Power', icon: Zap },
       { href: '/dashboard/system/packages', label: 'Packages', icon: Package },
       { href: '/dashboard/system/network', label: 'Network', icon: Network },
