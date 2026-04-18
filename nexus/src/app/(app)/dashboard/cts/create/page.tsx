@@ -7,6 +7,7 @@ import { api } from '@/lib/proxmox-client';
 import { useNodes } from '@/hooks/use-cluster';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Loader2, Check, Box } from 'lucide-react';
+import { UnitInput } from '@/components/ui/unit-input';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -171,8 +172,15 @@ function StepTemplate({ state, set }: { state: WizardState; set: (p: Partial<Wiz
           <Field label="Storage">
             <StorageSelect node={state.node} value={state.rootfsStorage} onChange={(v) => set({ rootfsStorage: v })} />
           </Field>
-          <Field label="Disk Size (GB)">
-            <Input type="number" value={state.rootfsSize} onChange={(v) => set({ rootfsSize: Number(v) })} min={1} />
+          <Field label="Disk Size">
+            <UnitInput
+              value={state.rootfsSize}
+              canonicalUnit="GiB"
+              onChange={(v) => set({ rootfsSize: v })}
+              min={1}
+              units={['GiB', 'TiB']}
+              ariaLabel="Root disk size"
+            />
           </Field>
         </div>
       </div>
@@ -204,15 +212,24 @@ function StepResources({ state, set }: { state: WizardState; set: (p: Partial<Wi
       <Field label="CPU Cores">
         <Input type="number" value={state.cores} onChange={(v) => set({ cores: Number(v) })} min={1} max={128} />
       </Field>
-      <Field label="Memory (MB)">
-        <Input type="number" value={state.memory} onChange={(v) => set({ memory: Number(v) })} min={64} />
+      <Field label="Memory">
+        <UnitInput
+          value={state.memory}
+          canonicalUnit="MiB"
+          onChange={(v) => set({ memory: v })}
+          min={64}
+          ariaLabel="Memory"
+        />
       </Field>
-      <Field label="Swap (MB)">
-        <Input type="number" value={state.swap} onChange={(v) => set({ swap: Number(v) })} min={0} />
+      <Field label="Swap">
+        <UnitInput
+          value={state.swap}
+          canonicalUnit="MiB"
+          onChange={(v) => set({ swap: v })}
+          min={0}
+          ariaLabel="Swap"
+        />
       </Field>
-      <p className="text-xs text-[var(--color-fg-faint)]">
-        Memory: {(state.memory / 1024).toFixed(2)} GB · Swap: {(state.swap / 1024).toFixed(2)} GB
-      </p>
     </div>
   );
 }

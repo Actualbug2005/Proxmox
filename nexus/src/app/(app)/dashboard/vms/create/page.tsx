@@ -7,6 +7,7 @@ import { api } from '@/lib/proxmox-client';
 import { useNodes } from '@/hooks/use-cluster';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Loader2, Check, Monitor } from 'lucide-react';
+import { UnitInput } from '@/components/ui/unit-input';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -177,8 +178,14 @@ function StepHardware({ state, set }: { state: WizardState; set: (p: Partial<Wiz
           <Input type="number" value={state.cores} onChange={(v) => set({ cores: Number(v) })} min={1} max={128} />
         </Field>
       </div>
-      <Field label="Memory (MB)">
-        <Input type="number" value={state.memory} onChange={(v) => set({ memory: Number(v) })} min={256} />
+      <Field label="Memory">
+        <UnitInput
+          value={state.memory}
+          canonicalUnit="MiB"
+          onChange={(v) => set({ memory: v })}
+          min={256}
+          ariaLabel="Memory"
+        />
       </Field>
       <p className="text-xs text-[var(--color-fg-faint)]">
         Total vCPUs: {state.sockets * state.cores} · Memory: {(state.memory / 1024).toFixed(1)} GB
@@ -206,8 +213,15 @@ function StepDisk({ state, set }: { state: WizardState; set: (p: Partial<WizardS
           {diskStorages.length === 0 && <option value="local-lvm">local-lvm</option>}
         </Select>
       </Field>
-      <Field label="Disk Size (GB)">
-        <Input type="number" value={state.diskSize} onChange={(v) => set({ diskSize: Number(v) })} min={1} />
+      <Field label="Disk Size">
+        <UnitInput
+          value={state.diskSize}
+          canonicalUnit="GiB"
+          onChange={(v) => set({ diskSize: v })}
+          min={1}
+          units={['GiB', 'TiB']}
+          ariaLabel="Disk size"
+        />
       </Field>
       <Field label="Format">
         <Select value={state.diskFormat} onChange={(v) => set({ diskFormat: v })}>
