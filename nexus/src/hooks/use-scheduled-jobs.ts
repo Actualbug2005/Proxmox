@@ -81,3 +81,28 @@ export function useDeleteScheduledJob() {
     invalidateKeys: [[...LIST_KEY]],
   });
 }
+
+// ─── Run history (7.6) ────────────────────────────────────────────────
+
+import type { RunHistoryEntry } from '@/lib/run-history/store';
+
+export type { RunHistoryEntry };
+
+export function useScheduleRuns(scheduleId: string | undefined, limit = 20) {
+  return useQuery<RunHistoryEntry[], Error>({
+    queryKey: ['scheduled-jobs', 'runs', scheduleId, limit] as const,
+    enabled: Boolean(scheduleId),
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/scripts/schedules/${encodeURIComponent(scheduleId!)}/runs?limit=${limit}`,
+        { credentials: 'same-origin' },
+      );
+      if (!res.ok) throw new Error(await readError(res));
+      const body = (await res.json()) as { runs: RunHistoryEntry[] };
+      return body.runs;
+    },
+    // Fetched on-demand in a drawer; keep it cheap and non-polling.
+    refetchOnWindowFocus: false,
+    staleTime: 15_000,
+  });
+}

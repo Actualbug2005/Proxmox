@@ -1,17 +1,19 @@
 # Nexus Roadmap — Tiers 5 → 9 and Backlog
 
 **Date:** 2026-04-18
-**Status:** In progress — Top-10 items #1-5 and #8 shipped (v0.10.0–v0.21.0)
+**Status:** In progress — Top-10 items #1-8 shipped (v0.10.0–v0.22.0)
 
-**Shipped so far (6 of the Top-10):**
+**Shipped so far (8 of the Top-10):**
 - ✅ **#2 — Unit picker primitive (7.2)** → `v0.10.0` (UnitInput in VM/CT create)
 - ✅ **#3 — Audit Log Explorer UI (8.1)** → `v0.11.0` (`/dashboard/cluster/audit`)
 - ✅ **#1 — Tag/Folder Resource View (7.1)** → `v0.12.0` (`/dashboard/resources` + Segmented toggle)
 - ✅ **#4 — Notification Rule Engine (5.1)** → `v0.15.0–v0.19.0` (destinations, rules, dispatcher, poll source)
 - ✅ **#5 — Auto-DRS Loop (5.3)** → `v0.20.0` (`/dashboard/cluster/drs` — off/dry-run/enabled with all 3 anti-ping-pong rails)
 - ✅ **#8 — Guest-Internal Health (5.2)** → `v0.21.0` (QEMU agent probe: disk pressure + agent liveness; LXC + service-down deferred)
+- ✅ **#7 — Drag-and-drop dashboards (7.4)** → `v0.22.0` (native DnD on 4-col grid, per-user JSON prefs)
+- ✅ **#6 — Next-fire + run-history (7.6)** → `v0.22.0` (chip list on cron editor, persistent `run-history.jsonl` + inline last-20 table)
 
-**Next up (from the Top-10):** #6 Schedule next-fire preview (2d), #7 Drag-and-drop bento (1d), #9 Remote Cluster Registry (4d), #10 Security hardening pass (2d).
+**Next up (from the Top-10):** #9 Remote Cluster Registry (4d, unlocks Tier 6), #10 Security hardening pass (2d).
 **Source material:** session audit 2026-04-18 covering roadmap completion, feature review, and community-gap research (Proxmox forums, PDM roadmap, SDN threads, VMware-migration commentary).
 
 This document rolls up three analyses from today's session:
@@ -151,10 +153,11 @@ These are referenced throughout so later tiers can build on them without re-desc
 - **Touchpoints.** `src/app/(app)/layout.tsx`, new components under `src/components/dashboard/mobile/`, CSS container queries in `globals.css`.
 - **Effort.** 1 week. **Pull.** M.
 
-### 7.4 Drag-and-Drop Widget Customisation
+### 7.4 Drag-and-Drop Widget Customisation ✅ shipped in v0.22.0
 - **Rationale.** Widget registry + presets already exist; only the interaction layer is missing.
 - **Shape.** Add `react-grid-layout` (or equivalent lightweight DnD) to `bento-grid.tsx`, persist per-user layout to `${NEXUS_DATA_DIR}/user-prefs/{userid}.json`. Preset switcher remains for quick resets.
 - **Effort.** 1 day. **Pull.** M.
+- **Shipped scope.** Native HTML5 DnD on the existing 4-col grid (no `react-grid-layout` dep — ~100 LOC); per-user JSON at `${NEXUS_DATA_DIR}/user-prefs/<username>.json`, one override per preset id. Explicit Edit / Reset buttons on the dashboard header.
 
 ### 7.5 Command Palette Enhancements
 - **Rationale.** CMD+K exists but is action-only. Forum users want quick-jump search.
@@ -162,11 +165,12 @@ These are referenced throughout so later tiers can build on them without re-desc
 - **Touchpoints.** `src/components/dashboard/command-palette.tsx`.
 - **Effort.** 1 day. **Pull.** M.
 
-### 7.6 Next-Fire Preview + Run History on Schedules
+### 7.6 Next-Fire Preview + Run History on Schedules ✅ shipped in v0.22.0
 - **Rationale.** Current `cron-input.tsx` is textual; users frequently miscount a cron. Proxmox's own schedule editor shows the next few fires. Run-history is absent entirely.
 - **Shape.** `cron-input` gains a "Next 5 fires" chip list. Schedule detail drawer shows last-20-runs with stdout/stderr/exit-code.
 - **Touchpoints.** `src/components/dashboard/cron-input.tsx`, `src/components/script-jobs/JobDrawer.tsx`, new per-schedule history endpoint.
 - **Effort.** 2 days. **Pull.** M.
+- **Shipped scope.** `nextFires()` helper added to `cron-match.ts` + chip list on the cron builder. Persistent `run-history.jsonl` (rotating at 2 MB, keyed by `source:sourceId`) appended by the scheduler after every fire; `/api/scripts/schedules/[id]/runs`; inline last-20 table on each row of `/dashboard/schedules`. Chain-scheduler opted into the same store — future chain-detail drawer inherits history for free.
 
 ### 7.7 Resource-Tree Virtualisation
 - **Rationale.** 100+ guests cause DOM lag.
@@ -355,8 +359,8 @@ Ordered by recommended sequencing, not strict priority:
 | 3 | **Audit Log Explorer UI** (8.1) | 8 | 2d | H | ✅ v0.11.0 | Backend already done; pure UI. |
 | 4 | **Notification Rule Engine** (5.1) | 5 | 3–4d | H | ✅ v0.15.0–v0.19.0 | Foundation for 5.2–5.4, 9.7. Must land first in Tier 5. |
 | 5 | **Auto-DRS Loop** (5.3) | 5 | 3–4d | Highest | ✅ v0.20.0 | Single biggest community-pull feature; scorer already exists. |
-| 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | pending | Hugely improves existing scheduled-jobs UX. |
-| 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | pending | Registry is ready; 1-day ship. |
+| 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | ✅ v0.22.0 | Hugely improves existing scheduled-jobs UX. |
+| 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | ✅ v0.22.0 | Registry is ready; 1-day ship. |
 | 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | ✅ v0.21.0 (disk + agent; services deferred) | Completes the "intelligence" loop with 5.1 + 5.3. |
 | 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | pending | Unlocks all of Tier 6. |
 | 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | pending | Bundle SSRF guard + CSP headers + safe-regex audit as one PR. |

@@ -172,3 +172,63 @@ export function matchesCron(expr: string, date: Date): boolean {
 export function validateCron(expr: string): void {
   parseCron(expr);
 }
+
+const ONE_MINUTE_MS = 60_000;
+const DEFAULT_HORIZON_DAYS = 30;
+
+/**
+ * Return the next `limit` fires of `expr` starting from `from` (default now),
+ * giving up after `horizonDays` (default 30) even if fewer matches were
+ * found. Minute-resolution forward scan; cheap enough for a chip list in
+ * the cron editor but NOT suitable as a scheduler hot path.
+ *
+ * Returns `[]` on parse failure so UI code can render "no preview"
+ * without a try/catch.
+ */
+export function nextFires(
+  expr: string,
+  limit = 5,
+  from: Date = new Date(),
+  horizonDays = DEFAULT_HORIZON_DAYS,
+): Date[] {
+  let spec: ParsedCron;
+  try {
+    spec = parseCron(expr);
+  } catch {
+    return [];
+  }
+
+  const out: Date[] = [];
+  // Start at the next whole minute after `from` so the first hit isn't
+  // the minute we're already sitting in (which has no useful meaning
+  // for a "next fire" preview).
+  const cursor = new Date(from.getTime() + ONE_MINUTE_MS);
+  cursor.setSeconds(0, 0);
+
+  const deadline = from.getTime() + horizonDays * 24 * 60 * 60_000;
+
+  while (cursor.getTime() <= deadline && out.length < limit) {
+    if (matchesParsedCron(spec, cursor)) {
+      out.push(new Date(cursor.getTime()));
+    }
+    cursor.setTime(cursor.getTime() + ONE_MINUTE_MS);
+  }
+  return out;
+}
+
+/** Internal match check reusing an already-parsed spec. */
+function matchesParsedCron(spec: ParsedCron, date: Date): boolean {
+  if (!spec.minute.has(date.getMinutes())) return false;
+  if (!spec.hour.has(date.getHours())) return false;
+  if (!spec.month.has(date.getMonth() + 1)) return false;
+
+  const dom = date.getDate();
+  const dow = date.getDay();
+
+  if (!spec.domRestricted && !spec.dowRestricted) return true;
+  if (spec.domRestricted && spec.dowRestricted) {
+    return spec.dom.has(dom) || spec.dow.has(dow);
+  }
+  if (spec.domRestricted) return spec.dom.has(dom);
+  return spec.dow.has(dow);
+}

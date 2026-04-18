@@ -23,6 +23,7 @@
 import { matchesCron } from './cron-match.ts';
 import * as scriptsStore from './scheduled-jobs-store.ts';
 import { emit as emitNotification } from './notifications/event-bus.ts';
+import { appendRun, type RunSource } from './run-history/store.ts';
 
 const SCHED_TICK_MS = 60_000;
 const DEDUP_WINDOW_MS = 55_000;
@@ -62,6 +63,14 @@ export interface SchedulerSource<T> {
    *  flip `enabled=false`. Sources that don't implement it get logged
    *  warnings instead of an auto-disable. */
   disable?(id: string, reason: string): Promise<void>;
+  /**
+   * Optional label used to record a run-history line under
+   * `${NEXUS_DATA_DIR}/run-history.jsonl` whenever a fire completes.
+   * When omitted, the source opts out of the run-history store —
+   * callers that already have their own per-run log (exec-audit for
+   * raw scripts) don't need to double-record.
+   */
+  historySource?: RunSource;
 }
 
 declare global {
@@ -105,6 +114,7 @@ async function runTick<T>(
       if (lastFiredAt && nowMs - lastFiredAt < DEDUP_WINDOW_MS) continue;
 
       let result: FireResult;
+      const fireStart = Date.now();
       try {
         result = await fire(item);
       } catch (err) {
@@ -128,7 +138,34 @@ async function runTick<T>(
         // `lastFireError`/`consecutiveFailures`/the auto-disable below.
         result = { error: reason };
       }
+      const durationMs = Date.now() - fireStart;
       await source.onFired(source.getId(item), nowMs, result);
+
+      // Persist a durable per-fire record (7.6). The schedule-detail
+      // drawer reads these long after the in-memory script-job log has
+      // been GC'd. Off by default — a source opts in by setting
+      // `historySource`. Failures here must never cascade into the
+      // main tick; we log + continue.
+      if (source.historySource) {
+        try {
+          await appendRun({
+            at: nowMs,
+            source: source.historySource,
+            sourceId: source.getId(item),
+            jobId: result.jobId,
+            outcome: result.error ? 'failed' : 'success',
+            durationMs,
+            error: result.error,
+          });
+        } catch (err) {
+          console.error(
+            '[nexus event=run_history_append_failed] source=%s id=%s reason=%s',
+            source.name,
+            source.getId(item),
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+      }
 
       // Auto-disable after MAX_CONSECUTIVE_FAILURES consecutive failures.
       // Only runs when the source exposes the optional helpers — legacy
@@ -214,6 +251,7 @@ const scriptsSource: SchedulerSource<scriptsStore.ScheduledJob> = {
   disable: async (id) => {
     await scriptsStore.update(id, { enabled: false });
   },
+  historySource: 'schedule',
 };
 
 /** @deprecated Prefer `startSchedulerSource(source, fire)`. Kept for the

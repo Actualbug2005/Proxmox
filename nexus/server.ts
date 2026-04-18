@@ -290,6 +290,7 @@ app.prepare().then(() => {
     disable: async (id) => {
       await scheduledJobsStore.update(id, { enabled: false });
     },
+    historySource: 'schedule',
   };
   startSchedulerSource(scriptsSource, async (job) => {
     const result = await runScriptJob({
@@ -320,6 +321,7 @@ app.prepare().then(() => {
     disable: async (id) => {
       await chainsStore.update(id, { enabled: false });
     },
+    historySource: 'chain',
   };
   startSchedulerSource(chainsSource, async (chain) => {
     runChain(chain);

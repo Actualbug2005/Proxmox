@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { matchesCron, parseCron, validateCron } from './cron-match';
+import { matchesCron, nextFires, parseCron, validateCron } from './cron-match';
 
 const d = (y: number, mo: number, da: number, h: number, mi: number) =>
   // Month is 1-indexed in the helper; JS Date wants 0-indexed.
@@ -89,4 +89,36 @@ test('parse rejects inverted range', () => {
 
 test('raw matcher returns false on garbage input instead of throwing', () => {
   assert.equal(matchesCron('not a cron', new Date()), false);
+});
+
+// ─── nextFires (7.6) ──────────────────────────────────────────────────
+
+test('nextFires returns N daily hits with 24h cadence', () => {
+  const from = d(2026, 4, 18, 0, 0);
+  const fires = nextFires('0 2 * * *', 3, from);
+  assert.equal(fires.length, 3);
+  assert.equal(fires[1].getTime() - fires[0].getTime(), 24 * 60 * 60_000);
+  assert.equal(fires[2].getTime() - fires[1].getTime(), 24 * 60 * 60_000);
+});
+
+test('nextFires respects the limit', () => {
+  const fires = nextFires('*/5 * * * *', 2, d(2026, 4, 18, 0, 0));
+  assert.equal(fires.length, 2);
+  assert.equal(fires[1].getTime() - fires[0].getTime(), 5 * 60_000);
+});
+
+test('nextFires returns [] for an invalid expression', () => {
+  assert.deepEqual(nextFires('not a cron'), []);
+});
+
+test('nextFires gives up at the horizon — Feb 31 never matches', () => {
+  const fires = nextFires('0 0 31 2 *', 5, d(2026, 4, 18, 0, 0), 30);
+  assert.deepEqual(fires, []);
+});
+
+test('nextFires starts strictly after `from`', () => {
+  const from = d(2026, 4, 18, 2, 0);
+  const fires = nextFires('0 2 * * *', 1, from);
+  assert.equal(fires.length, 1);
+  assert.ok(fires[0].getTime() > from.getTime());
 });

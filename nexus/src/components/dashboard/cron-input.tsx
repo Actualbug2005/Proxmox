@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { nextFires } from '@/lib/cron-match';
 
 /**
  * Cron editor. Proxmox schedule syntax is a superset of classic cron — it accepts
@@ -129,6 +130,7 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
           <p className="col-span-2 text-xs text-[var(--color-fg-subtle)] font-mono">
             → <span className="text-[var(--color-fg-secondary)]">{value || '0 2 * * *'}</span>
           </p>
+          <NextFiresChips expr={value || '0 2 * * *'} className="col-span-2" />
         </div>
       ) : (
         <div>
@@ -143,8 +145,59 @@ export function CronInput({ value, onChange, className }: CronInputProps) {
           <p className="text-xs text-[var(--color-fg-faint)] mt-1">
             PVE-extended cron: `*/N` shortcuts, ranges (`1-5`), lists (`mon,wed,fri`), and `mon..fri` keywords.
           </p>
+          <NextFiresChips expr={raw} className="mt-3" />
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * "Next 5 fires" preview chip list. Recomputes with useMemo whenever
+ * `expr` changes; a deliberately shallow horizon (30 d / 5 hits) keeps
+ * the minute-by-minute scan cheap even inside a tight controlled input.
+ *
+ * Renders nothing when the expression doesn't parse — the CronInput
+ * already shows the raw text, and surfacing a separate "bad expression"
+ * banner here would be noise.
+ */
+interface NextFiresChipsProps {
+  expr: string;
+  className?: string;
+}
+
+function NextFiresChips({ expr, className }: NextFiresChipsProps) {
+  const fires = useMemo(() => nextFires(expr, 5), [expr]);
+  if (fires.length === 0) return null;
+
+  // Use the operator's local TZ — PVE schedules fire in the server's
+  // local TZ, so showing server-local here is accurate only when Nexus
+  // runs on the same host (which it does by design). Good enough for
+  // a preview; tooltip carries the ISO string for unambiguous reading.
+  const fmt = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+  });
+
+  return (
+    <div className={cn('space-y-1.5', className)}>
+      <p className="text-[11px] uppercase tracking-widest text-[var(--color-fg-subtle)]">
+        Next 5 fires
+      </p>
+      <ul className="flex flex-wrap gap-1.5">
+        {fires.map((d) => (
+          <li
+            key={d.getTime()}
+            title={d.toISOString()}
+            className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] tabular text-[var(--color-fg-secondary)]"
+          >
+            {fmt.format(d)}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
