@@ -1,14 +1,17 @@
 # Nexus Roadmap — Tiers 5 → 9 and Backlog
 
 **Date:** 2026-04-18
-**Status:** In progress — Top-10 items #1-3 shipped (v0.10.0-v0.12.0)
+**Status:** In progress — Top-10 items #1-5 and #8 shipped (v0.10.0–v0.21.0)
 
-**Shipped this session (first 3 of the Top-10):**
+**Shipped so far (6 of the Top-10):**
 - ✅ **#2 — Unit picker primitive (7.2)** → `v0.10.0` (UnitInput in VM/CT create)
 - ✅ **#3 — Audit Log Explorer UI (8.1)** → `v0.11.0` (`/dashboard/cluster/audit`)
 - ✅ **#1 — Tag/Folder Resource View (7.1)** → `v0.12.0` (`/dashboard/resources` + Segmented toggle)
+- ✅ **#4 — Notification Rule Engine (5.1)** → `v0.15.0–v0.19.0` (destinations, rules, dispatcher, poll source)
+- ✅ **#5 — Auto-DRS Loop (5.3)** → `v0.20.0` (`/dashboard/cluster/drs` — off/dry-run/enabled with all 3 anti-ping-pong rails)
+- ✅ **#8 — Guest-Internal Health (5.2)** → `v0.21.0` (QEMU agent probe: disk pressure + agent liveness; LXC + service-down deferred)
 
-**Next up (from the Top-10):** #6 Schedule next-fire preview (2d), #7 Drag-and-drop bento (1d), then #4 Notification Rule Engine / #5 Auto-DRS (each 3-4d, both need design sign-off first).
+**Next up (from the Top-10):** #6 Schedule next-fire preview (2d), #7 Drag-and-drop bento (1d), #9 Remote Cluster Registry (4d), #10 Security hardening pass (2d).
 **Source material:** session audit 2026-04-18 covering roadmap completion, feature review, and community-gap research (Proxmox forums, PDM roadmap, SDN threads, VMware-migration commentary).
 
 This document rolls up three analyses from today's session:
@@ -49,7 +52,7 @@ These are referenced throughout so later tiers can build on them without re-desc
 
 **Theme:** turn Nexus from a reactive UI into an active operator. Reuses existing scorer, scheduler, audit log, and notification surface.
 
-### 5.1 Notification Rule Engine **(foundation for 5.2–5.4)**
+### 5.1 Notification Rule Engine **(foundation for 5.2–5.4)** ✅ shipped in v0.15.0–v0.19.0
 - **Rationale.** PVE's notification system is CLI-first and hostile. Every alerting feature below depends on having *somewhere* to send the alert.
 - **Shape.** `lib/notifications/` module: `destinations` (webhook, Discord, ntfy, email via SMTP, Slack) + `rules` (predicate over an event: `metric`, `threshold`, `duration`, `scope`) + `dispatch` (debounced, templated via logic-less Mustache-style strings — avoid full expression engines to keep injection surface small).
 - **Storage.** `${NEXUS_DATA_DIR}/notifications.json` (rules) + per-destination creds encrypted at rest (reuse `exec-audit`'s crypto primitives).
@@ -57,15 +60,16 @@ These are referenced throughout so later tiers can build on them without re-desc
 - **Touchpoints.** New: `src/lib/notifications/*`, `src/app/api/notifications/**`, `src/app/(app)/dashboard/notifications/page.tsx`, components under `src/components/notifications/`.
 - **Effort.** 3–4 days. **Pull.** H.
 
-### 5.2 Guest-Internal Health Monitoring
+### 5.2 Guest-Internal Health Monitoring ✅ shipped in v0.21.0 (disk pressure + agent liveness; services deferred)
 - **Rationale.** Top VMware-vs-Proxmox complaint: "I can't see when a VM is running low on disk internally." PVE exposes the data via qemu-guest-agent but shows almost none of it.
 - **Shape.** New `use-guest-agent.ts` hook polling `nodes/{node}/qemu/{vmid}/agent/get-fsinfo`, `get-memory-block-info`, `get-host-name`, `network-get-interfaces` for VMs with `agent=1`. LXC parity via `pct exec`.
 - **Widgets.** `guest-disk-pressure`, `guest-service-health` bento widgets.
 - **Integrates with 5.1.** Emits events: `guest.disk.filling`, `guest.service.down`, `guest.agent.unreachable`.
 - **Touchpoints.** New: `src/hooks/use-guest-agent.ts`, `src/lib/guest-health.ts`, `src/components/widgets/guest-disk-pressure.tsx`, `src/components/widgets/guest-service-health.tsx`. Registry additions in `src/lib/widgets/register-all.ts`.
 - **Effort.** 1 week. **Pull.** H. **Depends on:** 5.1.
+- **Shipped scope.** `guest.disk.filling` (edge-triggered, 85% default) + `guest.agent.unreachable` (3 consecutive failures). 60s cluster-wide poll, bounded concurrency 4, in-memory snapshot, on-demand `/api/guests/[node]/[vmid]/agent` route + cluster roll-up `/api/guests/pressure`. LXC and `guest.service.down` deferred to a follow-up.
 
-### 5.3 Auto-DRS Loop
+### 5.3 Auto-DRS Loop ✅ shipped in v0.20.0
 - **Rationale.** The most-cited vSphere feature PDM is missing. Nexus already has a migration scorer and a cron scheduler — wiring the loop is ~3 days of work for a headline feature.
 - **Shape.** New `lib/drs/` module. A scheduled tick (reuse `scheduler.ts` with a third `SchedulerSource<DrsPolicy>`) reads cluster pressure, picks the most-pressured node, runs `migration-score` for each eligible guest on it, and issues a single migration to the best target if the score delta exceeds a configurable hysteresis (default 0.2, prevents ping-pong).
 - **Safety rails.**
@@ -349,11 +353,11 @@ Ordered by recommended sequencing, not strict priority:
 | 1 | **Tag/Folder Resource View** (7.1) | 7 | 4h | H | ✅ v0.12.0 | Cheapest H-pull win in the plan. |
 | 2 | **Unit picker primitive** (7.2) | 7 | 2h | M | ✅ v0.10.0 | Ships alongside #1, tiny reusable primitive. |
 | 3 | **Audit Log Explorer UI** (8.1) | 8 | 2d | H | ✅ v0.11.0 | Backend already done; pure UI. |
-| 4 | **Notification Rule Engine** (5.1) | 5 | 3–4d | H | pending | Foundation for 5.2–5.4, 9.7. Must land first in Tier 5. |
-| 5 | **Auto-DRS Loop** (5.3) | 5 | 3–4d | Highest | pending | Single biggest community-pull feature; scorer already exists. |
+| 4 | **Notification Rule Engine** (5.1) | 5 | 3–4d | H | ✅ v0.15.0–v0.19.0 | Foundation for 5.2–5.4, 9.7. Must land first in Tier 5. |
+| 5 | **Auto-DRS Loop** (5.3) | 5 | 3–4d | Highest | ✅ v0.20.0 | Single biggest community-pull feature; scorer already exists. |
 | 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | pending | Hugely improves existing scheduled-jobs UX. |
 | 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | pending | Registry is ready; 1-day ship. |
-| 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | pending | Completes the "intelligence" loop with 5.1 + 5.3. |
+| 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | ✅ v0.21.0 (disk + agent; services deferred) | Completes the "intelligence" loop with 5.1 + 5.3. |
 | 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | pending | Unlocks all of Tier 6. |
 | 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | pending | Bundle SSRF guard + CSP headers + safe-regex audit as one PR. |
 
