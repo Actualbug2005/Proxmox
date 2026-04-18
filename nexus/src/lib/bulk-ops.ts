@@ -13,7 +13,6 @@ import { randomUUID } from 'node:crypto';
 
 export type BulkOp = 'start' | 'stop' | 'shutdown' | 'reboot' | 'snapshot';
 export type GuestType = 'qemu' | 'lxc';
-export type ItemStatus = 'pending' | 'running' | 'success' | 'failed' | 'skipped';
 
 export interface SnapshotParams {
   snapname: string;

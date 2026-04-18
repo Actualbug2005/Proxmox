@@ -32,12 +32,6 @@ export type UnwireBool<T, K extends keyof T> = {
   [P in keyof T]: P extends K ? boolean | undefined : T[P];
 };
 
-// ─── Proxmox API Response Types ───────────────────────────────────────────────
-
-export interface PVEApiResponse<T> {
-  data: T;
-}
-
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface PVETicketResponse {
@@ -270,10 +264,6 @@ export interface StorageCreatePayload {
   path?: string;
   mkdir?: PveBool;
 }
-
-/** Body for `PUT /api2/json/storage/{id}`. PVE rejects attempts to change
- *  the ID or backend type once a pool exists, so both are stripped. */
-export type StorageUpdatePayload = Partial<Omit<StorageCreatePayload, 'storage' | 'type'>>;
 
 /** Response of `GET /api2/json/storage/{id}` — the full persisted config.
  *  Superset of `StorageCreatePayload` with PVE's optimistic-concurrency
@@ -545,13 +535,6 @@ export interface CommunityScript {
   };
 }
 
-export interface ScriptExecutionPayload {
-  node: string;
-  storage: string;
-  scriptUrl: string;
-  scriptName: string;
-}
-
 // ─── CT Config ────────────────────────────────────────────────────────────────
 
 export interface CTConfig {
@@ -808,7 +791,6 @@ export interface UpdateCTConfigParams {
  *  Note on semantics: unlike `PVEUser.enable` (which defaults to "enabled"
  *  when absent), these fields all default to *false* when absent in PVE's
  *  config schema. Read sites should use `?? false`, not `!== false`. */
-export type VMConfigPublic = UnwireBool<VMConfig, 'onboot' | 'protection' | 'template'>;
 export type VMConfigFullPublic = UnwireBool<VMConfigFull, 'onboot' | 'protection' | 'template'>;
 export type CTConfigPublic = UnwireBool<CTConfig, 'onboot' | 'protection' | 'template'>;
 export type UpdateVMConfigParamsPublic = UnwireBool<UpdateVMConfigParams, 'onboot' | 'protection' | 'template'>;
@@ -852,9 +834,6 @@ export interface AptUpdatablePackage {
   Priority?: string;
   [key: string]: unknown;
 }
-
-/** @deprecated Use AptInstalledPackage or AptUpdatablePackage */
-export type AptPackage = AptUpdatablePackage;
 
 export interface NetworkIface {
   iface: string;
@@ -966,10 +945,6 @@ export interface BackupJob {
   protected?: PveBool;
 }
 
-export interface BackupJobParams extends Partial<Omit<BackupJob, 'id'>> {
-  [key: string]: unknown;
-}
-
 export interface BackupFile {
   volid: string;
   ctime: number;
@@ -1059,10 +1034,6 @@ export interface FirewallRule {
   ipversion?: 4 | 6;
   'icmp-type'?: string;
   digest?: string;
-}
-
-export interface FirewallRuleParams extends Partial<Omit<FirewallRule, 'pos'>> {
-  [key: string]: unknown;
 }
 
 export interface FirewallAlias {
@@ -1380,7 +1351,6 @@ export type CreateSnapshotParamsPublic = UnwireBool<CreateSnapshotParams, 'vmsta
  *  defaults to disabled. */
 export type FirewallRulePublic = UnwireBool<FirewallRule, 'enable'>;
 export type FirewallRuleParamsPublic = Partial<Omit<FirewallRulePublic, 'pos'>>;
-export type FirewallIPSetEntryPublic = UnwireBool<FirewallIPSetEntry, 'nomatch'>;
 
 /** CT creation. `unprivileged` defaults to false (i.e. privileged). */
 export type CreateCTParamsPublic = UnwireBool<CreateCTParams, 'unprivileged'>;
