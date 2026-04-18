@@ -82,7 +82,10 @@ export function VncConsole({ node, vmid, type, className }: VncConsoleProps) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(data.error ?? `Failed to get VNC ticket (HTTP ${res.status})`);
       }
-      const { sessionId } = (await res.json()) as { sessionId: string };
+      const { sessionId, vncTicket } = (await res.json()) as {
+        sessionId: string;
+        vncTicket?: string;
+      };
 
       if (!containerRef.current) return;
 
@@ -97,8 +100,18 @@ export function VncConsole({ node, vmid, type, className }: VncConsoleProps) {
       // vncwebsocket advertises; without the match, the WS upgrade is
       // rejected with 1002. The same protocol is negotiated on the
       // server-side connection in server.ts.
+      //
+      // `credentials.password`: PVE's inner RFB stream uses VNC Auth with
+      // the vncticket as the password (truncated to 8 bytes per VNC Auth
+      // spec). Without this, noVNC reaches the security challenge step
+      // and waits indefinitely for credentials it was never given.
+      // Diagnosed from byte-level relay logging in v0.4.3 (pveTx=30,
+      // clientTx=13: banner + selection + 16-byte challenge, no response).
       const rfb = new RFB(containerRef.current, relayUrl, {
         wsProtocols: ['binary'],
+        ...(vncTicket
+          ? { credentials: { password: vncTicket.slice(0, 8) } }
+          : {}),
       });
       // Scale the remote framebuffer to fit our container instead of
       // showing scrollbars — this is what PVE's built-in noVNC does, and

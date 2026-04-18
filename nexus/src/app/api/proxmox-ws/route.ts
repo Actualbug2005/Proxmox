@@ -158,9 +158,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // For graphical (VNC) consoles, the inner RFB stream still goes through
+  // QEMU's VNC Auth — pveproxy validates the vncticket at the WebSocket
+  // layer, but the inner stream challenges with the same ticket (truncated
+  // to 8 bytes) as the VNC password. Without this, noVNC stalls waiting
+  // for credentials it never receives. We expose the ticket only in vnc
+  // mode and only to a session that already passed CSRF + auth checks
+  // above; the powerful PVEAuthCookie remains server-side. The vncticket
+  // itself is single-VM-scoped and TTL ~30 s — narrower blast radius than
+  // any other credential the browser already holds.
   return NextResponse.json({
     sessionId: relaySessionId,
     upid: upid ?? null,
     mode,
+    ...(mode === 'vnc' ? { vncTicket: ticket } : {}),
   });
 }
