@@ -45,6 +45,15 @@
   --color-warn: #fbbf24;              /* amber-400 */
   --color-err: #f87171;               /* red-400 */
 
+  /* ── CTA (primary buttons) ──
+   * Dark canvas wants a high-luminance pill that pops without competing
+   * with the indigo accent. Light canvas wants a near-black surface so
+   * the same `bg-[var(--color-cta)] text-[var(--color-cta-fg)]` markup
+   * inverts correctly when the theme flips. */
+  --color-cta: #d4d4d8;               /* zinc-300 */
+  --color-cta-hover: #e4e4e7;         /* zinc-200 */
+  --color-cta-fg: #18181b;            /* zinc-900 — readable on cta */
+
   /* ── Radius standard ── */
   --radius-lg: 0.5rem;
 
@@ -106,6 +115,12 @@
   --color-ok: #059669;                /* emerald-600 */
   --color-warn: #d97706;              /* amber-600 */
   --color-err: #dc2626;               /* red-600 */
+
+  /* CTA flips: light theme uses near-black so the same utility keeps
+   * meaning ("primary action stands out from the canvas"). */
+  --color-cta: #0f172a;               /* slate-900 */
+  --color-cta-hover: #1e293b;         /* slate-800 */
+  --color-cta-fg: #f8fafc;            /* slate-50 — readable on cta */
 }
 
 /*

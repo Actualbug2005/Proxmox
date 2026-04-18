@@ -7,7 +7,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNodes } from '@/hooks/use-cluster';
+import { useNodes, POLL_INTERVALS } from '@/hooks/use-cluster';
 import { api } from '@/lib/proxmox-client';
 import { Badge } from '@/components/ui/badge';
 import { StatusDot } from '@/components/ui/status-dot';
@@ -62,7 +62,7 @@ export function PhysicalDisksTable() {
     },
     enabled: visibleNodes.length > 0,
     // Disk listings change on hardware add/remove — slow polling is fine.
-    refetchInterval: 60_000,
+    refetchInterval: POLL_INTERVALS.disks,
     staleTime: 30_000,
   });
 

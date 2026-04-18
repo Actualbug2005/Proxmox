@@ -7,6 +7,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { cn } from '@/lib/utils';
 import { Server } from 'lucide-react';
 import type { NasProtocol, NasService } from '@/types/nas';
@@ -59,7 +60,7 @@ export function NasServicesCard({ node }: Props) {
     queryKey: ['nas-services', node],
     queryFn: () => api.nas.getServices(node),
     enabled: !!node,
-    refetchInterval: 15_000,
+    refetchInterval: POLL_INTERVALS.services,
   });
 
   // Index by protocol so render is O(1) per indicator — avoids re-scanning

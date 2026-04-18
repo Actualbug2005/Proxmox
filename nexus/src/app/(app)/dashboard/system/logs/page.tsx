@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/proxmox-client';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useSystemNode } from '@/app/(app)/dashboard/system/node-context';
 import { Loader2, ScrollText, Pause, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,7 +33,7 @@ export default function LogsPage() {
     queryKey: ['journal', node, 'tail'],
     queryFn: () => api.nodes.journal(node, { lastentries: 100 }),
     enabled: !!node && mode === 'tail' && !paused,
-    refetchInterval: 2_000,
+    refetchInterval: POLL_INTERVALS.logs,
   });
 
   useEffect(() => {

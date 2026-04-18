@@ -36,12 +36,34 @@ export function useDefaultNode(): string | null {
 /**
  * Single source of truth for polling intervals. Keep these in milliseconds
  * and tune here rather than scattered across hooks/components.
+ *
+ * Migration note (Phase F): the original list covered cluster + nodeStatus
+ * + tasks + rrd. The expanded set adds the timings audit found scattered
+ * across 25 sites — guest detail polling, log tail, config refresh, slow
+ * disk inventory, mid-cadence services. Tune one value here and every
+ * call site re-renders consistently.
  */
 export const POLL_INTERVALS = {
+  /** /cluster/resources, /cluster/status — broad cluster snapshot. */
   cluster: 10_000,
+  /** Per-node status (load avg, disk, memory). */
   nodeStatus: 10_000,
+  /** Cluster-wide task list. */
   tasks: 15_000,
+  /** RRD historical metrics. Slow because PVE only updates ~every 2.4h. */
   rrd: 30_000,
+  /** Guest (VM/CT) detail status — fast because the user is staring at it. */
+  guestStatus: 5_000,
+  /** Guest task list on detail pages. */
+  guestTasks: 10_000,
+  /** Live journal / log tail. */
+  logs: 2_000,
+  /** Config-shaped data (backup jobs, firewall, pools, NAS shares). */
+  config: 30_000,
+  /** Hardware inventory (smartctl, physical disks). */
+  disks: 60_000,
+  /** Service health probes (NAS, HA). */
+  services: 15_000,
 } as const;
 
 export function useClusterResources() {

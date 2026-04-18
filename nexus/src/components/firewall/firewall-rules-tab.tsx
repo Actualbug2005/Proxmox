@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { EmptyState } from '@/components/dashboard/empty-state';
@@ -23,7 +24,7 @@ export function FirewallRulesTab({ scope }: FirewallRulesTabProps) {
   const { data: rules, isLoading } = useQuery({
     queryKey: [...keyBase, 'rules'],
     queryFn: () => listRules(scope),
-    refetchInterval: 30_000,
+    refetchInterval: POLL_INTERVALS.config,
   });
 
   const [editRule, setEditRule] = useState<FirewallRulePublic | null>(null);
