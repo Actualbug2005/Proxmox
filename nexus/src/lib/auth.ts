@@ -18,7 +18,10 @@ import {
 import { deriveCsrfToken, CSRF_COOKIE } from '@/lib/csrf';
 import { pveFetch } from '@/lib/pve-fetch';
 import { parseSessionTicket, parsePveCsrfToken } from '@/types/brands';
-import { emit as emitNotification } from '@/lib/notifications/event-bus';
+// Relative + explicit `.ts` so this import survives if server.ts ever
+// transitively pulls in auth.ts. The Webpack routes resolve the alias
+// fine; Node's --experimental-strip-types loader does not.
+import { emit as emitNotification } from './notifications/event-bus.ts';
 
 export const SESSION_COOKIE = 'nexus_session';
 

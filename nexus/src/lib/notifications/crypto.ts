@@ -19,7 +19,11 @@
  */
 
 import { hkdfSync, randomBytes, createCipheriv, createDecipheriv } from 'node:crypto';
-import { getJwtSecret } from '@/lib/env';
+// Relative + explicit `.ts`: this module is reached from server.ts via
+// dispatcher.ts → store.ts, under Node's --experimental-strip-types
+// loader which has no path-alias resolver. `@/lib/env` works in the
+// webpack-built routes but blows up at systemd boot.
+import { getJwtSecret } from '../env.ts';
 
 const SALT_BYTES = 16;
 const IV_BYTES = 12; // GCM standard

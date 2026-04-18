@@ -39,7 +39,12 @@
 import { createHash, publicEncrypt, randomBytes, createCipheriv, constants } from 'node:crypto';
 import { appendFile, readFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { emit as emitNotification } from '@/lib/notifications/event-bus';
+// Relative + explicit `.ts` extension: exec-audit.ts is transitively
+// reached from the custom `server.ts` (via run-script-job.ts), which
+// runs under Node's --experimental-strip-types loader with no
+// TypeScript path-alias support. A `@/lib/...` alias here works in the
+// Next.js webpack build but crashes at systemd start with ERR_MODULE_NOT_FOUND.
+import { emit as emitNotification } from './notifications/event-bus.ts';
 
 // Exported so the decrypt helper (scripts/nexus-audit-decrypt.ts) imports
 // the same canonical frame sizes that encrypt uses.

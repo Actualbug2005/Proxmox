@@ -8,7 +8,10 @@
  */
 import type { PVEAuthSession } from '@/types/proxmox';
 import { pveFetch } from '@/lib/pve-fetch';
-import { emit as emitNotification } from '@/lib/notifications/event-bus';
+// Relative + explicit `.ts`: see exec-audit.ts for the full rationale
+// (Node's --experimental-strip-types loader in server.ts has no
+// path-alias resolver; only webpack does).
+import { emit as emitNotification } from './notifications/event-bus.ts';
 
 type PermissionsResponse = { data?: Record<string, Record<string, number>> };
 
