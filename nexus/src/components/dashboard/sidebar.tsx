@@ -27,6 +27,7 @@ import {
   Clock,
   Workflow,
   FileLock2,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -53,6 +54,7 @@ const sections: NavSection[] = [
       { href: '/scripts', label: 'Community Scripts', icon: Code2 },
       { href: '/dashboard/schedules', label: 'Scheduled Jobs', icon: Clock },
       { href: '/dashboard/chains', label: 'Script Chains', icon: Workflow },
+      { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
       { href: '/dashboard/health', label: 'Health', icon: HeartPulse },
     ],
   },
