@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * Renders a list of `ResourceGroup` rows produced by
+ * `lib/resource-grouping`. The component itself is grouping-agnostic —
+ * Flat / Nodes / Tags / Pools all collapse to the same shape.
+ *
+ * Multi-select is opt-in (selectedIds + onToggleSelected). When provided,
+ * each guest row gets a checkbox and the group header shows a tri-state
+ * checkbox covering its members.
+ */
 import { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -13,29 +22,28 @@ import { cn, cpuPercent, formatBytes } from '@/lib/utils';
 import { StatusDot } from '@/components/ui/status-dot';
 import { Checkbox, type CheckboxState } from '@/components/ui/checkbox';
 import type { ClusterResourcePublic } from '@/types/proxmox';
+import {
+  groupResources,
+  parseTagList,
+  type ViewMode,
+  type ResourceGroup,
+} from '@/lib/resource-grouping';
 
 interface ResourceTreeProps {
   resources: ClusterResourcePublic[];
+  /** Defaults to 'nodes' to match the legacy behaviour. */
+  viewMode?: ViewMode;
   onSelect?: (resource: ClusterResourcePublic) => void;
   selectedId?: string;
   /**
    * Additive multi-select for bulk lifecycle. When provided, a checkbox
-   * column is rendered on guest rows (qemu/lxc) and a tri-state checkbox on
-   * each node row that covers all guests under it. Single-select via
-   * onSelect / selectedId is unaffected.
+   * column is rendered on guest rows and a tri-state checkbox on each
+   * group header. Single-select via onSelect / selectedId is unaffected.
    */
   selectedIds?: Set<string>;
   onToggleSelected?: (resource: ClusterResourcePublic, next: boolean) => void;
-  onToggleNodeGroup?: (guests: ClusterResourcePublic[], next: boolean) => void;
+  onToggleGroup?: (members: ClusterResourcePublic[], next: boolean) => void;
 }
-
-type GroupedResources = {
-  [node: string]: {
-    node?: ClusterResourcePublic;
-    vms: ClusterResourcePublic[];
-    containers: ClusterResourcePublic[];
-  };
-};
 
 function ResourceRow({
   resource,
@@ -62,6 +70,8 @@ function ResourceRow({
         ? 'stopped'
         : resource.status;
 
+  const tags = parseTagList(resource.tags);
+
   const inner = (
     <>
       <StatusDot status={dotStatus} size="sm" />
@@ -72,6 +82,22 @@ function ResourceRow({
           <span className="text-[var(--color-fg-faint)] text-xs ml-1 tabular font-mono">({resource.vmid})</span>
         ) : null}
       </span>
+      {tags.length > 0 && (
+        <span className="hidden sm:flex items-center gap-1 shrink-0">
+          {tags.slice(0, 3).map((t) => (
+            <span
+              key={t}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-overlay)] text-[var(--color-fg-muted)] uppercase tracking-wide"
+              title={t}
+            >
+              {t}
+            </span>
+          ))}
+          {tags.length > 3 && (
+            <span className="text-[10px] text-[var(--color-fg-faint)]">+{tags.length - 3}</span>
+          )}
+        </span>
+      )}
       {resource.status === 'running' && resource.cpu !== undefined && (
         <span className="text-xs text-[var(--color-fg-subtle)] tabular font-mono">{cpu.toFixed(0)}%</span>
       )}
@@ -122,67 +148,61 @@ function ResourceRow({
   );
 }
 
-// Helper: compute the tri-state for a node's child checkbox.
-function nodeGroupState(
-  guests: ClusterResourcePublic[],
+function groupCheckboxState(
+  members: ClusterResourcePublic[],
   selectedIds: Set<string>,
 ): CheckboxState {
-  if (guests.length === 0) return false;
-  const n = guests.filter((g) => selectedIds.has(g.id)).length;
+  if (members.length === 0) return false;
+  const n = members.filter((g) => selectedIds.has(g.id)).length;
   if (n === 0) return false;
-  if (n === guests.length) return true;
+  if (n === members.length) return true;
   return 'indeterminate';
 }
 
 export function ResourceTree({
   resources,
+  viewMode = 'nodes',
   onSelect,
   selectedId,
   selectedIds,
   onToggleSelected,
-  onToggleNodeGroup,
+  onToggleGroup,
 }: ResourceTreeProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const multiSelect = selectedIds !== undefined && onToggleSelected !== undefined;
 
-  const grouped = resources.reduce<GroupedResources>((acc, r) => {
-    if (r.type === 'node') {
-      if (!acc[r.node ?? r.id]) acc[r.node ?? r.id] = { vms: [], containers: [] };
-      acc[r.node ?? r.id].node = r;
-    } else if (r.type === 'qemu') {
-      const n = r.node ?? 'unknown';
-      if (!acc[n]) acc[n] = { vms: [], containers: [] };
-      acc[n].vms.push(r);
-    } else if (r.type === 'lxc') {
-      const n = r.node ?? 'unknown';
-      if (!acc[n]) acc[n] = { vms: [], containers: [] };
-      acc[n].containers.push(r);
-    }
-    return acc;
-  }, {});
+  const groups: ResourceGroup[] = groupResources(resources, viewMode);
 
-  function toggle(node: string) {
+  function toggle(groupId: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      if (next.has(node)) next.delete(node);
-      else next.add(node);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
       return next;
     });
   }
 
+  if (groups.length === 0) {
+    return (
+      <p className="text-sm text-[var(--color-fg-faint)] py-6 text-center">
+        No guests to show.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-1">
-      {Object.entries(grouped).map(([nodeName, group]) => {
-        const isCollapsed = collapsed.has(nodeName);
-        const nodeResource = group.node;
-        const children = [...group.vms, ...group.containers];
-        const groupState = multiSelect ? nodeGroupState(children, selectedIds) : false;
+      {groups.map((group) => {
+        const isCollapsed = collapsed.has(group.id);
+        const groupState = multiSelect
+          ? groupCheckboxState(group.members, selectedIds)
+          : false;
 
         return (
-          <div key={nodeName}>
+          <div key={group.id}>
             <div className="flex items-center">
               <button
-                onClick={() => toggle(nodeName)}
+                onClick={() => toggle(group.id)}
                 className="p-1 text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] transition"
                 aria-label={isCollapsed ? 'Expand' : 'Collapse'}
               >
@@ -192,35 +212,30 @@ export function ResourceTree({
                   <ChevronDown className="w-3.5 h-3.5" />
                 )}
               </button>
-              {nodeResource ? (
-                <div className="flex-1">
-                  <ResourceRow
-                    resource={nodeResource}
-                    selected={selectedId === nodeResource.id}
-                    onSelect={onSelect}
-                    leading={
-                      multiSelect && children.length > 0 ? (
-                        <Checkbox
-                          checked={groupState}
-                          onChange={(next) => onToggleNodeGroup?.(children, next)}
-                          ariaLabel={`Select all guests on ${nodeName}`}
-                        />
-                      ) : null
-                    }
-                  />
-                </div>
-              ) : (
-                <span className="flex-1 text-sm font-medium text-[var(--color-fg-secondary)] px-2 py-1">
-                  {nodeName}
-                </span>
+              {multiSelect && group.members.length > 0 && (
+                <Checkbox
+                  checked={groupState}
+                  onChange={(next) => onToggleGroup?.(group.members, next)}
+                  ariaLabel={`Select all in ${group.label}`}
+                />
               )}
+              <div className="flex-1 flex items-center gap-2 px-2 py-1 min-w-0">
+                <span className="text-sm font-medium text-[var(--color-fg-secondary)] truncate">
+                  {group.label}
+                </span>
+                {group.sublabel && (
+                  <span className="text-xs text-[var(--color-fg-faint)] tabular font-mono">
+                    {group.sublabel}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {!isCollapsed && children.length > 0 && (
+            {!isCollapsed && group.members.length > 0 && (
               <div className="ml-2 border-l border-[var(--color-border-subtle)] pl-1 space-y-0.5 mt-0.5">
-                {children.map((r) => (
+                {group.members.map((r) => (
                   <ResourceRow
-                    key={r.id}
+                    key={`${group.id}:${r.id}`}
                     resource={r}
                     selected={selectedId === r.id}
                     onSelect={onSelect}

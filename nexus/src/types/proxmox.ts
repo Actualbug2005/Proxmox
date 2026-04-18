@@ -102,6 +102,10 @@ export interface ClusterResource {
   content?: string;
   plugintype?: string;
   pool?: string;
+  /** Semicolon-separated PVE tag string ("prod;web;tier1"). Empty / absent
+   *  on resources without tags. Use `parseTagList()` from
+   *  `lib/resource-grouping` to get a clean string[]. */
+  tags?: string;
 }
 
 /** Boolean-facing shape of ClusterResource — `template` and `shared`

@@ -59,6 +59,7 @@ const sections: NavSection[] = [
   {
     label: 'Infrastructure',
     items: [
+      { href: '/dashboard/resources', label: 'Resources', icon: FolderTree },
       { href: '/dashboard/nodes', label: 'Nodes', icon: Server },
       { href: '/dashboard/vms', label: 'Virtual Machines', icon: Monitor },
       { href: '/dashboard/cts', label: 'Containers', icon: Box },
