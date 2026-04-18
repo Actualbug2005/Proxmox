@@ -169,7 +169,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
           <button
             onClick={() => execM.mutate(provider.installCmd)}
             disabled={execM.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-xs rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-xs rounded-lg transition disabled:opacity-40"
           >
             {execM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             Install
@@ -226,7 +226,7 @@ function TunnelCard({ node, provider, status }: TunnelCardProps) {
           <button
             onClick={() => execM.mutate(provider.configCmd(configVals))}
             disabled={execM.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-xs rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-xs rounded-lg transition disabled:opacity-40"
           >
             {execM.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             Apply Config
@@ -450,7 +450,7 @@ export default function CertificatesPage() {
             <button
               onClick={() => uploadM.mutate()}
               disabled={!certPem || !keyPem || uploadM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40"
             >
               {uploadM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Upload Certificate
@@ -482,7 +482,7 @@ export default function CertificatesPage() {
                 <button
                   onClick={() => registerAccountM.mutate()}
                   disabled={!acmeEmail || registerAccountM.isPending}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40"
                 >
                   {registerAccountM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Register Account
@@ -500,7 +500,7 @@ export default function CertificatesPage() {
             <button
               onClick={() => orderCertM.mutate()}
               disabled={!acmeDomain || orderCertM.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40"
             >
               {orderCertM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Order Certificate

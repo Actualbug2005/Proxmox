@@ -136,7 +136,7 @@ export default function CTsPage() {
         </div>
         <Link
           href="/dashboard/cts/create"
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm font-medium rounded-lg transition"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm font-medium rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Create CT

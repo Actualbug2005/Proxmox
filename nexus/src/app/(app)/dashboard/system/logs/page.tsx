@@ -181,7 +181,7 @@ export default function LogsPage() {
               className={cn(
                 'flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition',
                 paused
-                  ? 'bg-zinc-300 hover:bg-zinc-200 text-zinc-900'
+                  ? 'bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)]'
                   : 'bg-[var(--color-overlay)] hover:bg-[var(--color-overlay)] text-[var(--color-fg-secondary)]',
               )}
             >

@@ -236,7 +236,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
           {(status === 'idle' || status === 'disconnected' || status === 'error') && (
             <button
               onClick={connect}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-xs rounded-md transition"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-xs rounded-md transition"
             >
               {status === 'error' || status === 'disconnected' ? (
                 <RefreshCw className="w-3 h-3" />
@@ -261,7 +261,7 @@ export function Terminal({ node, vmid, type, className }: TerminalProps) {
               <p className="text-sm text-[var(--color-fg-subtle)] mb-3">Terminal not connected</p>
               <button
                 onClick={connect}
-                className="px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
+                className="px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition"
               >
                 Connect
               </button>

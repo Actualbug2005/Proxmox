@@ -136,7 +136,7 @@ function BackupNowDialog({
           <button
             onClick={submit}
             disabled={!effectiveStorage || backupM.isPending}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-zinc-300 hover:bg-zinc-200 text-zinc-900 rounded-lg transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] rounded-lg transition disabled:opacity-40"
           >
             {backupM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
             Back up now
@@ -252,7 +252,7 @@ export function BackupsTab({ kind, node, vmid }: BackupsTabProps) {
           </p>
           <button
             onClick={() => setShowBackupNow(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition"
           >
             <Archive className="w-4 h-4" />
             Back up now

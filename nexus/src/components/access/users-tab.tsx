@@ -55,7 +55,7 @@ export function UsersTab() {
 
       <div className="space-y-4">
         <div className="flex justify-end">
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition">
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition">
             <Plus className="w-4 h-4" /> New user
           </button>
         </div>
@@ -212,7 +212,7 @@ function UserEditor({ initial, realms, groups, onClose, onSaved }: {
 
         <div className="flex gap-3 justify-end mt-5">
           <button onClick={onClose} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition">Cancel</button>
-          <button onClick={submit} disabled={!userName || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40">
+          <button onClick={submit} disabled={!userName || saveM.isPending} className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40">
             {saveM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? 'Save' : 'Create'}
           </button>
@@ -237,7 +237,7 @@ function PasswordDialog({ user, onClose }: { user: PVEUserPublic; onClose: () =>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus placeholder="New password" className="w-full px-3 py-2 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50 mb-4" />
         <div className="flex gap-3 justify-end">
           <button onClick={onClose} disabled={M.isPending} className="px-4 py-2 text-sm text-[var(--color-fg-muted)] hover:text-white bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40">Cancel</button>
-          <button onClick={() => M.mutate()} disabled={!password || M.isPending} className="flex items-center gap-2 px-4 py-2 bg-zinc-300 hover:bg-zinc-200 text-zinc-900 text-sm rounded-lg transition disabled:opacity-40">
+          <button onClick={() => M.mutate()} disabled={!password || M.isPending} className="flex items-center gap-2 px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition disabled:opacity-40">
             {M.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />} Change
           </button>
         </div>
