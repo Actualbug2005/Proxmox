@@ -47,14 +47,13 @@ function ct(vmid: number, node_: string, cpu = 0, mem = 0, maxmem = 0, status = 
 }
 
 function task(upid: string, exitstatus: string | undefined, starttime: number): PVETask {
-  return {
-    upid,
-    node: 'pve',
-    type: 'test',
-    user: 'u@pam',
-    starttime,
-    exitstatus,
-  };
+  // exitstatus undefined === task is still running (no endtime either).
+  // Any string value means the task is terminal.
+  if (exitstatus === undefined) {
+    return { upid, node: 'pve', type: 'test', user: 'u@pam', starttime };
+  }
+  return { upid, node: 'pve', type: 'test', user: 'u@pam', starttime,
+    endtime: starttime + 1, exitstatus };
 }
 
 const nodeStatus = (load1: number): NodeStatus =>

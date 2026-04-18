@@ -7,7 +7,7 @@
  * already-fetched data.
  */
 
-import type { ClusterResourcePublic, NodeStatus, PVETask } from '@/types/proxmox';
+import { isTaskTerminal, type ClusterResourcePublic, type NodeStatus, type PVETask } from '@/types/proxmox';
 
 export interface TopGuest {
   id: string;
@@ -27,7 +27,8 @@ export interface RecentFailure {
   user: string;
   exitstatus: string;
   starttime: number;
-  endtime?: number;
+  /** Always set — a failure by definition has reached a terminal state. */
+  endtime: number;
 }
 
 export interface ClusterPressure {
@@ -121,15 +122,18 @@ export function computePressure(
     .slice(0, topN);
 
   // Recent failures: exitstatus present AND not 'OK'. Newest first.
+  // `isTaskTerminal` narrows to the TerminalPVETask variant so endtime/
+  // exitstatus are compile-time-guaranteed.
   const recentFailures: RecentFailure[] = tasks
-    .filter((t) => t.exitstatus && t.exitstatus !== 'OK')
+    .filter(isTaskTerminal)
+    .filter((t) => t.exitstatus !== 'OK')
     .map((t) => ({
       upid: t.upid,
       node: t.node,
       type: t.type,
       id: t.id,
       user: t.user,
-      exitstatus: t.exitstatus ?? '',
+      exitstatus: t.exitstatus,
       starttime: t.starttime,
       endtime: t.endtime,
     }))

@@ -367,18 +367,55 @@ export interface SmartData {
 
 export type TaskStatus = 'running' | 'stopped' | 'OK' | 'error';
 
-export interface PVETask {
+/**
+ * Fields common to every PVE task record, independent of run state.
+ * PVE returns these uniformly from both `/cluster/tasks` and
+ * `/nodes/{node}/tasks/{upid}/status`.
+ */
+interface PVETaskBase {
   upid: string;
   node: string;
   pid?: number;
   pstart?: number;
   starttime: number;
-  endtime?: number;
   type: string;
   id?: string;
   user: string;
-  status?: string;
-  exitstatus?: string;
+}
+
+/**
+ * A task still executing on PVE. `endtime` and `exitstatus` are absent
+ * per PVE's convention — they're only stamped when the task reaches a
+ * terminal state. `status` is optional because `/cluster/tasks`
+ * listings omit it while running.
+ */
+export interface RunningPVETask extends PVETaskBase {
+  status?: 'running';
+  endtime?: undefined;
+  exitstatus?: undefined;
+}
+
+/**
+ * A task that has finished. `endtime` and `exitstatus` are both set —
+ * 'OK' on success, any other string is a failure reason (e.g.
+ * "command 'qm reboot' failed: …").
+ */
+export interface TerminalPVETask extends PVETaskBase {
+  status?: 'stopped';
+  endtime: number;
+  exitstatus: string;
+}
+
+export type PVETask = RunningPVETask | TerminalPVETask;
+
+/**
+ * Type guard — after `isTaskTerminal(t)` is true, callers can reach for
+ * `t.endtime` and `t.exitstatus` without optional-chaining. Discriminates
+ * on endtime because PVE's cluster-level listing omits the `status` field
+ * while a task is running (only the per-node status endpoint fills it).
+ */
+export function isTaskTerminal(t: PVETask): t is TerminalPVETask {
+  return t.endtime !== undefined && t.exitstatus !== undefined;
 }
 
 // ─── Console ──────────────────────────────────────────────────────────────────
