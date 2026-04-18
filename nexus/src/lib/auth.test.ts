@@ -19,8 +19,15 @@ import {
 import { putSession, getStoredSession } from './session-store.ts';
 import type { PVEAuthSession } from '@/types/proxmox';
 import type { pveFetch } from '@/lib/pve-fetch';
+import { parseSessionTicket, parseCsrfToken, parseUserid } from '@/types/brands';
 
 type Fetcher = typeof pveFetch;
+
+// Valid CsrfToken is exactly 64 hex chars. Two distinct fixtures so
+// the "advance" assertion below verifies the field changed across
+// a renewal, not that it stayed constant.
+const CSRF_OLD = 'a'.repeat(64);
+const CSRF_NEW = 'b'.repeat(64);
 
 function fakeOk(body: unknown): Awaited<ReturnType<Fetcher>> {
   return {
@@ -44,9 +51,9 @@ function fakeFail(status: number): Awaited<ReturnType<Fetcher>> {
 }
 
 const baseSession = (): PVEAuthSession => ({
-  ticket: 'ticket-old',
-  csrfToken: 'csrf-old',
-  username: 'root@pam',
+  ticket: parseSessionTicket('ticket-old'),
+  csrfToken: parseCsrfToken(CSRF_OLD),
+  username: parseUserid('root@pam'),
   proxmoxHost: 'pve',
   ticketIssuedAt: Date.now() - PVE_TICKET_REFRESH_AFTER_MS - 1,
 });
@@ -76,11 +83,11 @@ describe('refreshPVESessionIfStale', () => {
     const sid = 'sid-renew-ok';
     await putSession(sid, session);
     const fetcher: Fetcher = async () =>
-      fakeOk({ data: { ticket: 'ticket-new', CSRFPreventionToken: 'csrf-new', username: session.username } });
+      fakeOk({ data: { ticket: 'ticket-new', CSRFPreventionToken: CSRF_NEW, username: session.username } });
 
     const result = await refreshPVESessionIfStale(sid, session, fetcher);
     assert.equal(result.ticket, 'ticket-new');
-    assert.equal(result.csrfToken, 'csrf-new');
+    assert.equal(result.csrfToken, CSRF_NEW);
     assert.equal(result.lastRenewalAttemptAt, undefined, 'must clear on success');
     assert.ok(result.ticketIssuedAt > session.ticketIssuedAt, 'issuedAt must advance');
 
@@ -128,11 +135,29 @@ describe('refreshPVESessionIfStale', () => {
     let calls = 0;
     const fetcher: Fetcher = async () => {
       calls += 1;
-      return fakeOk({ data: { ticket: 'ticket-recovered', CSRFPreventionToken: 'csrf-recovered', username: session.username } });
+      return fakeOk({ data: { ticket: 'ticket-recovered', CSRFPreventionToken: CSRF_NEW, username: session.username } });
     };
 
     const result = await refreshPVESessionIfStale(sid, session, fetcher);
     assert.equal(calls, 1, 'fetcher must be called once back-off has elapsed');
     assert.equal(result.ticket, 'ticket-recovered');
+  });
+
+  it('treats a malformed CSRF token from PVE as a renewal failure', async () => {
+    // If PVE (or a MITM) ever returns a CSRFPreventionToken that doesn't
+    // match the 64-hex shape, the parseCsrfToken call inside the renewal
+    // path throws. The function must catch it like any other renewal error
+    // rather than letting a garbage value land in the session store.
+    const session = baseSession();
+    const sid = 'sid-garbage-csrf';
+    await putSession(sid, session);
+    const fetcher: Fetcher = async () =>
+      fakeOk({ data: { ticket: 'ticket-ok', CSRFPreventionToken: 'not-a-hex-digest', username: session.username } });
+
+    const before = getRenewalFailureCount();
+    const result = await refreshPVESessionIfStale(sid, session, fetcher);
+    assert.equal(result.ticket, session.ticket, 'returns the stale session unchanged');
+    assert.ok(result.lastRenewalAttemptAt, 'stamps back-off');
+    assert.equal(getRenewalFailureCount(), before + 1, 'increments failure counter');
   });
 });

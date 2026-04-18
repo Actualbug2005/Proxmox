@@ -34,6 +34,8 @@ export type UnwireBool<T, K extends keyof T> = {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
+import type { CsrfToken, SessionTicket, Userid } from '@/types/brands';
+
 export interface PVETicketResponse {
   ticket: string;
   CSRFPreventionToken: string;
@@ -41,10 +43,19 @@ export interface PVETicketResponse {
   clustername?: string;
 }
 
+/**
+ * Server-side session envelope. The three brand-typed fields (`ticket`,
+ * `csrfToken`, `username`) are structurally identical to `string` at
+ * runtime but refuse raw-string assignment at compile time — the only
+ * sanctioned producers are `parseSessionTicket` / `parseCsrfToken` /
+ * `parseUserid` in `@/types/brands`. This catches accidental
+ * field-swap bugs (e.g. passing `csrfToken` where a PVE ticket was
+ * expected) before they ship.
+ */
 export interface PVEAuthSession {
-  ticket: string;
-  csrfToken: string;
-  username: string;
+  ticket: SessionTicket;
+  csrfToken: CsrfToken;
+  username: Userid;
   proxmoxHost: string;
   /** Unix ms when the PVE ticket was issued (or last refreshed). Used by the
    *  proxy to trigger a proactive refresh before PVE's ~2h expiry lands. */

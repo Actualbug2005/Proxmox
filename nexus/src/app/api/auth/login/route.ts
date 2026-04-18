@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { acquirePVETicket, startSession } from '@/lib/auth';
 import { takeToken, RATE_LIMITS } from '@/lib/rate-limit';
+import { parseSessionTicket, parseCsrfToken, parseUserid } from '@/types/brands';
 
 /**
  * Phase 2 hardening on this route:
@@ -135,9 +136,12 @@ export async function POST(req: NextRequest) {
   // ── Session creation ───────────────────────────────────────────────────
   try {
     const { csrfToken } = await startSession({
-      ticket: ticket.ticket,
-      csrfToken: ticket.CSRFPreventionToken,
-      username: ticket.username,
+      // Validate-on-ingress: PVE's ticket endpoint is the only trusted source
+      // of these strings, but we still parse so a PVE behavioural change
+      // can't sneak a malformed value into the session store.
+      ticket: parseSessionTicket(ticket.ticket),
+      csrfToken: parseCsrfToken(ticket.CSRFPreventionToken),
+      username: parseUserid(ticket.username),
       proxmoxHost,
       ticketIssuedAt: Date.now(),
     });
