@@ -154,22 +154,94 @@ jobs:
 
       - name: Generate release notes
         env:
+          # Both env vars come from trusted GitHub-controlled context: REPO is
+          # the repo full-name (validated by GitHub at workflow load), VERSION
+          # is the SemVer tag we just validated above. Neither is operator
+          # free-text. Commit messages (user content) NEVER touch the shell —
+          # they're piped through git → awk and end up as awk printf %s
+          # substitutions, which don't interpret format specifiers. Safe per
+          # https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
           REPO: ${{ github.repository }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Find previous release tag (ignores the one we're about to make).
-          PREV=$(git tag --list 'v*' --sort=-creatordate | head -1 || true)
+          # Resolve the previous release tag — the one immediately before the
+          # tag we're publishing now. The previous version of this script
+          # picked the most-recent tag without excluding the current ref,
+          # which silently produced empty changelog sections (an empty
+          # "${VERSION}..HEAD" range).
+          PREV=$(git tag --list 'v*' --sort=-creatordate \
+                  | grep -v -x -F "${VERSION}" \
+                  | head -1 || true)
+
+          # Conventional-commit categorisation. Each bucket grabs the lines
+          # matching its prefix (case-insensitive) and strips the prefix +
+          # optional scope so the rendered list reads cleanly. REPO is
+          # passed to awk via -v so user-controlled commit messages can't
+          # interfere with the shell quoting.
+          render_section() {
+            local heading="$1"
+            local pattern="$2"
+            local content
+            content=$(git log --pretty=format:'%H%x09%s' "${PREV}..HEAD" \
+                       | awk -F'\t' -v pat="$pattern" 'tolower($2) ~ pat { print $0 }' \
+                       | awk -F'\t' -v repo="$REPO" '{
+                           sha = substr($1, 1, 7);
+                           msg = $2;
+                           # Strip the leading "type(scope): " or "type: " prefix.
+                           sub(/^[a-zA-Z]+(\([^)]+\))?!?:[ ]*/, "", msg);
+                           printf("- %s ([%s](https://github.com/%s/commit/%s))\n", msg, sha, repo, $1);
+                         }')
+            if [[ -n "$content" ]]; then
+              echo ""
+              echo "### $heading"
+              echo ""
+              echo "$content"
+            fi
+          }
+
           {
             echo "## What's changed"
             echo ""
-            if [[ -n "$PREV" ]]; then
-              echo "Commits since ${PREV}:"
-              echo ""
-              # Commit messages are written to file (body_path), never interpolated
-              # into a shell command — safe even with backticks/$(...) in messages.
-              git log --pretty=format:'- %s (%h)' "${PREV}..HEAD"
-            else
+            if [[ -z "$PREV" ]]; then
               echo "Initial release."
+            else
+              echo "Commits since [\`${PREV}\`](https://github.com/${REPO}/releases/tag/${PREV}) → [\`${VERSION}\`](https://github.com/${REPO}/releases/tag/${VERSION}):"
+
+              render_section "Features"      '^feat'
+              render_section "Bug fixes"     '^fix'
+              render_section "Performance"   '^perf'
+              render_section "Refactoring"   '^refactor'
+              render_section "Tests"         '^test'
+              render_section "Documentation" '^docs'
+              render_section "Build / CI"    '^(build|ci)'
+              render_section "Chores"        '^chore'
+
+              # Anything that doesn't match a conventional-commit prefix
+              # falls into "Other" so nothing is silently dropped.
+              OTHER=$(git log --pretty=format:'%H%x09%s' "${PREV}..HEAD" \
+                       | awk -F'\t' '$2 !~ /^(feat|fix|perf|refactor|test|docs|build|ci|chore)(\([^)]+\))?!?:/ { print $0 }' \
+                       | awk -F'\t' -v repo="$REPO" '{
+                           sha = substr($1, 1, 7);
+                           printf("- %s ([%s](https://github.com/%s/commit/%s))\n", $2, sha, repo, $1);
+                         }')
+              if [[ -n "$OTHER" ]]; then
+                echo ""
+                echo "### Other"
+                echo ""
+                echo "$OTHER"
+              fi
+
+              # Diff stats — totals for the release.
+              echo ""
+              echo "### Diff stats"
+              echo ""
+              echo '```'
+              git diff --shortstat "${PREV}..HEAD"
+              echo '```'
+              echo ""
+              echo "**Full diff:** [\`${PREV}...${VERSION}\`](https://github.com/${REPO}/compare/${PREV}...${VERSION})"
             fi
+
             echo ""
             echo ""
             echo "## Install"
@@ -186,6 +258,10 @@ jobs:
             echo "nexus-update"
             echo '```'
           } > RELEASE_NOTES.md
+
+          echo "─── Generated release notes ───────────────────────────"
+          cat RELEASE_NOTES.md
+          echo "───────────────────────────────────────────────────────"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

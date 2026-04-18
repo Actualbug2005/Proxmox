@@ -2,9 +2,23 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
 import { api } from '@/lib/proxmox-client';
-import { RRDChart, type Timeframe, type SeriesSpec } from './rrd-chart';
+import type { Timeframe, SeriesSpec } from './rrd-chart';
 import { POLL_INTERVALS } from '@/hooks/use-cluster';
+
+// Lazy-load the recharts-heavy implementation. recharts is ~100KB gz; this
+// keeps it out of the initial bundle for VM/CT/node detail pages until the
+// user actually opens the metrics tab.
+const RRDChart = dynamic(() => import('./rrd-chart').then((m) => ({ default: m.RRDChart })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-48 studio-card">
+      <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
+    </div>
+  ),
+});
 
 interface VMMetricsChartProps {
   node: string;

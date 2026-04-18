@@ -45,6 +45,8 @@ import { Badge } from '@/components/ui/badge';
 import { useClusterResources, useDefaultNode } from '@/hooks/use-cluster';
 import { useStartScriptJob } from '@/hooks/use-script-jobs';
 import { ScheduleJobEditor } from '@/components/scripts/schedule-job-editor';
+import { ScriptLogo, TYPE_VARIANT } from '@/components/scripts/script-logo';
+import { ScriptsApiError, getJSON, humanizeError } from '@/lib/scripts-api';
 import type {
   CommunityScript,
   InstallMethod,
@@ -53,131 +55,6 @@ import type {
   ScriptNote,
 } from '@/lib/community-scripts';
 import type { GroupedEnvelope } from '@/app/api/scripts/route';
-
-// ─── Typed fetch helpers ─────────────────────────────────────────────────────
-
-interface ApiError {
-  status: number;
-  error: string;
-  kind?: 'timeout' | 'network' | 'http' | 'parse' | 'empty';
-  detail?: string;
-  upstreamStatus?: number | null;
-  upstreamUrl?: string;
-}
-
-class ScriptsApiError extends Error implements ApiError {
-  status: number;
-  error: string;
-  kind?: ApiError['kind'];
-  detail?: string;
-  upstreamStatus?: number | null;
-  upstreamUrl?: string;
-
-  constructor(body: ApiError) {
-    super(body.detail ?? body.error);
-    this.name = 'ScriptsApiError';
-    this.status = body.status;
-    this.error = body.error;
-    this.kind = body.kind;
-    this.detail = body.detail;
-    this.upstreamStatus = body.upstreamStatus;
-    this.upstreamUrl = body.upstreamUrl;
-  }
-}
-
-async function getJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    let body: Partial<ApiError> = {};
-    try {
-      body = (await res.json()) as Partial<ApiError>;
-    } catch {
-      /* ignore */
-    }
-    throw new ScriptsApiError({
-      status: res.status,
-      error: body.error ?? `HTTP ${res.status}`,
-      kind: body.kind,
-      detail: body.detail,
-      upstreamStatus: body.upstreamStatus ?? null,
-      upstreamUrl: body.upstreamUrl,
-    });
-  }
-  return (await res.json()) as T;
-}
-
-function humanizeError(err: unknown): { title: string; message: string; icon: 'timeout' | 'network' } {
-  if (err instanceof ScriptsApiError) {
-    if (err.kind === 'timeout' || err.status === 504) {
-      return {
-        title: 'Upstream took too long',
-        message:
-          'The community-scripts PocketBase endpoint did not respond in time. Try again in a moment.',
-        icon: 'timeout',
-      };
-    }
-    if (err.kind === 'http' && err.upstreamStatus === 429) {
-      return {
-        title: 'Upstream rate-limit reached',
-        message: 'Too many requests to the community-scripts API. Wait a minute and retry.',
-        icon: 'network',
-      };
-    }
-    if (err.kind === 'empty') {
-      return {
-        title: 'Upstream returned no scripts',
-        message: 'The PocketBase API responded but the index was empty — usually a transient upstream issue.',
-        icon: 'network',
-      };
-    }
-    return {
-      title: 'Failed to load community scripts',
-      message: err.detail ?? err.error,
-      icon: 'network',
-    };
-  }
-  return { title: 'Failed to load community scripts', message: String(err), icon: 'network' };
-}
-
-// ─── Small presentational atoms ──────────────────────────────────────────────
-
-const TYPE_VARIANT: Record<CommunityScript['type'], 'info' | 'warning' | 'outline' | 'success'> = {
-  ct: 'info',
-  vm: 'warning',
-  misc: 'outline',
-  addon: 'success',
-};
-
-function ScriptLogo({ script, size = 36 }: { script: Pick<CommunityScript, 'logo' | 'name'>; size?: number }) {
-  if (script.logo) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={script.logo}
-        alt=""
-        width={size}
-        height={size}
-        className="rounded-md bg-white/5 object-contain"
-        loading="lazy"
-        onError={(e) => {
-          // Fall back to placeholder when upstream CDN 404s.
-          (e.currentTarget as HTMLImageElement).style.display = 'none';
-          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-          if (fallback) fallback.style.display = 'flex';
-        }}
-      />
-    );
-  }
-  return (
-    <div
-      className="rounded-md bg-white/5 text-indigo-400 flex items-center justify-center"
-      style={{ width: size, height: size, display: script.logo ? 'none' : 'flex' }}
-      aria-hidden
-    >
-      <Package className="w-4 h-4" />
-    </div>
-  );
-}
 
 // ─── Sidebar (category tree) ─────────────────────────────────────────────────
 

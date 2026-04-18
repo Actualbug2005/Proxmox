@@ -1,8 +1,20 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
 import { useNodeRRD } from '@/hooks/use-cluster';
-import { RRDChart, type Timeframe, type SeriesSpec } from './rrd-chart';
+import type { Timeframe, SeriesSpec } from './rrd-chart';
+
+// Lazy-load — see vm-metrics-chart.tsx for the rationale (recharts ~100KB).
+const RRDChart = dynamic(() => import('./rrd-chart').then((m) => ({ default: m.RRDChart })), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-48 studio-card">
+      <Loader2 className="w-5 h-5 animate-spin text-[var(--color-fg-muted)]" />
+    </div>
+  ),
+});
 
 interface NodeMetricsChartProps {
   nodeName: string;
