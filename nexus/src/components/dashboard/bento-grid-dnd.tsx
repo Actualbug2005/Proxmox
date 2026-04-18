@@ -122,11 +122,23 @@ export function BentoGridDnd({ cells, onChange, editable = true }: BentoGridDndP
               gridColumn: `span ${cell.cols} / span ${cell.cols}`,
               gridRow: `span ${cell.rows} / span ${cell.rows}`,
             }}
+            // In edit mode the ENTIRE cell is the drag source. Out of
+            // edit mode draggable is off so links/buttons inside widgets
+            // behave normally. Dropping on the cell itself (not only
+            // the handle) keeps the target area generous.
+            draggable={editable}
+            onDragStart={editable ? (e) => handleDragStart(i, e) : undefined}
+            onDragEnd={editable ? handleDragEnd : undefined}
             onDragOver={(e) => handleDragOver(i, e)}
             onDrop={() => handleDrop(i)}
             onDragLeave={() => hoverIdx === i && setHoverIdx(null)}
             className={cn(
               'min-w-0 relative transition',
+              // Visual signal the card is pickable. Without this the
+              // native drag-handle cursor doesn't always show until the
+              // drag has already started, so users couldn't tell edit
+              // mode was live.
+              editable && 'cursor-grab active:cursor-grabbing ring-1 ring-inset ring-white/10 rounded-xl',
               isSource && 'opacity-40 scale-[0.98]',
               isHover &&
                 'outline outline-2 outline-[var(--color-accent-border,rgba(255,255,255,0.5))] outline-offset-2 rounded-xl',
@@ -135,30 +147,41 @@ export function BentoGridDnd({ cells, onChange, editable = true }: BentoGridDndP
             {editable && (
               <button
                 type="button"
-                // Draggable span inside — makes the drag handle the only
-                // grabbable region so interactive widget content (links,
-                // buttons) stays clickable.
-                draggable
-                onDragStart={(e) => handleDragStart(i, e)}
-                onDragEnd={handleDragEnd}
-                onClick={() => handleKeyboardPick(i)}
+                // Keyboard-accessible fallback. Clicking picks up / drops,
+                // the parent-div draggable handles the mouse path.
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleKeyboardPick(i);
+                }}
                 title={
                   keyboardSrc === i
                     ? 'Press again to cancel, or activate another card to swap'
-                    : 'Drag, or click to pick up; click another card to swap'
+                    : 'Drag the card to move it, or click this handle to pick up'
                 }
                 className={cn(
                   'absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md',
-                  'border border-white/10 bg-[var(--color-bg-raised,rgba(0,0,0,0.2))] text-[var(--color-fg-subtle)]',
-                  'opacity-0 transition hover:opacity-100 focus-visible:opacity-100',
+                  'border border-white/20 bg-black/40 text-[var(--color-fg-secondary)] backdrop-blur',
+                  'transition hover:border-white/40 hover:text-[var(--color-fg)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300',
-                  keyboardSrc === i && 'opacity-100 text-[var(--color-fg)]',
+                  keyboardSrc === i && 'border-[var(--color-accent-border,rgba(255,255,255,0.5))] text-[var(--color-fg)]',
                 )}
                 aria-label={`Reposition ${widget?.title ?? cell.widgetId}`}
                 aria-pressed={keyboardSrc === i}
               >
                 <GripVertical className="h-3.5 w-3.5" />
               </button>
+            )}
+            {/* Edit-mode overlay: sits above the widget content so its
+                 internal links/buttons/cards can't fire while the
+                 operator is rearranging. Transparent with a subtle
+                 "grab me" tint. Does not need to be draggable — the
+                 parent cell already is, and the overlay just forwards
+                 pointer events to that native drag. */}
+            {editable && (
+              <div
+                className="absolute inset-0 z-[5] rounded-xl bg-white/[0.02]"
+                aria-hidden="true"
+              />
             )}
             {widget ? (
               <widget.Component />
