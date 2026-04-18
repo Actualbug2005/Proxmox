@@ -157,6 +157,46 @@ export const COMPARISON_OPS = ['>', '>=', '<', '<=', '==', '!='] as const;
 export type ComparisonOp = (typeof COMPARISON_OPS)[number];
 
 /**
+ * Built-in backoff curves. Values are intervals (minutes) between
+ * successive fires while the predicate stays matching. The LAST entry
+ * is the steady-state cap — `consecutiveFires` beyond the array length
+ * keep waiting that interval (we don't "fall off" the curve).
+ *
+ * Gentle is the out-of-the-box default: 4 notifications in the first
+ * hour of sustained alerting, which matches how most ops teams tune
+ * their pager in practice.
+ */
+export const BACKOFF_CURVES = {
+  gentle:      [0, 5, 15, 60],
+  moderate:    [0, 5, 15, 30, 60],
+  aggressive:  [0, 2, 5, 10, 30, 60],
+  exponential: [0, 1, 2, 4, 8, 16, 32, 60],
+} as const;
+export type BuiltInCurveName = keyof typeof BACKOFF_CURVES;
+
+export interface BackoffConfig {
+  /** Preset name, or 'custom' to supply `customIntervalsMin`. */
+  curve: BuiltInCurveName | 'custom';
+  /**
+   * Required when curve = 'custom'. Must be non-empty; last value is
+   * the steady-state cap. Validated by `store.ts` on create/update.
+   */
+  customIntervalsMin?: number[];
+}
+
+/**
+ * Resolve-notification policy — controls whether the dispatcher fires
+ * a "resolved" message when a rule's predicate stops matching.
+ *   - 'always'     — fire on every clear, even after a single match
+ *   - 'multi-fire' — fire only if the rule sent ≥2 notifications in
+ *                    the current run (blips don't generate noise)
+ *   - 'never'      — silent on resolve; traditional Nagios-style
+ *
+ * Default is 'multi-fire' — you asked for option (c).
+ */
+export type ResolvePolicy = 'always' | 'multi-fire' | 'never';
+
+/**
  * Match criteria — structured JSON, deliberately NOT an expression
  * language. The matcher handles `eventKind` plus the optional metric
  * fields; other payload keys appear only as template variables.
@@ -194,6 +234,17 @@ export interface Rule {
   messageTemplate: string;
   /** Optional fixed-string title prefix for destinations that want one. */
   title?: string;
+
+  /**
+   * Optional per-rule backoff override. `undefined` means use the system
+   * default (Gentle curve). A rule can opt into aggressive paging for a
+   * specific alert without affecting the rest of the rule set.
+   */
+  backoff?: BackoffConfig;
+  /**
+   * Optional per-rule resolve policy. `undefined` = 'multi-fire' default.
+   */
+  resolvePolicy?: ResolvePolicy;
 
   // ─── backoff state ────────────────────────────────────────────────────────
   /** When the predicate first matched in the current "run" (cleared → matched). */
