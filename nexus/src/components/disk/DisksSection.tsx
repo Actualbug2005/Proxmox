@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { HardDrive, MoreHorizontal, Plus } from 'lucide-react';
 import { parseVolume, formatVolumeSize, type VolumeDescriptor } from '@/lib/disk/parse';
 import { ResizeDiskDialog } from './ResizeDiskDialog';
+import { AddDiskDialog } from './AddDiskDialog';
 
 export interface DisksSectionProps {
   type: 'qemu' | 'lxc';
@@ -26,7 +27,8 @@ export interface DisksSectionProps {
 
 type DialogState =
   | { kind: 'closed' }
-  | { kind: 'resize'; volume: VolumeDescriptor };
+  | { kind: 'resize'; volume: VolumeDescriptor }
+  | { kind: 'add' };
 
 /** Stable sort key so rootfs leads CT volumes, then slot alpha. */
 function slotLabel(v: VolumeDescriptor): string {
@@ -81,9 +83,8 @@ export function DisksSection({ type, node, vmid, config }: DisksSectionProps) {
           <h3 className="text-sm font-semibold text-white">{sectionTitle}</h3>
           <button
             type="button"
-            disabled
-            title="Coming in Task 4"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-overlay)] text-[var(--color-fg-subtle)] text-xs rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => setDialog({ kind: 'add' })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-xs rounded-lg transition"
           >
             <Plus className="w-3.5 h-3.5" />
             {addLabel}
@@ -172,6 +173,17 @@ export function DisksSection({ type, node, vmid, config }: DisksSectionProps) {
           node={node}
           vmid={vmid}
           volume={dialog.volume}
+        />
+      )}
+
+      {dialog.kind === 'add' && (
+        <AddDiskDialog
+          open
+          onClose={() => setDialog({ kind: 'closed' })}
+          type={type}
+          node={node}
+          vmid={vmid}
+          config={config}
         />
       )}
     </>
