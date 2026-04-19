@@ -58,16 +58,45 @@ export function AlertRuleModal({ open, onClose, draft }: AlertRuleModalProps) {
   // but internal edits during the current session persist via RuleForm's
   // own state. `destinations` is included so the default destination
   // picks up once the query resolves.
+  // Rebuild match from scalars so the memo's dep array is literal —
+  // parent widgets pass a fresh `draft` object every render (poll
+  // tick etc.), so keying on object identity would bust the memo each
+  // tick. Pulling scalar fields keeps the seed stable across renders.
+  const matchEventKind = draft.match.eventKind;
+  const matchMetric = draft.match.metric;
+  const matchOp = draft.match.op;
+  const matchThreshold = draft.match.threshold;
+  const matchScope = draft.match.scope;
+  const draftName = draft.name;
+  const draftTitle = draft.title;
+  const draftMessageTemplate = draft.messageTemplate;
+
   const initial: RuleFormValue = useMemo(
     () => ({
-      name: draft.name,
+      name: draftName,
       enabled: true,
-      title: draft.title,
-      match: draft.match,
+      title: draftTitle,
+      match: {
+        eventKind: matchEventKind,
+        metric: matchMetric,
+        op: matchOp,
+        threshold: matchThreshold,
+        scope: matchScope,
+      },
       destinationId: destinations[0]?.id ?? '',
-      messageTemplate: draft.messageTemplate ?? defaultTemplateFor(draft.match.eventKind),
+      messageTemplate: draftMessageTemplate ?? defaultTemplateFor(matchEventKind),
     }),
-    [draft, destinations],
+    [
+      draftName,
+      draftTitle,
+      matchEventKind,
+      matchMetric,
+      matchOp,
+      matchThreshold,
+      matchScope,
+      draftMessageTemplate,
+      destinations,
+    ],
   );
 
   if (!open) return null;

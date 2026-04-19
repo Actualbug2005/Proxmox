@@ -436,6 +436,8 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 eventKind: 'guest.disk.filling',
                 scope: vmScope,
               },
+              messageTemplate:
+                'Nexus alert: disk filling on VM {{vmid}} ({{node}}) — {{mountpoint}} at {{usedPct}} used',
             }}
           />
 

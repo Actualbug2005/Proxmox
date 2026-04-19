@@ -127,4 +127,34 @@ describe('countMatchingRules', () => {
     });
     assert.equal(n, 1);
   });
+
+  it('counts enabled rules with empty scope that match the metric', () => {
+    const rs = [
+      rule({ eventKind: 'metric.threshold.crossed', metric: 'guest.cpu', scope: '' }),
+    ];
+    assert.equal(
+      countMatchingRules(rs, { scope: 'guest:100', metric: 'guest.cpu' }),
+      1,
+    );
+  });
+
+  it('counts enabled rules with undefined scope that match the event kind', () => {
+    const rs = [rule({ eventKind: 'guest.service.failed' })]; // no scope field
+    assert.equal(
+      countMatchingRules(rs, { scope: 'guest:100', eventKind: 'guest.service.failed' }),
+      1,
+    );
+  });
+
+  it('does NOT count rules with bare-substring scopes (intentional UI narrowing)', () => {
+    const rs = [
+      rule({ eventKind: 'metric.threshold.crossed', metric: 'guest.cpu', scope: 'pve' }),
+    ];
+    // Server matcher would fire this rule on scope 'node:pve-01'; our bell
+    // intentionally under-counts to keep the UI promise honest.
+    assert.equal(
+      countMatchingRules(rs, { scope: 'node:pve-01', metric: 'guest.cpu' }),
+      0,
+    );
+  });
 });

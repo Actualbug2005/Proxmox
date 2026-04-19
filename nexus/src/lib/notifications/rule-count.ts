@@ -15,12 +15,20 @@
  *   // render <AlertBell rulesCount={count} onClick={openModal} />
  *   // render <AlertRuleModal open={open} onClose={closeModal} draft={...} />
  *
- * Scope filter matches the spirit of `rule-matcher.ts:scopeMatches` —
- * a rule targets this widget when its scope equals the widget scope OR
- * is a prefix terminated by `:` (deeper sub-scope) or `-` (node/vmid
- * hostname suffix). A rule with an empty scope (matches any) is NOT
- * counted here: the bell UX is about rules that specifically target
- * this widget's subject.
+ * NOTE — intentional narrower match vs. the server matcher.
+ * `rule-matcher.ts:scopeMatches` uses substring matching (with a
+ * numeric-boundary guard) so a rule scoped to `pve` will fire on events
+ * scoped to `node:pve-01`. This hook is stricter: it counts only rules
+ * whose scope is exactly the widget's scope OR a boundary prefix
+ * followed by `:` or `-` (e.g. `node:pve` counts for widget
+ * `node:pve-01`). The bell therefore under-counts in the rare case of
+ * bare-substring-scope rules; this is a deliberate UX choice — the
+ * bell should tell the operator "rules specifically targeting this
+ * subject" rather than "any rule that might fire on this subject".
+ *
+ * A rule with an empty / unset scope matches any widget that shares
+ * the metric or event kind — this is intentional: such rules act as
+ * "any-subject" alerts and should surface on every applicable bell.
  */
 
 import { useMemo, useState } from 'react';
@@ -58,8 +66,9 @@ export function countMatchingRules(
   return rules.filter((r) => {
     if (!r.enabled) return false;
     // Scope: exact OR prefix-with-boundary (`:` or `-`). Rules with an
-    // empty scope are intentionally not counted — the bell represents
-    // "rules specifically targeting this subject".
+    // empty / unset scope fall through intentionally — such rules act
+    // as "any-subject" alerts and should surface on every applicable
+    // bell that also matches the metric / event kind filter below.
     if (
       r.match.scope &&
       r.match.scope !== input.scope &&
