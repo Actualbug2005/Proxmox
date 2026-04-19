@@ -5,6 +5,13 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  MockAgent,
+  setGlobalDispatcher,
+  getGlobalDispatcher,
+  type Dispatcher,
+} from 'undici';
+import { __setPveDispatcherForTests } from '../pve-fetch.ts';
 import { saveConfig, deleteConfig } from './store.ts';
 import {
   loadServiceAccountAtBoot,
@@ -15,24 +22,44 @@ import {
 
 let dataDir: string;
 const origDataDir = process.env.NEXUS_DATA_DIR;
-let originalFetch: typeof globalThis.fetch;
+let originalDispatcher: Dispatcher;
+let mockAgent: MockAgent;
 
 before(() => {
   dataDir = mkdtempSync(join(tmpdir(), 'nexus-sa-session-'));
   process.env.NEXUS_DATA_DIR = dataDir;
-  originalFetch = globalThis.fetch;
-  // Default: probes succeed.
-  globalThis.fetch = (async () =>
-    new Response(JSON.stringify({ data: { '/': { 'Sys.Audit': 1 } } }), { status: 200 })) as typeof fetch;
+
+  // Route pveFetchWithToken through undici's MockAgent. The probe inside
+  // reloadServiceAccount() calls pveFetchWithToken without an init
+  // override, so we swap the default dispatcher via the test-only hook.
+  originalDispatcher = getGlobalDispatcher();
+  mockAgent = new MockAgent();
+  mockAgent.disableNetConnect();
+  setGlobalDispatcher(mockAgent);
+  __setPveDispatcherForTests(mockAgent);
 });
 
 beforeEach(async () => {
   await deleteConfig().catch(() => undefined);
   await reloadServiceAccount(); // reset singleton to whatever the filesystem says
+  // Re-arm a persistent intercept so every probe during a test succeeds.
+  // `.persist()` keeps the interceptor live across the multiple probes a
+  // test may trigger via reloadServiceAccount / loadServiceAccountAtBoot.
+  const pool = mockAgent.get('https://127.0.0.1:8006');
+  pool
+    .intercept({ path: '/api2/json/access/permissions', method: 'GET' })
+    .reply(
+      200,
+      { data: { '/': { 'Sys.Audit': 1 } } },
+      { headers: { 'content-type': 'application/json' } },
+    )
+    .persist();
 });
 
-after(() => {
-  globalThis.fetch = originalFetch;
+after(async () => {
+  __setPveDispatcherForTests(null);
+  await mockAgent.close();
+  setGlobalDispatcher(originalDispatcher);
   if (origDataDir !== undefined) process.env.NEXUS_DATA_DIR = origDataDir;
   else delete process.env.NEXUS_DATA_DIR;
   rmSync(dataDir, { recursive: true, force: true });

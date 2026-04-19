@@ -1,3 +1,4 @@
+import type { Dispatcher } from 'undici';
 import { pveFetchWithToken } from '../pve-fetch.ts';
 import type { ServiceAccountSession } from './types.ts';
 
@@ -29,13 +30,17 @@ function describeFetchError(err: unknown, url: string): string {
 
 export async function probeServiceAccount(
   session: ServiceAccountSession,
+  initOverride?: { dispatcher?: Dispatcher },
 ): Promise<{ ok: true; userid: string } | { ok: false; error: string }> {
   const userid = session.tokenId;
   const url = `https://${session.proxmoxHost}:8006/api2/json/access/permissions`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
-    const res = await pveFetchWithToken(session, url, { signal: controller.signal });
+    const res = await pveFetchWithToken(session, url, {
+      signal: controller.signal,
+      ...(initOverride ?? {}),
+    });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       return { ok: false, error: `HTTP ${res.status}: ${body || res.statusText}` };

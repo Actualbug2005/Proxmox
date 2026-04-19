@@ -28,7 +28,12 @@
  * fingerprint.
  */
 
-import { Agent, fetch as undiciFetch, type RequestInit as UndiciRequestInit } from 'undici';
+import {
+  Agent,
+  fetch as undiciFetch,
+  type Dispatcher,
+  type RequestInit as UndiciRequestInit,
+} from 'undici';
 
 import type { ServiceAccountSession } from './service-account/types.ts';
 
@@ -43,6 +48,24 @@ const pveAgent = new Agent({
   keepAliveTimeout: 10_000,
   keepAliveMaxTimeout: 60_000,
 });
+
+// Active dispatcher used by pveFetchWithToken when the caller doesn't supply
+// its own. In production this stays pinned to `pveAgent`. The exported
+// setter below lets the test suite swap in an undici MockAgent so requests
+// from code paths that don't expose an init override (e.g. the probe invoked
+// inside `reloadServiceAccount`) can be intercepted without stubbing the
+// global `fetch`.
+let currentPveDispatcher: Dispatcher = pveAgent;
+
+/**
+ * Test-only hook: replace the dispatcher used by {@link pveFetchWithToken}.
+ * Production code never calls this; it exists so the test suite can route
+ * pveFetchWithToken through undici's MockAgent without monkey-patching
+ * `globalThis.fetch`. Pass `null` to restore the default scoped `pveAgent`.
+ */
+export function __setPveDispatcherForTests(d: Dispatcher | null): void {
+  currentPveDispatcher = d ?? pveAgent;
+}
 
 /**
  * Scoped fetch with TLS verification disabled — use ONLY for calls to
@@ -71,22 +94,28 @@ export function pveFetch(
  * ticket cookie, no CSRF header (API tokens don't need CSRF since the
  * secret itself is the credential).
  *
- * Uses the global `fetch` so that callers can stub it in tests; the shared
- * `pveAgent` is passed via the `dispatcher` option, which Node's global
- * fetch honours (it's undici under the hood), preserving the same scoped
- * self-signed-cert bypass as {@link pveFetch}.
+ * Goes through undici's fetch (same as {@link pveFetch}) so the shared
+ * `pveAgent` dispatcher is honoured reliably across every Node version —
+ * Node's global fetch silently broke `dispatcher` support on some 22.x
+ * minors and surfaced as `UND_ERR_INVALID_ARG: invalid onRequestStart
+ * method` against PVE.
  */
-export async function pveFetchWithToken(
+export function pveFetchWithToken(
   session: ServiceAccountSession,
-  url: string,
-  init?: RequestInit,
-): Promise<Response> {
-  const headers = new Headers(init?.headers);
-  headers.set('Authorization', `PVEAPIToken=${session.tokenId}=${session.secret}`);
-  const finalInit: RequestInit & { dispatcher?: Agent } = {
-    ...init,
-    headers,
-    dispatcher: pveAgent,
-  };
-  return globalThis.fetch(url, finalInit);
+  url: string | URL,
+  init?: UndiciRequestInit,
+): ReturnType<typeof undiciFetch> {
+  // Build a clean init object. Caller may override the dispatcher (tests
+  // inject a MockAgent/Pool); production callers leave it unset so the
+  // shared pveAgent is used.
+  const merged = { dispatcher: currentPveDispatcher, ...init };
+  const authValue = `PVEAPIToken=${session.tokenId}=${session.secret}`;
+  if (merged.headers instanceof Array) {
+    merged.headers = [...merged.headers, ['Authorization', authValue]];
+  } else if (merged.headers && typeof merged.headers === 'object') {
+    merged.headers = { ...(merged.headers as Record<string, string>), Authorization: authValue };
+  } else {
+    merged.headers = { Authorization: authValue };
+  }
+  return undiciFetch(url, merged);
 }
