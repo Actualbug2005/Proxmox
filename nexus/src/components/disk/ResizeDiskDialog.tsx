@@ -21,6 +21,7 @@
 import { useMemo, useState } from 'react';
 import { Loader2, AlertCircle, X, HardDrive } from 'lucide-react';
 import { ModalShell } from '@/components/ui/modal-shell';
+import { useToast } from '@/components/ui/toast';
 import { UnitInput } from '@/components/ui/unit-input';
 import { useCsrfMutation } from '@/lib/create-csrf-mutation';
 import { formatVolumeSize, type VolumeDescriptor } from '@/lib/disk/parse';
@@ -53,6 +54,7 @@ export function ResizeDiskDialog({
   vmid,
   volume,
 }: ResizeDiskDialogProps) {
+  const toast = useToast();
   const currentMiB = volume.sizeMiB;
   // Floor the initial value at the current size expressed in whole GiB
   // (rounded up — the UnitInput `min` uses the same ceil so the initial
@@ -94,14 +96,15 @@ export function ResizeDiskDialog({
       { disk: slot, size: sizeParam },
       {
         onSuccess: () => {
-          // TODO: surface this as a user-visible toast once the app has a toast primitive.
           if (type === 'qemu') {
-            console.info(
-              `Disk grown to ${formatVolumeSize(newMiB)}. Log into the VM and run 'sudo growpart /dev/sda 1 && sudo resize2fs /dev/sda1' (or equivalent) to expand the filesystem.`,
+            toast.success(
+              `Disk grown to ${formatVolumeSize(newMiB)}`,
+              `Log into the VM and run 'sudo growpart /dev/sda 1 && sudo resize2fs /dev/sda1' (or equivalent) to expand the filesystem.`,
             );
           } else {
-            console.info(
-              `${slot} grown to ${formatVolumeSize(newMiB)}. The filesystem has been expanded automatically.`,
+            toast.success(
+              `${slot} grown to ${formatVolumeSize(newMiB)}`,
+              'The filesystem has been expanded automatically.',
             );
           }
           onClose();
