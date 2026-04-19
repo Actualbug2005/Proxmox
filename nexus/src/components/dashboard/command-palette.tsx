@@ -17,6 +17,7 @@ import {
   RotateCcw,
   LogOut,
   Search,
+  KeyRound,
 } from 'lucide-react';
 import { useClusterResources } from '@/hooks/use-cluster';
 import { api, readCsrfCookie } from '@/lib/proxmox-client';
@@ -132,6 +133,7 @@ export function CommandPalette() {
                 { label: 'Tasks', href: '/dashboard/tasks', icon: Activity },
                 { label: 'Console', href: '/console', icon: Terminal },
                 { label: 'Community Scripts', href: '/scripts', icon: Code2 },
+                { label: 'Service Account', href: '/dashboard/system/service-account', icon: KeyRound },
               ]
                 .filter(
                   (item) =>
