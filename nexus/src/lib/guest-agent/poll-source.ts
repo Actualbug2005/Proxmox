@@ -27,6 +27,11 @@ const DEFAULT_TICK_MS = 60_000;
 const DEFAULT_PRESSURE_THRESHOLD = 0.85;
 const DEFAULT_UNREACHABLE_THRESHOLD = 3;
 const PROBE_CONCURRENCY = 4;
+/** Run the services probe every Nth tick. Kept lightweight so the default
+ *  60s cadence only runs `systemctl list-units` every 3 minutes per guest. */
+const SERVICES_PROBE_EVERY_N_TICKS = 3;
+
+let tickCounter = 0;
 
 /** One entry in the fleet the poll source iterates over. */
 export interface GuestTarget {
@@ -41,6 +46,12 @@ interface GuestTickState {
   fillingMounts: Set<string>;
   /** True once we've already fired `guest.agent.unreachable` this run. */
   unreachableFired: boolean;
+  /** Set of unit names currently failing — for edge detection. */
+  failedUnits: Set<string>;
+  /** First-observed wall-time per unit — persisted across ticks so a
+   *  resolved-then-returned unit gets its original timestamp back if it's
+   *  still in `firstObserved`. Entries cleared on resolve. */
+  firstObserved: Map<string, number>;
 }
 
 const tickState = new Map<string, GuestTickState>();
@@ -52,7 +63,13 @@ function keyOf(node: string, vmid: number): string {
 function ensureState(k: string): GuestTickState {
   let s = tickState.get(k);
   if (!s) {
-    s = { consecutiveUnreachable: 0, fillingMounts: new Set(), unreachableFired: false };
+    s = {
+      consecutiveUnreachable: 0,
+      fillingMounts: new Set(),
+      unreachableFired: false,
+      failedUnits: new Set(),
+      firstObserved: new Map(),
+    };
     tickState.set(k, s);
   }
   return s;
@@ -80,6 +97,7 @@ export interface PollSourceOptions {
 async function probeFleet(
   guests: GuestTarget[],
   session: ServiceAccountSession,
+  probeServices: boolean,
 ): Promise<GuestProbe[]> {
   const out: GuestProbe[] = new Array(guests.length);
   let cursor = 0;
@@ -88,7 +106,7 @@ async function probeFleet(
       const idx = cursor++;
       if (idx >= guests.length) return;
       const g = guests[idx];
-      out[idx] = await probeGuest({ session, node: g.node, vmid: g.vmid });
+      out[idx] = await probeGuest({ session, node: g.node, vmid: g.vmid, probeServices });
     }
   }
   await Promise.all(
@@ -175,6 +193,51 @@ export function processProbes(
       }
     }
     state.fillingMounts = nowFilling;
+
+    // Services probe — off-ticks leave `failedServices` undefined so we
+    // skip the edge/resolve bookkeeping entirely (otherwise every off-tick
+    // would look like "all units cleared" and emit spurious resolves).
+    if (probe.failedServices !== undefined) {
+      const nowFailing = new Set<string>();
+      for (const svc of probe.failedServices) {
+        nowFailing.add(svc.unit);
+        if (!state.failedUnits.has(svc.unit)) {
+          // Edge: empty→present. Record (or reuse) observation time and emit.
+          const since = state.firstObserved.get(svc.unit) ?? opts.now;
+          state.firstObserved.set(svc.unit, since);
+          emit({
+            kind: 'guest.service.failed',
+            at: opts.now,
+            payload: {
+              vmid: probe.vmid,
+              node: probe.node,
+              unit: svc.unit,
+              description: svc.description,
+              since,
+            },
+          });
+        }
+      }
+      // Resolve: units that left the failing set since last tick.
+      for (const prev of state.failedUnits) {
+        if (!nowFailing.has(prev)) {
+          state.firstObserved.delete(prev);
+          emit({
+            kind: 'guest.service.failed',
+            at: opts.now,
+            payload: {
+              vmid: probe.vmid,
+              node: probe.node,
+              unit: prev,
+              description: '',
+              since: 0,
+            },
+            __resolve: true,
+          });
+        }
+      }
+      state.failedUnits = nowFailing;
+    }
   }
 
   // GC state for guests that dropped out of the fleet (deleted, agent
@@ -190,19 +253,26 @@ export function processProbes(
 export async function runTick(opts: PollSourceOptions): Promise<void> {
   const session = opts.getSession();
   if (!session) return; // Boot in progress; skip silently.
-  const guests = await opts.fetchGuests();
-  const now = Date.now();
-  if (guests.length === 0) {
-    setSnapshot({ updatedAt: now, probes: [], pressures: [] });
-    return;
+  // Decide BEFORE the fetch so an empty-fleet tick still advances the
+  // counter — keeps the cadence stable regardless of guest churn.
+  const probeServices = tickCounter % SERVICES_PROBE_EVERY_N_TICKS === 0;
+  try {
+    const guests = await opts.fetchGuests();
+    const now = Date.now();
+    if (guests.length === 0) {
+      setSnapshot({ updatedAt: now, probes: [], pressures: [] });
+      return;
+    }
+    const probes = await probeFleet(guests, session, probeServices);
+    const pressures = processProbes(probes, {
+      pressureThreshold: opts.pressureThreshold ?? DEFAULT_PRESSURE_THRESHOLD,
+      unreachableThreshold: opts.unreachableThreshold ?? DEFAULT_UNREACHABLE_THRESHOLD,
+      now,
+    });
+    setSnapshot({ updatedAt: now, probes, pressures });
+  } finally {
+    tickCounter += 1;
   }
-  const probes = await probeFleet(guests, session);
-  const pressures = processProbes(probes, {
-    pressureThreshold: opts.pressureThreshold ?? DEFAULT_PRESSURE_THRESHOLD,
-    unreachableThreshold: opts.unreachableThreshold ?? DEFAULT_UNREACHABLE_THRESHOLD,
-    now,
-  });
-  setSnapshot({ updatedAt: now, probes, pressures });
 }
 
 // ─── Timer lifecycle ───────────────────────────────────────────────────────
@@ -242,4 +312,5 @@ export function startPollSource(opts: PollSourceOptions): () => void {
 /** Test-only state reset. */
 export function __resetTickState(): void {
   tickState.clear();
+  tickCounter = 0;
 }

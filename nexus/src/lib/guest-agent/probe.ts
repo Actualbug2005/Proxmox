@@ -16,7 +16,8 @@
 import { pveFetch, pveFetchWithToken } from '../pve-fetch.ts';
 import type { PVEAuthSession } from '../../types/proxmox.ts';
 import type { ServiceAccountSession } from '../service-account/types.ts';
-import type { GuestFilesystem, GuestProbe } from './types.ts';
+import { parseFailedUnits } from './services-probe.ts';
+import type { GuestFailedService, GuestFilesystem, GuestProbe } from './types.ts';
 
 /**
  * The probe accepts either a user-auth PVE ticket session (used by the
@@ -37,6 +38,11 @@ interface ProbeArgs {
   /** Request timeout in ms. QMP agents can hang for a long time if the
    *  guest is frozen; we bound the whole probe aggressively. Default 5s. */
   timeoutMs?: number;
+  /** Opt-in services probe. Runs `systemctl list-units --state=failed` via
+   *  `/agent/exec` after a successful base probe. Default false so existing
+   *  callers (the on-demand route) don't suddenly pay the cost. The poll
+   *  source opts in on a 1/3 cadence — see `SERVICES_PROBE_EVERY_N_TICKS`. */
+  probeServices?: boolean;
 }
 
 /**
@@ -113,6 +119,7 @@ export async function probeGuest({
   node,
   vmid,
   timeoutMs = 5000,
+  probeServices = false,
 }: ProbeArgs): Promise<GuestProbe> {
   const base = `https://${session.proxmoxHost}:8006/api2/json/nodes/${encodeURIComponent(node)}/qemu/${vmid}/agent`;
   // Ticket-auth needs Cookie + CSRF; token-auth paths ignore these because
@@ -162,31 +169,33 @@ export async function probeGuest({
   // guest "reachable" (agent responded to ping) but return an empty fs
   // list with the reason attached, so the UI distinguishes "stale data"
   // from "unreachable agent".
+  let probe: GuestProbe;
   try {
     const res = await fetchWithTimeout(session, `${base}/get-fsinfo`, { headers }, timeoutMs);
     if (!res.ok) {
-      return {
+      probe = {
         vmid,
         node,
         reachable: true,
         reason: `fsinfo: ${res.status} ${res.statusText}`,
         filesystems: [],
       };
+    } else {
+      const json = (await res.json()) as { data?: { result?: RawFsinfo[] } | RawFsinfo[] };
+      // PVE nests the QMP result under `data.result`; older releases returned
+      // `data` directly as the array. Accept both.
+      const raw = Array.isArray(json.data)
+        ? json.data
+        : Array.isArray(json.data?.result)
+          ? json.data!.result!
+          : [];
+      const filesystems = raw
+        .map(normaliseFs)
+        .filter((f): f is GuestFilesystem => f !== null);
+      probe = { vmid, node, reachable: true, filesystems };
     }
-    const json = (await res.json()) as { data?: { result?: RawFsinfo[] } | RawFsinfo[] };
-    // PVE nests the QMP result under `data.result`; older releases returned
-    // `data` directly as the array. Accept both.
-    const raw = Array.isArray(json.data)
-      ? json.data
-      : Array.isArray(json.data?.result)
-        ? json.data!.result!
-        : [];
-    const filesystems = raw
-      .map(normaliseFs)
-      .filter((f): f is GuestFilesystem => f !== null);
-    return { vmid, node, reachable: true, filesystems };
   } catch (err) {
-    return {
+    probe = {
       vmid,
       node,
       reachable: true,
@@ -195,5 +204,107 @@ export async function probeGuest({
         : `fsinfo: ${err instanceof Error ? err.message : String(err)}`,
       filesystems: [],
     };
+  }
+
+  // Step 3 — optional services probe (1/3 cadence from the poll source).
+  // Only run if the base probe was reachable; leaves `failedServices`
+  // undefined on off-ticks or on its own failures, so `processProbes` can
+  // distinguish "skipped this tick" from "probed and saw zero failures"
+  // (which would be `[]`).
+  if (probeServices && probe.reachable) {
+    try {
+      const failedServices = await probeFailedServices(session, base, headers, timeoutMs);
+      probe.failedServices = failedServices;
+    } catch (err) {
+      console.warn(
+        '[nexus event=guest_services_probe_failed] vmid=%d reason=%s',
+        vmid,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  return probe;
+}
+
+// ─── Services probe (systemctl via /agent/exec) ──────────────────────────
+//
+// PVE wraps QMP's guest-exec / guest-exec-status under these two endpoints:
+//   POST /api2/json/nodes/{node}/qemu/{vmid}/agent/exec
+//        body: command=<binary>&command=<arg>&command=<arg>…
+//        returns { data: { pid: number } }
+//   GET  /api2/json/nodes/{node}/qemu/{vmid}/agent/exec-status?pid={pid}
+//        returns { data: { exited, exitcode, out-data (base64), err-data } }
+//
+// We kick off `systemctl list-units --state=failed …`, poll exec-status at
+// short intervals until `exited=1` or the overall timeout trips, then
+// base64-decode `out-data` and hand it to `parseFailedUnits`.
+
+const SERVICES_POLL_INTERVAL_MS = 250;
+
+async function probeFailedServices(
+  session: ProbeSession,
+  base: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+): Promise<GuestFailedService[]> {
+  // Build form-encoded body. PVE expects one `command=` pair per argv
+  // element so we don't let the guest-agent do its own shell-style split.
+  const argv = [
+    'systemctl',
+    'list-units',
+    '--state=failed',
+    '--no-legend',
+    '--plain',
+    '--no-pager',
+  ];
+  const execBody = argv.map((a) => `command=${encodeURIComponent(a)}`).join('&');
+
+  const execRes = await fetchWithTimeout(
+    session,
+    `${base}/exec`,
+    {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: execBody,
+    },
+    timeoutMs,
+  );
+  if (!execRes.ok) {
+    throw new Error(`exec: ${execRes.status} ${execRes.statusText}`);
+  }
+  const execJson = (await execRes.json()) as { data?: { pid?: number } };
+  const pid = execJson.data?.pid;
+  if (typeof pid !== 'number') {
+    throw new Error('exec: missing pid');
+  }
+
+  // Poll exec-status. Overall deadline bounded by timeoutMs; exec itself
+  // fires-and-forgets so the only way we learn the command finished is to
+  // keep checking `exited`.
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const statusRes = await fetchWithTimeout(
+      session,
+      `${base}/exec-status?pid=${pid}`,
+      { headers },
+      Math.max(500, deadline - Date.now()),
+    );
+    if (!statusRes.ok) {
+      throw new Error(`exec-status: ${statusRes.status} ${statusRes.statusText}`);
+    }
+    const statusJson = (await statusRes.json()) as {
+      data?: { exited?: 0 | 1 | boolean; 'out-data'?: string };
+    };
+    const data = statusJson.data ?? {};
+    if (data.exited === 1 || data.exited === true) {
+      const outB64 = data['out-data'] ?? '';
+      const stdout = outB64 ? Buffer.from(outB64, 'base64').toString('utf8') : '';
+      return parseFailedUnits(stdout).map((p) => ({ ...p, since: 0 }));
+    }
+    if (Date.now() >= deadline) {
+      throw new Error('exec-status timeout');
+    }
+    await new Promise((resolve) => setTimeout(resolve, SERVICES_POLL_INTERVAL_MS));
   }
 }

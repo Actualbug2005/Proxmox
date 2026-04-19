@@ -129,3 +129,73 @@ describe('guest-agent poll-source — processProbes', () => {
     assert.equal(take().length, 0);
   });
 });
+
+describe('guest-agent poll-source — services probing', () => {
+  beforeEach(() => {
+    __resetTickState();
+    busTesting.clear();
+  });
+
+  it('emits guest.service.failed when a unit first appears in the failed set', () => {
+    const take = captureEvents();
+    const probe: GuestProbe = {
+      vmid: 101, node: 'pve-01', reachable: true, filesystems: [],
+      failedServices: [{ unit: 'nginx.service', description: 'Nginx', since: 0 }],
+    };
+    processProbes([probe], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 1000 });
+    const events = take();
+    assert.equal(events.length, 1);
+    assert.equal(events[0].kind, 'guest.service.failed');
+    if (events[0].kind === 'guest.service.failed') {
+      assert.equal(events[0].payload.unit, 'nginx.service');
+      assert.equal(events[0].payload.since, 1000);
+    }
+  });
+
+  it('does not re-emit while the unit stays failing', () => {
+    const take = captureEvents();
+    const probe: GuestProbe = {
+      vmid: 101, node: 'pve-01', reachable: true, filesystems: [],
+      failedServices: [{ unit: 'nginx.service', description: 'Nginx', since: 0 }],
+    };
+    processProbes([probe], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 1000 });
+    processProbes([probe], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 2000 });
+    assert.equal(take().length, 1, 'edge-trigger — no re-emit while failing');
+  });
+
+  it('emits a resolve event when the unit leaves the failing set', () => {
+    const take = captureEvents();
+    const failing: GuestProbe = {
+      vmid: 101, node: 'pve-01', reachable: true, filesystems: [],
+      failedServices: [{ unit: 'nginx.service', description: 'Nginx', since: 0 }],
+    };
+    const cleared: GuestProbe = { ...failing, failedServices: [] };
+    processProbes([failing], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 1000 });
+    processProbes([cleared], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 2000 });
+    const events = take();
+    assert.equal(events.length, 2);
+    assert.equal(events[1].kind, 'guest.service.failed');
+    assert.equal(events[1].__resolve, true);
+    if (events[1].kind === 'guest.service.failed') {
+      assert.equal(events[1].payload.unit, 'nginx.service');
+    }
+  });
+
+  it('skips the services block when probe.failedServices is undefined (off-tick)', () => {
+    const take = captureEvents();
+    // First tick: services ran and saw nginx failing.
+    const onTick: GuestProbe = {
+      vmid: 101, node: 'pve-01', reachable: true, filesystems: [],
+      failedServices: [{ unit: 'nginx.service', description: 'Nginx', since: 0 }],
+    };
+    processProbes([onTick], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 1000 });
+    assert.equal(take().length, 1, 'first tick emits initial failed event');
+
+    // Second tick: services probe skipped — failedServices undefined.
+    // Must NOT emit a spurious resolve just because the unit isn't in
+    // the (absent) current set.
+    const offTick: GuestProbe = { vmid: 101, node: 'pve-01', reachable: true, filesystems: [] };
+    processProbes([offTick], { pressureThreshold: 0.85, unreachableThreshold: 3, now: 2000 });
+    assert.equal(take().length, 1, 'off-tick must not emit');
+  });
+});
