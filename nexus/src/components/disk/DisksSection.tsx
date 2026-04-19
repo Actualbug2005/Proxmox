@@ -14,8 +14,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HardDrive, MoreHorizontal, Plus } from 'lucide-react';
-import { parseVolume, formatVolumeSize, type VolumeDescriptor } from '@/lib/disk/parse.ts';
-import { ResizeDiskDialog } from './ResizeDiskDialog.tsx';
+import { parseVolume, formatVolumeSize, type VolumeDescriptor } from '@/lib/disk/parse';
+import { ResizeDiskDialog } from './ResizeDiskDialog';
 
 export interface DisksSectionProps {
   type: 'qemu' | 'lxc';

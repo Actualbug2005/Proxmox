@@ -19,7 +19,7 @@ import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { MigrateWizard } from '@/components/migrate/migrate-wizard';
 import { CloneWizard } from '@/components/clone/clone-wizard';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
-import { DisksSection } from '@/components/disk/DisksSection.tsx';
+import { DisksSection } from '@/components/disk/DisksSection';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
@@ -474,7 +474,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               </div>
 
               {/* Disks */}
-              <DisksSection type="qemu" node={node} vmid={Number(vmid)} config={config} />
+              <DisksSection type="qemu" node={node} vmid={vmid} config={config} />
 
               {/* Network */}
               {netSlots.length > 0 && (
