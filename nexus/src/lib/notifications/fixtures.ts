@@ -129,6 +129,17 @@ export function fixtureEvent(kind: EventKind): NotificationEvent {
           reason: 'QMP ping timeout (5s)',
         },
       };
+    case 'guest.service.failed':
+      return {
+        kind, at: AT_FIXED,
+        payload: {
+          vmid: 100,
+          node: 'pve-01',
+          unit: 'nginx.service',
+          description: 'A high performance web server and a reverse proxy server',
+          since: Date.parse('2026-04-18T12:32:41.000Z'),
+        },
+      };
     case 'nexus.update.available':
       return {
         kind, at: AT_FIXED,
@@ -186,6 +197,7 @@ export const KIND_LABELS: Record<EventKind, string> = {
   'drs.migration.failed':    'DRS migration failed',
   'guest.disk.filling':      'Guest disk filling up',
   'guest.agent.unreachable': 'Guest agent unreachable',
+  'guest.service.failed':    'Guest service failed (systemd)',
   'nexus.update.available':  'Nexus update available',
   'nexus.update.installed':  'Nexus auto-update installed',
   'nexus.update.deferred':   'Nexus auto-update deferred',
@@ -214,7 +226,7 @@ export const KIND_GROUPS: ReadonlyArray<{
   },
   {
     label: 'Guest health (agent)',
-    kinds: ['guest.disk.filling', 'guest.agent.unreachable'],
+    kinds: ['guest.disk.filling', 'guest.agent.unreachable', 'guest.service.failed'],
   },
   {
     label: 'Auto-update',
