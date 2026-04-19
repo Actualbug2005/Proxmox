@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useCsrfMutation } from '@/lib/create-csrf-mutation';
 import type { ServiceAccountStatus } from '@/lib/service-account/session';
 
@@ -13,6 +13,7 @@ pveum user token add nexus@pve automation --privsep 0`;
 function timeAgo(ts: number | null): string {
   if (!ts) return '';
   const diff = Date.now() - ts;
+  if (diff < 0) return new Date(ts).toLocaleString();
   if (diff < 60_000) return 'just now';
   const mins = Math.floor(diff / 60_000);
   if (mins < 60) return `${mins}m ago`;
@@ -22,7 +23,6 @@ function timeAgo(ts: number | null): string {
 }
 
 export default function ServiceAccountPage() {
-  const qc = useQueryClient();
   const { data: status } = useQuery<ServiceAccountStatus>({
     queryKey: ['service-account', 'status'],
     queryFn: async () => {
@@ -62,7 +62,6 @@ export default function ServiceAccountPage() {
       {
         onSuccess: () => {
           setSecret('');
-          void qc.invalidateQueries({ queryKey: ['service-account', 'status'] });
         },
       },
     );
@@ -73,17 +72,12 @@ export default function ServiceAccountPage() {
       onSuccess: () => {
         setTokenId('');
         setSecret('');
-        void qc.invalidateQueries({ queryKey: ['service-account', 'status'] });
       },
     });
   }
 
   function onReVerify() {
-    probeMutation.mutate(undefined, {
-      onSuccess: () => {
-        void qc.invalidateQueries({ queryKey: ['service-account', 'status'] });
-      },
-    });
+    probeMutation.mutate(undefined);
   }
 
   if (!status) {
@@ -138,6 +132,14 @@ export default function ServiceAccountPage() {
               {deleteMutation.isPending ? 'Disconnecting…' : 'Disconnect'}
             </button>
           </div>
+          {(probeMutation.error || deleteMutation.error) && (
+            <p className="text-sm text-[var(--color-err)] bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg px-3 py-2">
+              {(() => {
+                const err = probeMutation.error ?? deleteMutation.error;
+                return err instanceof Error ? err.message : String(err);
+              })()}
+            </p>
+          )}
         </div>
       )}
 
@@ -163,6 +165,14 @@ export default function ServiceAccountPage() {
               {deleteMutation.isPending ? 'Disconnecting…' : 'Disconnect'}
             </button>
           </div>
+          {(probeMutation.error || deleteMutation.error) && (
+            <p className="text-sm text-[var(--color-err)] bg-[var(--color-err)]/10 border border-[var(--color-err)]/20 rounded-lg px-3 py-2">
+              {(() => {
+                const err = probeMutation.error ?? deleteMutation.error;
+                return err instanceof Error ? err.message : String(err);
+              })()}
+            </p>
+          )}
         </div>
       )}
 
@@ -207,7 +217,7 @@ export default function ServiceAccountPage() {
         )}
         <button
           onClick={onSave}
-          disabled={!canSubmit || saveMutation.isPending}
+          disabled={!canSubmit || saveMutation.isPending || probeMutation.isPending || deleteMutation.isPending}
           className="px-4 py-2 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm font-medium rounded-lg transition disabled:opacity-50"
         >
           {saveMutation.isPending ? 'Saving…' : 'Save'}
