@@ -46,8 +46,8 @@ interface GuestTickState {
   fillingMounts: Set<string>;
   /** True once we've already fired `guest.agent.unreachable` this run. */
   unreachableFired: boolean;
-  /** Set of unit names currently failing — for edge detection. */
-  failedUnits: Set<string>;
+  /** Map of currently-failing unit name → last-observed description, for edge detection + resolve payloads. */
+  failedUnits: Map<string, string>;
   /** First-observed wall-time per unit — persisted across ticks so a
    *  resolved-then-returned unit gets its original timestamp back if it's
    *  still in `firstObserved`. Entries cleared on resolve. */
@@ -67,7 +67,7 @@ function ensureState(k: string): GuestTickState {
       consecutiveUnreachable: 0,
       fillingMounts: new Set(),
       unreachableFired: false,
-      failedUnits: new Set(),
+      failedUnits: new Map<string, string>(),
       firstObserved: new Map(),
     };
     tickState.set(k, s);
@@ -198,9 +198,9 @@ export function processProbes(
     // skip the edge/resolve bookkeeping entirely (otherwise every off-tick
     // would look like "all units cleared" and emit spurious resolves).
     if (probe.failedServices !== undefined) {
-      const nowFailing = new Set<string>();
+      const nowFailing = new Map<string, string>();
       for (const svc of probe.failedServices) {
-        nowFailing.add(svc.unit);
+        nowFailing.set(svc.unit, svc.description);
         if (!state.failedUnits.has(svc.unit)) {
           // Edge: empty→present. Record (or reuse) observation time and emit.
           const since = state.firstObserved.get(svc.unit) ?? opts.now;
@@ -219,17 +219,17 @@ export function processProbes(
         }
       }
       // Resolve: units that left the failing set since last tick.
-      for (const prev of state.failedUnits) {
-        if (!nowFailing.has(prev)) {
-          state.firstObserved.delete(prev);
+      for (const [prevUnit, prevDescription] of state.failedUnits) {
+        if (!nowFailing.has(prevUnit)) {
+          state.firstObserved.delete(prevUnit);
           emit({
             kind: 'guest.service.failed',
             at: opts.now,
             payload: {
               vmid: probe.vmid,
               node: probe.node,
-              unit: prev,
-              description: '',
+              unit: prevUnit,
+              description: prevDescription,
               since: 0,
             },
             __resolve: true,

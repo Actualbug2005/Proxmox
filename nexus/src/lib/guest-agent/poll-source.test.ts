@@ -178,6 +178,7 @@ describe('guest-agent poll-source — services probing', () => {
     assert.equal(events[1].__resolve, true);
     if (events[1].kind === 'guest.service.failed') {
       assert.equal(events[1].payload.unit, 'nginx.service');
+      assert.equal(events[1].payload.description, 'Nginx');
     }
   });
 
