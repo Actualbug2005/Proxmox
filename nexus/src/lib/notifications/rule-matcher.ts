@@ -13,6 +13,29 @@ import type {
   EventKind,
 } from './types.ts';
 
+/**
+ * Boundary-aware scope comparison. Historically this was a raw
+ * `includes` check so `node:pve` would match `node:pve-01` — we
+ * preserve that prefix-style behavior, but reject the specific
+ * failure mode introduced by per-guest scopes (`guest:<vmid>`):
+ * `guest:100` must NOT silently match `guest:1000`, `guest:1001`,
+ * etc. The rule is "if the rule scope ends in a digit and the next
+ * event-scope character is also a digit, it's a numeric-prefix
+ * collision — reject." Non-digit boundaries (`-`, `:`, end-of-string,
+ * whitespace) continue to match as before.
+ */
+function scopeMatches(eventScope: string, ruleScope: string): boolean {
+  const idx = eventScope.indexOf(ruleScope);
+  if (idx === -1) return false;
+  const endIdx = idx + ruleScope.length;
+  if (endIdx < eventScope.length && ruleScope.length > 0) {
+    const lastRuleChar = ruleScope[ruleScope.length - 1];
+    const nextEventChar = eventScope[endIdx];
+    if (/\d/.test(lastRuleChar) && /\d/.test(nextEventChar)) return false;
+  }
+  return true;
+}
+
 function compare(a: number, op: ComparisonOp, b: number): boolean {
   switch (op) {
     case '>':  return a > b;
@@ -52,9 +75,11 @@ export function matchesEvent(match: RuleMatch, event: NotificationEvent): boolea
 
   if (match.scope && match.scope.length > 0) {
     const s = scopeFor(event);
-    // Substring match so "node:pve" matches "node:pve-01" by default;
-    // operators can use full scopes if they want strict equality.
-    if (!s.includes(match.scope)) return false;
+    // Boundary-aware substring match: `node:pve` still matches
+    // `node:pve-01` (non-digit boundary), but `guest:100` no longer
+    // silently matches `guest:1000` (digit-digit boundary — a real
+    // collision class with homelab vmids).
+    if (!scopeMatches(s, match.scope)) return false;
   }
 
   if (event.kind === 'metric.threshold.crossed') {

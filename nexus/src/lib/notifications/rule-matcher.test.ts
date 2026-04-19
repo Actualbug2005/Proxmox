@@ -90,6 +90,59 @@ describe('matchesEvent — scope filter', () => {
   });
 });
 
+describe('matchesEvent — scope boundary (numeric-prefix collision)', () => {
+  it('exact guest:<vmid> match passes', () => {
+    const ev = metric('guest.cpu', 0.9, 'guest:100');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: 'guest:100' }, ev),
+      true,
+    );
+  });
+
+  it('guest:100 does NOT match guest:1000 (numeric-prefix collision rejected)', () => {
+    const ev = metric('guest.cpu', 0.9, 'guest:1000');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: 'guest:100' }, ev),
+      false,
+    );
+    const ev2 = metric('guest.mem', 0.9, 'guest:1001');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: 'guest:100' }, ev2),
+      false,
+    );
+  });
+
+  it('regression guard: node:pve still matches node:pve-01 (non-digit boundary)', () => {
+    const ev = metric('cpu.node.max', 0.9, 'node:pve-01');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: 'node:pve' }, ev),
+      true,
+    );
+  });
+
+  it('numeric rule scope still matches when next char is a non-digit delimiter', () => {
+    // Hypothetical future per-disk sub-scope: `guest:100:disk-0`. A rule
+    // scoped `guest:100` must still catch it because `:` is a boundary.
+    const ev = metric('guest.disk', 0.9, 'guest:100:disk-0');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: 'guest:100' }, ev),
+      true,
+    );
+  });
+
+  it('empty / undefined scope on the rule matches any scope (including numeric)', () => {
+    const ev = metric('guest.cpu', 0.9, 'guest:1000');
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed', scope: '' }, ev),
+      true,
+    );
+    assert.equal(
+      matchesEvent({ eventKind: 'metric.threshold.crossed' }, ev),
+      true,
+    );
+  });
+});
+
 describe('matchesEvent — metric threshold', () => {
   const ev = metric('cpu.node.max', 0.85);
   it('compares value against threshold using the chosen op', () => {
