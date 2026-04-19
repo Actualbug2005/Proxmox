@@ -67,7 +67,10 @@ export function ResizeDiskDialog({
   const mutation = useCsrfMutation<unknown, ResizeInput>({
     url,
     method: 'PUT',
-    invalidateKeys: [['config', node, vmid]],
+    invalidateKeys: [
+      [type === 'qemu' ? 'vm' : 'ct', node, vmid, 'config'],
+      ['cluster', 'resources'],
+    ],
   });
 
   const newMiB = newGiB * 1024;
@@ -76,9 +79,9 @@ export function ResizeDiskDialog({
   const hasGrowth = deltaMiB > 0;
 
   const errorMessage = useMemo(() => {
-    if (!hasGrowth) return 'New size must be larger than the current size.';
+    if (!hasGrowth) return `New size must be greater than ${formatVolumeSize(currentMiB)}.`;
     return null;
-  }, [hasGrowth]);
+  }, [hasGrowth, currentMiB]);
 
   const pveError = mutation.error?.message ?? null;
 
@@ -91,13 +94,14 @@ export function ResizeDiskDialog({
       { disk: slot, size: sizeParam },
       {
         onSuccess: () => {
+          // TODO: surface this as a user-visible toast once the app has a toast primitive.
           if (type === 'qemu') {
             console.info(
-              `Disk grown to ${newGiB} GiB. Log into the VM and run 'sudo growpart /dev/sda 1 && sudo resize2fs /dev/sda1' (or equivalent) to expand the filesystem.`,
+              `Disk grown to ${formatVolumeSize(newMiB)}. Log into the VM and run 'sudo growpart /dev/sda 1 && sudo resize2fs /dev/sda1' (or equivalent) to expand the filesystem.`,
             );
           } else {
             console.info(
-              `${slot} grown to ${newGiB} GiB. The filesystem has been expanded automatically.`,
+              `${slot} grown to ${formatVolumeSize(newMiB)}. The filesystem has been expanded automatically.`,
             );
           }
           onClose();

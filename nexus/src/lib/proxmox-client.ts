@@ -611,6 +611,8 @@ export const api = {
       updateDescription: (node: string, vmid: number, snapname: string, description: string) =>
         proxmox.put<null>(`nodes/${node}/qemu/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`, { description }),
     },
+    // PVE /resize endpoint. Currently used via the CSRF-protected browser
+    // route in ResizeDiskDialog; exposed here for server-side callers.
     resize: (node: string, vmid: number, disk: string, size: string) =>
       proxmox.put<string>(
         `nodes/${node}/qemu/${vmid}/resize`,
@@ -672,6 +674,8 @@ export const api = {
       updateDescription: (node: string, vmid: number, snapname: string, description: string) =>
         proxmox.put<null>(`nodes/${node}/lxc/${vmid}/snapshot/${encodeURIComponent(snapname)}/config`, { description }),
     },
+    // PVE /resize endpoint. Currently used via the CSRF-protected browser
+    // route in ResizeDiskDialog; exposed here for server-side callers.
     resize: (node: string, vmid: number, disk: string, size: string) =>
       proxmox.put<string>(
         `nodes/${node}/lxc/${vmid}/resize`,
