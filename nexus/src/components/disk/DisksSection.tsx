@@ -205,6 +205,7 @@ export function DisksSection({ type, node, vmid, config }: DisksSectionProps) {
           node={node}
           vmid={vmid}
           volume={dialog.volume}
+          config={config}
         />
       )}
     </>

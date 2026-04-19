@@ -14,7 +14,8 @@
  * try to guard against being opened with one.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, AlertCircle, X, HardDrive } from 'lucide-react';
 import { ModalShell } from '@/components/ui/modal-shell';
 import { useCsrfMutation } from '@/lib/create-csrf-mutation';
@@ -27,9 +28,14 @@ export interface RemoveDiskDialogProps {
   node: string;
   vmid: number;
   volume: VolumeDescriptor;
+  /** Current guest config — used to snapshot pre-detach `unused*` keys
+   *  so leg 2 of the delete flow can identify the newly-produced key
+   *  rather than blindly picking the first `unused*` it sees. */
+  config: Record<string, unknown>;
 }
 
 type RemoveMode = 'detach' | 'delete';
+type DeletePhase = 'idle' | 'detached';
 
 /** PVE `delete` parameter: rootfs uses the literal key, everything else
  *  uses its own config slot (scsi0, virtio1, mp0, …). */
@@ -48,76 +54,111 @@ export function RemoveDiskDialog({
   node,
   vmid,
   volume,
+  config,
 }: RemoveDiskDialogProps) {
   const [mode, setMode] = useState<RemoveMode>('detach');
+  const [phase, setPhase] = useState<DeletePhase>('idle');
+  const [localError, setLocalError] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const slotLabel = volume.kind === 'ct-rootfs' ? 'rootfs' : volume.slot;
   const slot = resolveSlot(volume);
   const basePath = type === 'qemu' ? 'qemu' : 'lxc';
   const url = `/api/proxmox/nodes/${encodeURIComponent(node)}/${basePath}/${vmid}/config`;
+  const configKey = [type === 'qemu' ? 'vm' : 'ct', node, vmid, 'config'] as const;
 
-  // PVE's "remove + destroy" is a two-step flow: detach moves the volume to
-  // unused{N}, a second delete on that key destroys it. This matches what
-  // PVE's own UI does.
-  const finaliseDelete = async () => {
-    try {
-      const res = await fetch(url, { credentials: 'include' });
-      const json = (await res.json().catch(() => ({}))) as ConfigResponse;
-      const data = json.data ?? {};
-      const unusedKey = Object.keys(data).find((k) => k.startsWith('unused'));
-      if (!unusedKey) {
-        onClose();
-        return;
-      }
-      const token = (() => {
-        if (typeof document === 'undefined') return null;
-        const entry = document.cookie
-          .split('; ')
-          .find((c) => c.startsWith('CSRFPreventionToken='));
-        return entry ? entry.slice('CSRFPreventionToken='.length) : null;
-      })();
-      const destroyRes = await fetch(url, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { CSRFPreventionToken: token } : {}),
-        },
-        body: JSON.stringify({ delete: unusedKey }),
-      });
-      if (!destroyRes.ok) {
-        throw new Error(`Destroy volume failed: ${destroyRes.status}`);
-      }
-      onClose();
-    } catch (err) {
-      console.error(err);
-      onClose();
-    }
-  };
+  // Snapshot the `unused*` keys present BEFORE the detach so leg 2 can
+  // identify the new key deterministically (the first `unused*` in the
+  // refetched config may be a pre-existing entry from an earlier detach).
+  const preDetachUnused = useMemo(
+    () => new Set(Object.keys(config).filter((k) => k.startsWith('unused'))),
+    [config],
+  );
 
-  const mutation = useCsrfMutation<unknown, { delete: string }>({
+  const invalidateKeys = useMemo(
+    () => [[...configKey], ['cluster', 'resources']],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [type, node, vmid],
+  );
+
+  // PVE's "remove + destroy" is a two-step flow: leg 1 detaches the slot
+  // (the volume moves to unused{N}); leg 2 deletes that unused{N} key to
+  // destroy the volume on storage. Both legs are PUT /config with a
+  // `delete` param — same URL, same CSRF path, same invalidations.
+  const detachMutation = useCsrfMutation<unknown, { delete: string }>({
     url,
     method: 'PUT',
-    invalidateKeys: [
-      [type === 'qemu' ? 'vm' : 'ct', node, vmid, 'config'],
-      ['cluster', 'resources'],
-    ],
+    invalidateKeys,
   });
 
-  const pveError = mutation.error?.message ?? null;
+  const destroyMutation = useCsrfMutation<unknown, { delete: string }>({
+    url,
+    method: 'PUT',
+    invalidateKeys,
+  });
+
+  const pending = detachMutation.isPending || destroyMutation.isPending;
+  const pveError =
+    destroyMutation.error?.message ??
+    detachMutation.error?.message ??
+    localError;
 
   if (!open) return null;
 
+  const finaliseDelete = async () => {
+    setLocalError(null);
+    // Refetch the config so we can diff against the pre-detach snapshot.
+    const res = await fetch(url, { credentials: 'include' });
+    const json = (await res.json().catch(() => ({}))) as ConfigResponse;
+    const data = json.data ?? {};
+    const currentUnused = Object.keys(data).filter((k) => k.startsWith('unused'));
+    const newKeys = currentUnused.filter((k) => !preDetachUnused.has(k));
+
+    if (newKeys.length === 0) {
+      // PVE destroyed the volume inline — common for some LXC / storage
+      // combinations. Nothing more to do.
+      void qc.invalidateQueries({ queryKey: [...configKey] });
+      onClose();
+      return;
+    }
+
+    if (newKeys.length > 1) {
+      setLocalError(
+        'Could not identify the newly-detached volume. Inspect the guest in PVE directly.',
+      );
+      return;
+    }
+
+    destroyMutation.mutate(
+      { delete: newKeys[0] },
+      { onSuccess: () => onClose() },
+    );
+  };
+
   const submit = () => {
-    if (mutation.isPending) return;
-    mutation.mutate(
+    if (pending) return;
+    setLocalError(null);
+
+    if (mode === 'detach') {
+      detachMutation.mutate(
+        { delete: slot },
+        { onSuccess: () => onClose() },
+      );
+      return;
+    }
+
+    // Delete flow: retry re-enters at the point where it last failed so
+    // we don't re-detach an already-detached slot.
+    if (phase === 'detached') {
+      void finaliseDelete();
+      return;
+    }
+
+    detachMutation.mutate(
       { delete: slot },
       {
         onSuccess: () => {
-          if (mode === 'detach') {
-            onClose();
-            return;
-          }
+          setPhase('detached');
           void finaliseDelete();
         },
       },
@@ -131,7 +172,7 @@ export function RemoveDiskDialog({
       : 'bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)]';
 
   return (
-    <ModalShell size="md" onClose={mutation.isPending ? undefined : onClose}>
+    <ModalShell size="md" onClose={pending ? undefined : onClose}>
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-2">
           <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" />
@@ -141,7 +182,7 @@ export function RemoveDiskDialog({
         </div>
         <button
           onClick={onClose}
-          disabled={mutation.isPending}
+          disabled={pending}
           className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] p-1 disabled:opacity-40"
           aria-label="Close"
         >
@@ -167,7 +208,7 @@ export function RemoveDiskDialog({
               value="detach"
               checked={mode === 'detach'}
               onChange={() => setMode('detach')}
-              disabled={mutation.isPending}
+              disabled={pending || phase === 'detached'}
               className="mt-0.5"
             />
             <div className="flex-1">
@@ -188,7 +229,7 @@ export function RemoveDiskDialog({
               value="delete"
               checked={mode === 'delete'}
               onChange={() => setMode('delete')}
-              disabled={mutation.isPending}
+              disabled={pending || phase === 'detached'}
               className="mt-0.5"
             />
             <div className="flex-1">
@@ -211,6 +252,15 @@ export function RemoveDiskDialog({
           </label>
         </div>
 
+        {phase === 'detached' && !pveError && (
+          <div className="flex items-start gap-2 p-3 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg">
+            <AlertCircle className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
+            <p className="text-xs text-[var(--color-fg-subtle)]">
+              Volume detached. Retry to destroy it.
+            </p>
+          </div>
+        )}
+
         {pveError && (
           <div className="flex items-start gap-2 p-3 bg-[var(--color-err)]/10 border border-[var(--color-err)]/30 rounded-lg">
             <AlertCircle className="w-4 h-4 text-[var(--color-err)] mt-0.5 shrink-0" />
@@ -223,7 +273,7 @@ export function RemoveDiskDialog({
         <button
           type="button"
           onClick={onClose}
-          disabled={mutation.isPending}
+          disabled={pending}
           className="inline-flex items-center gap-1 px-3 py-2 text-sm text-[var(--color-fg-subtle)] hover:text-[var(--color-fg-secondary)] bg-[var(--color-overlay)] rounded-lg transition disabled:opacity-40"
         >
           Cancel
@@ -231,10 +281,10 @@ export function RemoveDiskDialog({
         <button
           type="button"
           onClick={submit}
-          disabled={mutation.isPending}
+          disabled={pending}
           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition disabled:opacity-40 ${actionCls}`}
         >
-          {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+          {pending && <Loader2 className="w-4 h-4 animate-spin" />}
           {actionLabel}
         </button>
       </div>
