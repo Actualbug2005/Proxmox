@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAriaLabel } from './alert-bell.tsx';
+import { buildAriaLabel } from './alert-bell';
 
 describe('buildAriaLabel', () => {
   it('returns "Add alert rule" when count is 0', () => {
