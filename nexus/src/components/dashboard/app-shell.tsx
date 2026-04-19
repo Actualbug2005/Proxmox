@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Sidebar } from '@/components/dashboard/sidebar';
+import { ServiceAccountBanner } from '@/components/dashboard/service-account-banner';
 import { cn } from '@/lib/utils';
 
 interface AppShellProps {
@@ -74,6 +75,7 @@ export function AppShell({ username, children }: AppShellProps) {
        *  uses a uniform px-4 padding plus top-16 so the hamburger doesn't
        *  occlude the first line of content. */}
       <main className="min-h-screen w-full transition-all duration-300 px-4 pt-16 pb-4 lg:pl-[272px] lg:pr-4 lg:py-4">
+        <ServiceAccountBanner />
         {children}
       </main>
     </>
