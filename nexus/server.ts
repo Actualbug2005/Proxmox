@@ -416,9 +416,6 @@ app.prepare().then(async () => {
   const UPDATE_VERSION_FILE = process.env.NEXUS_VERSION_FILE ?? '/opt/nexus/current/VERSION';
   const UPDATER_BIN = process.env.NEXUS_UPDATER_BIN ?? '/usr/local/bin/nexus-update';
 
-  const chainsStoreForUpdater = chainsStore;
-  void chainsStoreForUpdater; // silence unused-import warning
-
   const drsHistoryForUpdater = await import('./src/lib/drs/store.ts');
 
   const updatesTimer = setInterval(() => {
