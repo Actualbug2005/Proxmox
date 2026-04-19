@@ -8,6 +8,7 @@ import { api } from '@/lib/proxmox-client';
 import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress-bar';
+import { UnitInput } from '@/components/ui/unit-input';
 import { cpuPercent, formatBytes, memPercent, formatUptime, cn } from '@/lib/utils';
 import {
   Play, Square, RotateCcw, PowerOff, Loader2, ChevronLeft,
@@ -437,7 +438,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                   {(['name', 'cores', 'sockets', 'memory', 'onboot', 'description'] as const).map((field) => (
                     <div key={field}>
                       <label className="text-xs text-[var(--color-fg-subtle)] capitalize block mb-1">
-                        {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory (MB)' : field}
+                        {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory' : field}
                       </label>
                       {editConfig ? (
                         field === 'onboot' ? (
@@ -445,13 +446,21 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                             checked={!!configDraft.onboot}
                             onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked }))}
                             className="rounded border-gray-600" />
+                        ) : field === 'memory' ? (
+                          <UnitInput
+                            value={Number(configDraft.memory ?? 0)}
+                            canonicalUnit="MiB"
+                            onChange={(v) => setConfigDraft((d) => ({ ...d, memory: v }))}
+                            min={16}
+                            ariaLabel="Memory"
+                          />
                         ) : (
                           <input
-                            type={['cores','sockets','memory'].includes(field) ? 'number' : 'text'}
+                            type={['cores','sockets'].includes(field) ? 'number' : 'text'}
                             value={String(configDraft[field as keyof UpdateVMConfigParamsPublic] ?? '')}
                             onChange={(e) => setConfigDraft((d) => ({
                               ...d,
-                              [field]: ['cores','sockets','memory'].includes(field) ? Number(e.target.value) : e.target.value,
+                              [field]: ['cores','sockets'].includes(field) ? Number(e.target.value) : e.target.value,
                             }))}
                             className="w-full px-2.5 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
                           />

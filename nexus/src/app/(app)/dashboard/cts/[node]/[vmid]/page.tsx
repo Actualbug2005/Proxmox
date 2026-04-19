@@ -8,6 +8,7 @@ import { api } from '@/lib/proxmox-client';
 import { POLL_INTERVALS } from '@/hooks/use-cluster';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress-bar';
+import { UnitInput } from '@/components/ui/unit-input';
 import { cpuPercent, formatBytes, memPercent, formatUptime, cn } from '@/lib/utils';
 import {
   Play, Square, RotateCcw, PowerOff, Loader2, ChevronLeft,
@@ -341,20 +342,28 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                   {(['hostname', 'cores', 'memory', 'swap', 'onboot', 'description'] as const).map((field) => (
                     <div key={field}>
                       <label className="text-xs text-[var(--color-fg-subtle)] capitalize block mb-1">
-                        {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory (MB)' : field === 'swap' ? 'Swap (MB)' : field}
+                        {field === 'onboot' ? 'Start at Boot' : field === 'memory' ? 'Memory' : field === 'swap' ? 'Swap' : field}
                       </label>
                       {editConfig ? (
                         field === 'onboot' ? (
                           <input type="checkbox" checked={!!configDraft.onboot}
                             onChange={(e) => setConfigDraft((d) => ({ ...d, onboot: e.target.checked }))}
                             className="rounded border-gray-600" />
+                        ) : field === 'memory' || field === 'swap' ? (
+                          <UnitInput
+                            value={Number(configDraft[field] ?? 0)}
+                            canonicalUnit="MiB"
+                            onChange={(v) => setConfigDraft((d) => ({ ...d, [field]: v }))}
+                            min={16}
+                            ariaLabel={field === 'memory' ? 'Memory' : 'Swap'}
+                          />
                         ) : (
                           <input
-                            type={['cores','memory','swap'].includes(field) ? 'number' : 'text'}
+                            type={field === 'cores' ? 'number' : 'text'}
                             value={String(configDraft[field as keyof UpdateCTConfigParamsPublic] ?? '')}
                             onChange={(e) => setConfigDraft((d) => ({
                               ...d,
-                              [field]: ['cores','memory','swap'].includes(field) ? Number(e.target.value) : e.target.value,
+                              [field]: field === 'cores' ? Number(e.target.value) : e.target.value,
                             }))}
                             className="w-full px-2.5 py-1.5 bg-[var(--color-overlay)] border border-[var(--color-border-subtle)] rounded-lg text-sm text-[var(--color-fg-secondary)] focus:outline-none focus:border-zinc-300/50"
                           />
