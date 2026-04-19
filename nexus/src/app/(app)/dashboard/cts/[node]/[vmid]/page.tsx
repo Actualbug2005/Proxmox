@@ -23,6 +23,7 @@ import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
 import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
+import { DisksSection } from '@/components/disk/DisksSection';
 import type { UpdateCTConfigParamsPublic } from '@/types/proxmox';
 
 function statusVariant(status?: string): 'success' | 'danger' | 'warning' | 'outline' {
@@ -377,6 +378,8 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
                   ))}
                 </div>
               </div>
+
+              <DisksSection type="lxc" node={node} vmid={vmid} config={config} />
 
               {config.rootfs && (
                 <div className="studio-card p-5">
