@@ -124,31 +124,29 @@ export function CommandPalette() {
             </Command.Empty>
 
             {/* Navigation */}
-            {(!search || 'navigation pages'.includes(search.toLowerCase())) && (
-              <Command.Group heading="Navigation">
-                {[
-                  { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-                  { label: 'Nodes', href: '/dashboard/nodes', icon: Server },
-                  { label: 'Storage', href: '/dashboard/storage', icon: HardDrive },
-                  { label: 'Tasks', href: '/dashboard/tasks', icon: Activity },
-                  { label: 'Console', href: '/console', icon: Terminal },
-                  { label: 'Community Scripts', href: '/scripts', icon: Code2 },
-                ]
-                  .filter(
-                    (item) =>
-                      !search || item.label.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .map(({ label, href, icon: Icon }) => (
-                    <CommandItem
-                      key={href}
-                      onSelect={() => navigate(href)}
-                      icon={<Icon className="w-4 h-4" />}
-                      label={label}
-                      hint="Go to"
-                    />
-                  ))}
-              </Command.Group>
-            )}
+            <Command.Group heading="Navigation">
+              {[
+                { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+                { label: 'Nodes', href: '/dashboard/nodes', icon: Server },
+                { label: 'Storage', href: '/dashboard/storage', icon: HardDrive },
+                { label: 'Tasks', href: '/dashboard/tasks', icon: Activity },
+                { label: 'Console', href: '/console', icon: Terminal },
+                { label: 'Community Scripts', href: '/scripts', icon: Code2 },
+              ]
+                .filter(
+                  (item) =>
+                    !search || item.label.toLowerCase().includes(search.toLowerCase()),
+                )
+                .map(({ label, href, icon: Icon }) => (
+                  <CommandItem
+                    key={href}
+                    onSelect={() => navigate(href)}
+                    icon={<Icon className="w-4 h-4" />}
+                    label={label}
+                    hint="Go to"
+                  />
+                ))}
+            </Command.Group>
 
             {/* VMs */}
             {vms.length > 0 && (
@@ -254,6 +252,11 @@ export function CommandPalette() {
                               />
                             </>
                           )}
+                          <ActionButton
+                            icon={<Terminal className="w-3 h-3" />}
+                            label="Console"
+                            onClick={() => navigate(`/console?node=${encodeURIComponent(ct.node!)}&vmid=${ct.vmid}&type=lxc`)}
+                          />
                         </div>
                         <span
                           className={cn(
