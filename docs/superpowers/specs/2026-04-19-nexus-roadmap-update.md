@@ -41,6 +41,10 @@
 
 - **v0.29.0** — added permanent sidebar entry in the `System` section + command-palette entry for `/dashboard/system/service-account`. Closes the UX trap where dismissing the setup banner left no other path to the setup page. Regression guard in `sidebar.test.ts`.
 
+### Guest-agent services probes — v0.30.0 (closes 5.2)
+
+- **v0.30.0** — `systemctl list-units --state=failed` probe at 1/3 of the disk-pressure cadence. Emits `guest.service.failed` events (edge-triggered, resolve-aware via `__resolve: true`). On-demand via the existing `/api/guests/[node]/[vmid]/agent` route. Surface: new `<GuestAgentCard>` on the VM detail page showing reachability, filesystems, and failed services with per-unit descriptions + "since" timestamps.
+
 ### Tier 9 — **zero items shipped.** Verified: no PBS module, no local script library, no plugin system, no log search, no SR-IOV UI, no FRR wizard, no restore-test automation.
 
 ---
@@ -52,7 +56,7 @@
 | # | Item | Status | Notes |
 |---|---|---|---|
 | 5.1 | Notification Rule Engine | ✅ Done + extended in v0.27.3 + v0.28.0 | |
-| 5.2 | Guest-Internal Health | ◐ Partial | Disk-pressure + agent-liveness. **Services-level probes still deferred.** |
+| 5.2 | Guest-Internal Health | ✅ Done + services probes in v0.30.0 | Disk-pressure + agent-liveness (v0.21.0) + systemd failed-unit probes (v0.30.0) at 1/3 cadence with edge-triggered `guest.service.failed` events and a VM-page `GuestAgentCard` surface. |
 | 5.3 | Auto-DRS Loop | ✅ Done + live-unblocked in v0.27.0 | |
 | 5.4 | Alerting-Rule UI on pressure widgets | ◯ Not started | Depends on 5.1+5.2 (both available). |
 | 5.5 | Predictive Capacity Planner | ◯ Not started | `trend.ts` exists for storage only. Extend to CPU/RAM. |
