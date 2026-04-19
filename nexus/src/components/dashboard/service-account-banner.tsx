@@ -9,7 +9,11 @@ const DISMISS_KEY = 'nexus:service-account-banner-dismissed';
 
 function readDismissed(): boolean {
   if (typeof window === 'undefined') return false;
-  return sessionStorage.getItem(DISMISS_KEY) === '1';
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
 export function ServiceAccountBanner() {
@@ -28,7 +32,11 @@ export function ServiceAccountBanner() {
   if (dismissed || !data || data.configured) return null;
 
   function onDismiss() {
-    sessionStorage.setItem(DISMISS_KEY, '1');
+    try {
+      sessionStorage.setItem(DISMISS_KEY, '1');
+    } catch {
+      // Private browsing / quota — persistence fails; still hide for this session.
+    }
     setDismissed(true);
   }
 
