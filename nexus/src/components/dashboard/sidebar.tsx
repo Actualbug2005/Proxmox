@@ -29,6 +29,7 @@ import {
   FileLock2,
   Bell,
   Sliders,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { readCsrfCookie } from '@/lib/proxmox-client';
@@ -78,6 +79,7 @@ const sections: NavSection[] = [
     label: 'System',
     items: [
       { href: '/dashboard/cluster/access', label: 'Users & ACL', icon: Users },
+      { href: '/dashboard/system/service-account', label: 'Service Account', icon: KeyRound },
       { href: '/dashboard/cluster/audit', label: 'Audit Log', icon: FileLock2 },
       { href: '/dashboard/system/power', label: 'Power', icon: Zap },
       { href: '/dashboard/system/packages', label: 'Packages', icon: Package },
