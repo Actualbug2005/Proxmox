@@ -443,9 +443,11 @@ app.prepare().then(async () => {
   drsTimer.unref?.();
 
   // ── Guest-agent probes (5.2) ─────────────────────────────────────────────
-  // fetchGuests enumerates QEMU guests that have the agent enabled in
-  // their runtime config — PVE reports `agent` as 0|1 on running VMs in
-  // cluster/resources. LXC deferred (see probe module header).
+  // fetchGuests enumerates running QEMU guests from /cluster/resources. The
+  // agent config flag isn't surfaced there (it lives in per-VM /config), so
+  // we don't pre-filter on it; probeGuest returns a clean {reachable:false}
+  // shape on ping-timeout for guests without qemu-guest-agent installed.
+  // LXC deferred (see probe module header).
   startGuestPollSource({
     getSession: () => getServiceSession(),
     fetchGuests: async () => {
@@ -465,16 +467,17 @@ app.prepare().then(async () => {
               template?: 0 | 1;
               node?: string;
               vmid?: number;
-              agent?: number | string;
             }>;
           }).data ?? [];
+        // The agent flag isn't surfaced by /cluster/resources; let probeGuest
+        // time out for guests without qemu-guest-agent rather than pre-filter
+        // here.
         return data
           .filter(
             (g) =>
               g.type === 'qemu' &&
               g.template !== 1 &&
               g.status === 'running' &&
-              (g.agent === 1 || g.agent === '1') &&
               typeof g.node === 'string' &&
               typeof g.vmid === 'number',
           )
