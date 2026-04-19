@@ -381,20 +381,6 @@ export default function CTDetailPage({ params }: { params: Promise<{ node: strin
 
               <DisksSection type="lxc" node={node} vmid={vmid} config={config} />
 
-              {config.rootfs && (
-                <div className="studio-card p-5">
-                  <h3 className="text-sm font-semibold text-white mb-3">Root Filesystem</h3>
-                  <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                    <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">rootfs</p>
-                      <p className="text-sm text-[var(--color-fg-secondary)]">{config.rootfs.split(',')[0]}</p>
-                      {(() => { const kv = parseKV(config.rootfs); return kv.size ? <p className="text-xs text-[var(--color-fg-subtle)]">Size: {kv.size}</p> : null; })()}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {netSlots.length > 0 && (
                 <div className="studio-card p-5">
                   <h3 className="text-sm font-semibold text-white mb-3">Network</h3>
