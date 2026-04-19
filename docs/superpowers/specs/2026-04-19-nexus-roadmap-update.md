@@ -35,6 +35,11 @@
 ### Tier 7.5 Command Palette — partial credit
 
 - **v0.25.1** — palette nav-search fixed (was always hiding the Navigation group); CT console action added. Fuzzy search was always there (via `cmdk`). **Still missing:** recent-pages list, quick-exec shortcuts, schedule search.
+- **v0.29.0** — Service Account entry added to the Navigation group so `CMD+K` finds it.
+
+### Service-account discoverability — NEW, not in the original roadmap
+
+- **v0.29.0** — added permanent sidebar entry in the `System` section + command-palette entry for `/dashboard/system/service-account`. Closes the UX trap where dismissing the setup banner left no other path to the setup page. Regression guard in `sidebar.test.ts`.
 
 ### Tier 9 — **zero items shipped.** Verified: no PBS module, no local script library, no plugin system, no log search, no SR-IOV UI, no FRR wizard, no restore-test automation.
 
