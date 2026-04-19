@@ -26,6 +26,9 @@ import { TabBar } from '@/components/dashboard/tab-bar';
 import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
 import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
 import { GuestAgentCard } from '@/components/widgets/guest-agent-card';
+import { AlertBell } from '@/components/notifications/alert-bell';
+import { AlertRuleModal } from '@/components/notifications/alert-rule-modal';
+import { useRuleCount } from '@/lib/notifications/rule-count';
 import type { UpdateVMConfigParamsPublic } from '@/types/proxmox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -185,6 +188,15 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
   const mem = memPercent(status?.mem, status?.maxmem);
   const disk = memPercent(status?.disk, status?.maxdisk);
 
+  // Bell-icon rule counts per metric card. Scope is `guest:<vmid>`;
+  // threshold metrics narrow to the specific dotted metric name,
+  // while the disk card uses event-kind mode (per-mountpoint disk
+  // pressure is a pushed event, not a scalar threshold).
+  const vmScope = `guest:${vmid}`;
+  const cpuRule = useRuleCount({ scope: vmScope, metric: 'guest.cpu' });
+  const memRule = useRuleCount({ scope: vmScope, metric: 'guest.mem' });
+  const diskRule = useRuleCount({ scope: vmScope, eventKind: 'guest.disk.filling' });
+
   const vmName = status?.name ?? config?.name ?? `VM ${vmid}`;
 
   // parse net config strings (disks now live inside <DisksSection>)
@@ -331,6 +343,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="flex items-center gap-2 mb-3">
                   <Cpu className="w-4 h-4 text-[var(--color-fg-subtle)]" />
                   <span className="text-xs font-medium text-[var(--color-fg-muted)]">CPU</span>
+                  <AlertBell
+                    className="ml-auto"
+                    rulesCount={cpuRule.count}
+                    onClick={cpuRule.openModal}
+                  />
                 </div>
                 <p className="text-2xl font-semibold text-white tabular-nums">{cpu.toFixed(1)}%</p>
                 <ProgressBar value={cpu} className="mt-2" />
@@ -341,6 +358,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="flex items-center gap-2 mb-3">
                   <MemoryStick className="w-4 h-4 text-[var(--color-fg-subtle)]" />
                   <span className="text-xs font-medium text-[var(--color-fg-muted)]">Memory</span>
+                  <AlertBell
+                    className="ml-auto"
+                    rulesCount={memRule.count}
+                    onClick={memRule.openModal}
+                  />
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.mem ?? 0)}</p>
                 <ProgressBar value={mem} className="mt-2" />
@@ -351,6 +373,11 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
                 <div className="flex items-center gap-2 mb-3">
                   <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)]" />
                   <span className="text-xs font-medium text-[var(--color-fg-muted)]">Disk</span>
+                  <AlertBell
+                    className="ml-auto"
+                    rulesCount={diskRule.count}
+                    onClick={diskRule.openModal}
+                  />
                 </div>
                 <p className="text-2xl font-semibold text-white">{formatBytes(status.disk ?? 0)}</p>
                 <ProgressBar value={disk} className="mt-2" />
@@ -370,6 +397,47 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               </div>
             </div>
           ) : null}
+
+          {/* Alert-rule modals for the three bell-enabled metric cards */}
+          <AlertRuleModal
+            open={cpuRule.open}
+            onClose={cpuRule.closeModal}
+            draft={{
+              name: `VM ${vmid} CPU alert`,
+              match: {
+                eventKind: 'metric.threshold.crossed',
+                metric: 'guest.cpu',
+                op: '>=',
+                threshold: 0.85,
+                scope: vmScope,
+              },
+            }}
+          />
+          <AlertRuleModal
+            open={memRule.open}
+            onClose={memRule.closeModal}
+            draft={{
+              name: `VM ${vmid} memory alert`,
+              match: {
+                eventKind: 'metric.threshold.crossed',
+                metric: 'guest.mem',
+                op: '>=',
+                threshold: 0.9,
+                scope: vmScope,
+              },
+            }}
+          />
+          <AlertRuleModal
+            open={diskRule.open}
+            onClose={diskRule.closeModal}
+            draft={{
+              name: `VM ${vmid} disk alert`,
+              match: {
+                eventKind: 'guest.disk.filling',
+                scope: vmScope,
+              },
+            }}
+          />
 
           {/* Guest agent — liveness, filesystems, failed services */}
           <GuestAgentCard node={node} vmid={vmid} enabled={isRunning} />

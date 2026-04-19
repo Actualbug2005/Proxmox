@@ -30,6 +30,9 @@ import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { formatBytes } from '@/lib/utils';
 import { useGuestAgent } from '@/hooks/use-guest-agent';
+import { AlertBell } from '@/components/notifications/alert-bell';
+import { AlertRuleModal } from '@/components/notifications/alert-rule-modal';
+import { useRuleCount } from '@/lib/notifications/rule-count';
 
 interface GuestAgentCardProps {
   node: string;
@@ -73,7 +76,16 @@ export function GuestAgentCard({ node, vmid, enabled = true }: GuestAgentCardPro
   const filesystems = probe?.filesystems;
   const failed = probe?.failedServices;
 
+  // Bell for the failed-services section — `guest.service.failed`
+  // is a pushed event emitted by the probe when a systemd unit
+  // transitions to the failed set.
+  const servicesRule = useRuleCount({
+    scope: `guest:${vmid}`,
+    eventKind: 'guest.service.failed',
+  });
+
   return (
+    <>
     <div className="studio-card rounded-lg p-4">
       {/* Header + refresh */}
       <div className="mb-3 flex items-center justify-between">
@@ -192,8 +204,13 @@ export function GuestAgentCard({ node, vmid, enabled = true }: GuestAgentCardPro
           {/* 3. Failed services */}
           {reachable && (
             <div>
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-fg-subtle)]">
-                Failed services
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-fg-subtle)]">
+                <span>Failed services</span>
+                <AlertBell
+                  className="ml-auto"
+                  rulesCount={servicesRule.count}
+                  onClick={servicesRule.openModal}
+                />
               </div>
               {failed === undefined ? (
                 <p className="text-xs text-[var(--color-fg-faint)]">
@@ -245,5 +262,17 @@ export function GuestAgentCard({ node, vmid, enabled = true }: GuestAgentCardPro
         </p>
       )}
     </div>
+    <AlertRuleModal
+      open={servicesRule.open}
+      onClose={servicesRule.closeModal}
+      draft={{
+        name: `VM ${vmid} failed-service alert`,
+        match: {
+          eventKind: 'guest.service.failed',
+          scope: `guest:${vmid}`,
+        },
+      }}
+    />
+    </>
   );
 }
