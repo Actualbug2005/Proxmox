@@ -7,7 +7,12 @@
  * through this HTTP route.
  *
  * Response is the raw GuestProbe — reachable flag, reason, filesystems
- * with bytes. The UI computes usedPct itself.
+ * with bytes, and any failed systemd units. The UI computes usedPct itself.
+ *
+ * On-demand probes opt into `probeServices` unconditionally: the operator
+ * is looking at this guest *right now*, so the one-shot cost of running
+ * `systemctl list-units --state=failed` via /agent/exec is worth the
+ * signal. (The cluster-wide poll source runs it on a 1/3 cadence instead.)
  */
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/route-middleware';
@@ -24,7 +29,7 @@ export const GET = withAuth<Params>(async (_req, { params, session }) => {
   if (!Number.isFinite(vmid) || vmid <= 0) {
     return NextResponse.json({ error: 'invalid vmid' }, { status: 400 });
   }
-  const probe = await probeGuest({ session, node, vmid });
+  const probe = await probeGuest({ session, node, vmid, probeServices: true });
   return NextResponse.json(probe, {
     headers: { 'Cache-Control': 'no-store, private' },
   });

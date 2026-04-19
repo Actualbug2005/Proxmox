@@ -25,6 +25,7 @@ import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
 import { FirewallRulesTab } from '@/components/firewall/firewall-rules-tab';
 import { FirewallOptionsTab } from '@/components/firewall/firewall-options-tab';
+import { GuestAgentCard } from '@/components/widgets/guest-agent-card';
 import type { UpdateVMConfigParamsPublic } from '@/types/proxmox';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -369,6 +370,9 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               </div>
             </div>
           ) : null}
+
+          {/* Guest agent — liveness, filesystems, failed services */}
+          <GuestAgentCard node={node} vmid={vmid} enabled={isRunning} />
 
           {/* Recent tasks */}
           {tasks && tasks.length > 0 && (
