@@ -1,0 +1,67 @@
+name: Publish Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Clone wiki repo
+        env:
+          TOKEN: ${{ secrets.WIKI_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! git clone "https://x-access-token:${TOKEN}@github.com/${REPO}.wiki.git" wiki-repo; then
+            echo "::error::Could not clone ${REPO}.wiki.git."
+            echo "::error::Wiki must be enabled in repo Settings and have at least one page."
+            echo "::error::See wiki/README.md for the one-time pre-flight steps."
+            exit 1
+          fi
+
+      - name: Sync wiki/ into wiki-repo
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='README.md' \
+            wiki/ wiki-repo/
+
+      - name: Commit and push
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cd wiki-repo
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No wiki changes to sync."
+            exit 0
+          fi
+          short_sha="${SHA:0:7}"
+          git commit -m "Sync wiki from ${short_sha}"
+          if ! git push; then
+            echo "::warning::First push attempt failed; retrying once..."
+            sleep 5
+            if ! git push; then
+              echo "::error::Push to .wiki.git failed."
+              echo "::error::If this persists, set a WIKI_TOKEN repo secret (fine-grained PAT with Wiki: Read and write)."
+              exit 1
+            fi
+          fi
