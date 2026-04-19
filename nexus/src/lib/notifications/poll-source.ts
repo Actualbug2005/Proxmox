@@ -32,7 +32,7 @@ import {
   type MetricEvent,
   type MetricName,
 } from './types.ts';
-import { listRules, markRuleCleared, markRuleFired } from './store.ts';
+import { listRules, markRuleCleared } from './store.ts';
 import { matchesEvent } from './rule-matcher.ts';
 import { shouldFireResolve } from './backoff.ts';
 
@@ -199,11 +199,6 @@ export async function runTick(
       await markRuleCleared(rule.id, now);
     }
   }
-
-  // Mark fires for rules that only had time-based state — not this
-  // source's job. The dispatcher's markRuleFired handles that on the
-  // emit path above.
-  void markRuleFired;
 }
 
 /**
