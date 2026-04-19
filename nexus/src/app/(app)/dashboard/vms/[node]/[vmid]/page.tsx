@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/dashboard/confirm-dialog';
 import { MigrateWizard } from '@/components/migrate/migrate-wizard';
 import { CloneWizard } from '@/components/clone/clone-wizard';
 import { VMMetricsChart } from '@/components/dashboard/vm-metrics-chart';
+import { DisksSection } from '@/components/disk/DisksSection.tsx';
 import { SnapshotsTab } from '@/components/dashboard/snapshots-tab';
 import { BackupsTab } from '@/components/dashboard/backups-tab';
 import { TabBar } from '@/components/dashboard/tab-bar';
@@ -185,12 +186,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
 
   const vmName = status?.name ?? config?.name ?? `VM ${vmid}`;
 
-  // parse disk/net config strings
-  const diskSlots = config
-    ? (['scsi0','scsi1','scsi2','scsi3','ide0','ide2','sata0','virtio0','virtio1'] as const)
-        .filter((k) => config[k])
-        .map((k) => ({ key: k, value: config[k]! }))
-    : [];
+  // parse net config strings (disks now live inside <DisksSection>)
   const netSlots = config
     ? (['net0','net1','net2','net3'] as const)
         .filter((k) => config[k])
@@ -478,27 +474,7 @@ export default function VMDetailPage({ params }: { params: Promise<{ node: strin
               </div>
 
               {/* Disks */}
-              {diskSlots.length > 0 && (
-                <div className="studio-card p-5">
-                  <h3 className="text-sm font-semibold text-white mb-3">Disks</h3>
-                  <div className="space-y-2">
-                    {diskSlots.map(({ key, value }) => {
-                      const kv = parseKV(value);
-                      const [location] = value.split(',');
-                      return (
-                        <div key={key} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                          <HardDrive className="w-4 h-4 text-[var(--color-fg-subtle)] mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-xs font-mono text-[var(--color-fg-muted)] mb-0.5">{key}</p>
-                            <p className="text-sm text-[var(--color-fg-secondary)]">{location}</p>
-                            {kv.size && <p className="text-xs text-[var(--color-fg-subtle)]">Size: {kv.size}</p>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <DisksSection type="qemu" node={node} vmid={Number(vmid)} config={config} />
 
               {/* Network */}
               {netSlots.length > 0 && (
