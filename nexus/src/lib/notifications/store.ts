@@ -24,9 +24,11 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { decryptSecret, encryptSecret } from './crypto.ts';
 import type {
+  BackoffConfig,
   Destination,
   DestinationConfig,
   DestinationId,
+  ResolvePolicy,
   Rule,
   RuleId,
   RuleMatch,
@@ -183,7 +185,13 @@ export interface CreateRuleInput {
   match: RuleMatch;
   destinationId: DestinationId;
   messageTemplate: string;
+  /** Optional template used when the rule clears; falls back to messageTemplate. */
+  resolveMessageTemplate?: string;
   title?: string;
+  /** Optional per-rule backoff override; falls back to system default. */
+  backoff?: BackoffConfig;
+  /** Optional per-rule resolve policy; 'multi-fire' when unset. */
+  resolvePolicy?: ResolvePolicy;
 }
 
 export async function listRules(): Promise<Rule[]> {
@@ -213,7 +221,10 @@ export async function createRule(input: CreateRuleInput): Promise<Rule> {
       match: input.match,
       destinationId: input.destinationId,
       messageTemplate: input.messageTemplate,
+      resolveMessageTemplate: input.resolveMessageTemplate,
       title: input.title,
+      backoff: input.backoff,
+      resolvePolicy: input.resolvePolicy,
       consecutiveFires: 0,
       createdAt: now,
       updatedAt: now,

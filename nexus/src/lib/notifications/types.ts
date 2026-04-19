@@ -329,6 +329,13 @@ export interface Rule {
    * payload; unknown keys render as the empty string.
    */
   messageTemplate: string;
+  /**
+   * Optional message template used when the rule clears (event.__resolve
+   * is true). Falls back to `messageTemplate` when unset. Resolve
+   * templates may reference `{{firingFor}}` in addition to the usual
+   * event-payload keys.
+   */
+  resolveMessageTemplate?: string;
   /** Optional fixed-string title prefix for destinations that want one. */
   title?: string;
 

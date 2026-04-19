@@ -260,6 +260,7 @@ export interface RuleInput {
   match: RuleMatch;
   destinationId: string;
   messageTemplate: string;
+  resolveMessageTemplate?: string;
   title?: string;
   backoff?: BackoffConfig;
   resolvePolicy?: ResolvePolicy;
@@ -353,6 +354,13 @@ export function parseRuleInput(raw: unknown): Result<RuleInput> {
   const messageTemplate = str(obj.messageTemplate, 'messageTemplate', 4096);
   if (!messageTemplate.ok) return messageTemplate;
 
+  const resolveMessageTemplate = optionalStr(
+    obj.resolveMessageTemplate,
+    'resolveMessageTemplate',
+    4096,
+  );
+  if (!resolveMessageTemplate.ok) return resolveMessageTemplate;
+
   const match = parseMatch(obj.match);
   if (!match.ok) return match;
 
@@ -376,6 +384,7 @@ export function parseRuleInput(raw: unknown): Result<RuleInput> {
       match: match.value,
       destinationId: destinationId.value,
       messageTemplate: messageTemplate.value,
+      resolveMessageTemplate: resolveMessageTemplate.value,
       title: title.value,
       backoff: backoff.value,
       resolvePolicy: resolvePolicy.value,
@@ -415,6 +424,11 @@ export function parseRulePatch(raw: unknown): Result<RulePatchInput> {
     const r = str(obj.messageTemplate, 'messageTemplate', 4096);
     if (!r.ok) return r;
     out.messageTemplate = r.value;
+  }
+  if (obj.resolveMessageTemplate !== undefined) {
+    const r = optionalStr(obj.resolveMessageTemplate, 'resolveMessageTemplate', 4096);
+    if (!r.ok) return r;
+    out.resolveMessageTemplate = r.value;
   }
   if (obj.title !== undefined) {
     const r = optionalStr(obj.title, 'title', 128);

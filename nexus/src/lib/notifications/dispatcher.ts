@@ -14,7 +14,7 @@
 
 import { emit, subscribe, type EventHandler } from './event-bus.ts';
 import { planFire } from './backoff.ts';
-import { renderTemplate } from './template.ts';
+import { humaniseFiringFor, renderTemplate } from './template.ts';
 import { contextFor, rulesForEvent } from './rule-matcher.ts';
 import {
   decryptDestination,
@@ -165,7 +165,25 @@ async function dispatchOne(
     return;
   }
 
-  const message = renderTemplate(rule.messageTemplate, ctx);
+  // Pick the template. Resolves use resolveMessageTemplate when set;
+  // otherwise fall back to messageTemplate. The distinctive resolve-
+  // flavour (Discord green, ntfy emoji, email subject suffix, webhook
+  // resolved:true) still fires from the payload.resolved flag below, so
+  // authors who leave the resolve template blank get the alert body
+  // with a visually distinct wrapper.
+  const isResolve = event.__resolve === true;
+  const chosenTemplate =
+    isResolve && rule.resolveMessageTemplate
+      ? rule.resolveMessageTemplate
+      : rule.messageTemplate;
+  // Inject the firingFor variable for resolve templates. Empty string
+  // when we don't have a fire timestamp (e.g. resolve without a prior
+  // fire, which shouldn't happen but shouldn't crash either).
+  const firingFor =
+    isResolve && rule.lastFireAt
+      ? humaniseFiringFor(event.at - rule.lastFireAt)
+      : '';
+  const message = renderTemplate(chosenTemplate, { ...ctx, firingFor });
   const scope = typeof ctx.scope === 'string' ? ctx.scope : undefined;
   const result = await transportFor(
     config,

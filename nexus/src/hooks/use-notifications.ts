@@ -119,6 +119,7 @@ export interface RuleCreateInput {
   match: RuleMatch;
   destinationId: string;
   messageTemplate: string;
+  resolveMessageTemplate?: string;
   title?: string;
   backoff?: BackoffConfig;
   resolvePolicy?: ResolvePolicy;

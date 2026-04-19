@@ -64,6 +64,25 @@ export function renderTemplate(
 }
 
 /**
+ * Humanise a fire-duration (in ms) for the `{{firingFor}}` resolve-template
+ * variable. Returns the two largest non-zero units — e.g. `23m`, `2h 14m`,
+ * `3d 1h`. Sub-minute durations collapse to `just now` so a rule that
+ * fires and clears inside one tick doesn't produce `0m`. Negative or
+ * non-finite input returns `''` so a missing `lastFireAt` renders as
+ * empty rather than as a literal "just now".
+ */
+export function humaniseFiringFor(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return '';
+  if (ms < 60_000) return 'just now';
+  const minutes = Math.floor(ms / 60_000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return `${days}d ${hours - days * 24}h`;
+  if (hours >= 1) return `${hours}h ${minutes - hours * 60}m`;
+  return `${minutes}m`;
+}
+
+/**
  * List the keys a template references, in source order. Powers the UI
  * preview ("this template uses: node, reason") and the rule editor's
  * sanity check that all referenced keys exist for the chosen event kind.

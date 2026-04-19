@@ -6,7 +6,7 @@
  */
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { collectKeys, renderTemplate } from './template.ts';
+import { collectKeys, humaniseFiringFor, renderTemplate } from './template.ts';
 
 describe('renderTemplate', () => {
   it('replaces matching keys in source order', () => {
@@ -67,5 +67,37 @@ describe('collectKeys', () => {
   });
   it('returns [] on a template with no tokens', () => {
     assert.deepEqual(collectKeys('no tokens here'), []);
+  });
+});
+
+describe('humaniseFiringFor', () => {
+  it('formats < 1 minute as "just now"', () => {
+    assert.equal(humaniseFiringFor(0), 'just now');
+    assert.equal(humaniseFiringFor(30_000), 'just now');
+    assert.equal(humaniseFiringFor(59_999), 'just now');
+  });
+
+  it('formats sub-hour durations as Nm', () => {
+    assert.equal(humaniseFiringFor(60_000), '1m');
+    assert.equal(humaniseFiringFor(23 * 60_000), '23m');
+    assert.equal(humaniseFiringFor(59 * 60_000), '59m');
+  });
+
+  it('formats sub-day durations as Nh Nm (rounded down)', () => {
+    assert.equal(humaniseFiringFor(60 * 60_000), '1h 0m');
+    assert.equal(humaniseFiringFor(2 * 3600_000 + 14 * 60_000), '2h 14m');
+    assert.equal(humaniseFiringFor(23 * 3600_000 + 59 * 60_000), '23h 59m');
+  });
+
+  it('formats day-plus durations as Nd Nh', () => {
+    assert.equal(humaniseFiringFor(24 * 3600_000), '1d 0h');
+    assert.equal(humaniseFiringFor(3 * 86_400_000 + 1 * 3600_000), '3d 1h');
+    assert.equal(humaniseFiringFor(7 * 86_400_000), '7d 0h');
+  });
+
+  it('returns empty string for negative or NaN input', () => {
+    assert.equal(humaniseFiringFor(-1), '');
+    assert.equal(humaniseFiringFor(NaN), '');
+    assert.equal(humaniseFiringFor(Number.NEGATIVE_INFINITY), '');
   });
 });

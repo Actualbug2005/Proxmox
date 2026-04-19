@@ -47,6 +47,7 @@ export interface RuleFormValue {
   match: RuleMatch;
   destinationId: string;
   messageTemplate: string;
+  resolveMessageTemplate?: string;
   backoff?: BackoffConfig;
   resolvePolicy?: ResolvePolicy;
 }
@@ -88,6 +89,9 @@ export function RuleForm({
   );
   const [messageTemplate, setMessageTemplate] = useState(
     initial?.messageTemplate ?? DEFAULT_TEMPLATE,
+  );
+  const [resolveMessageTemplate, setResolveMessageTemplate] = useState(
+    initial?.resolveMessageTemplate ?? '',
   );
   const [backoff, setBackoff] = useState<BackoffConfig | undefined>(initial?.backoff);
   const [resolvePolicy, setResolvePolicy] = useState<ResolvePolicy | undefined>(
@@ -154,6 +158,7 @@ export function RuleForm({
       match,
       destinationId,
       messageTemplate,
+      resolveMessageTemplate: resolveMessageTemplate.trim() || undefined,
       backoff,
       resolvePolicy,
     });
@@ -342,6 +347,21 @@ export function RuleForm({
         </Field>
       </div>
 
+      {resolvePolicy !== 'never' && (
+        <Field
+          label="Resolve message (optional)"
+          hint="Rendered when the rule clears. Leave blank to reuse the alert message. Supports {{firingFor}} — humanised duration the rule was firing for."
+        >
+          <textarea
+            value={resolveMessageTemplate}
+            onChange={(e) => setResolveMessageTemplate(e.target.value)}
+            rows={3}
+            placeholder={'Rule cleared after {{firingFor}}'}
+            className={cn(inputCls, 'font-mono text-xs')}
+          />
+        </Field>
+      )}
+
       {backoff?.curve === 'custom' && (
         <Field label="Custom intervals (minutes, comma-separated)">
           <input
@@ -424,6 +444,7 @@ export function synthesiseInitialFromRule(rule: Rule): RuleFormValue {
     match: rule.match,
     destinationId: rule.destinationId,
     messageTemplate: rule.messageTemplate,
+    resolveMessageTemplate: rule.resolveMessageTemplate,
     backoff: rule.backoff,
     resolvePolicy: rule.resolvePolicy,
   };

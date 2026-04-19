@@ -178,6 +178,83 @@ describe('handleEvent', () => {
       'firing alert body has no resolved key',
     );
   });
+
+  it('uses resolveMessageTemplate when set and the event is a resolve', async () => {
+    // Seed a rule manually so we can set resolveMessageTemplate + a known
+    // lastFireAt.
+    const dest = await store.createDestination({
+      name: 'webhook',
+      config: { kind: 'webhook', url: 'https://rx.example/in' },
+    });
+    const t0 = 1_000_000;
+    const r = await store.createRule({
+      name: 'cpu-rule',
+      match: { eventKind: 'metric.threshold.crossed' },
+      destinationId: dest.id,
+      messageTemplate: 'CPU high: {{value}}',
+      resolveMessageTemplate: 'CPU recovered after {{firingFor}}',
+      resolvePolicy: 'always',
+    });
+    // Stamp a fire so the firingFor duration is computable. 2h 14m ago.
+    await store.updateRule(r.id, { lastFireAt: t0, consecutiveFires: 1 });
+
+    let captured: Record<string, unknown> = {};
+    const fetcher: DispatchFetcher = async (_url, init) => {
+      captured = JSON.parse(init.body) as Record<string, unknown>;
+      return { ok: true, status: 200, statusText: 'OK' };
+    };
+
+    const resolveAt = t0 + 2 * 3600_000 + 14 * 60_000;
+    const resolveEvt: NotificationEvent = {
+      kind: 'metric.threshold.crossed',
+      at: resolveAt,
+      metric: 'cpu.node.max',
+      value: 0,
+      scope: 'node:pve',
+      __resolve: true,
+    };
+    await dispatcher.handleEvent(resolveEvt, { fetcher, now: () => resolveAt });
+    assert.equal(captured.message, 'CPU recovered after 2h 14m');
+    assert.equal(captured.resolved, true);
+  });
+
+  it('falls back to messageTemplate when resolveMessageTemplate is unset', async () => {
+    const dest = await store.createDestination({
+      name: 'webhook',
+      config: { kind: 'webhook', url: 'https://rx.example/in' },
+    });
+    const t0 = 1_000_000;
+    const r = await store.createRule({
+      name: 'cpu-rule-no-resolve-tpl',
+      match: { eventKind: 'metric.threshold.crossed' },
+      destinationId: dest.id,
+      messageTemplate: 'CPU was {{value}}',
+      resolvePolicy: 'always',
+    });
+    await store.updateRule(r.id, { lastFireAt: t0, consecutiveFires: 1 });
+
+    let captured: Record<string, unknown> = {};
+    const fetcher: DispatchFetcher = async (_url, init) => {
+      captured = JSON.parse(init.body) as Record<string, unknown>;
+      return { ok: true, status: 200, statusText: 'OK' };
+    };
+
+    const resolveAt = t0 + 30 * 60_000;
+    await dispatcher.handleEvent(
+      {
+        kind: 'metric.threshold.crossed',
+        at: resolveAt,
+        metric: 'cpu.node.max',
+        value: 0,
+        scope: 'node:pve',
+        __resolve: true,
+      },
+      { fetcher, now: () => resolveAt },
+    );
+    // Resolve event value is 0, template uses messageTemplate verbatim.
+    assert.equal(captured.message, 'CPU was 0');
+    assert.equal(captured.resolved, true);
+  });
 });
 
 describe('recentDispatches', () => {
