@@ -68,6 +68,8 @@ export interface PushedEvent {
     | 'guest.disk.filling'
     /** Guest-agent probe (5.2) — agent has been unreachable across multiple polls. */
     | 'guest.agent.unreachable'
+    /** Guest-agent probe (5.2) — a systemd unit transitioned to the failed set. */
+    | 'guest.service.failed'
     /** Auto-update — release probe saw a newer tag than the running version. */
     | 'nexus.update.available'
     /** Auto-update — unattended installer triggered successfully. */
@@ -127,6 +129,7 @@ export const EVENT_KINDS = [
   'drs.migration.failed',
   'guest.disk.filling',
   'guest.agent.unreachable',
+  'guest.service.failed',
   'nexus.update.available',
   'nexus.update.installed',
   'nexus.update.deferred',

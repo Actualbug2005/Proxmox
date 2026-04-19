@@ -32,6 +32,12 @@ export interface GuestProbe {
   reason?: string;
   /** Present when `reachable=true`. May be empty array for minimal images. */
   filesystems?: GuestFilesystem[];
+  /**
+   * Failed systemd units from this probe cycle. Only populated on ticks where
+   * the services probe ran (1/3 cadence). Undefined on off-ticks; empty
+   * array means "probe ran and found zero failed units".
+   */
+  failedServices?: GuestFailedService[];
 }
 
 /** Disk-pressure observation — a mountpoint above threshold. */
@@ -43,3 +49,15 @@ export interface DiskPressure {
   totalBytes: number;
   usedBytes: number;
 }
+
+/**
+ * One failed systemd unit reported by `systemctl list-units --state=failed`.
+ * `description` is the human-readable text; `since` is walltime (ms epoch)
+ * when the unit was first observed in the failed set this run.
+ */
+export interface GuestFailedService {
+  unit: string;
+  description: string;
+  since: number;
+}
+
