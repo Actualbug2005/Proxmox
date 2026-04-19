@@ -37,10 +37,17 @@ export interface AlertRuleModalProps {
 }
 
 // Default tailored for metric.threshold.crossed events (pressure widgets
-// are the primary caller). For PushedEvent kinds (e.g. guest.service.failed)
-// `{{metric}}` and `{{value}}` render blank — parents should pass a
-// kind-appropriate `messageTemplate` via the draft in that case.
-const DEFAULT_TEMPLATE = 'Nexus alert: {{metric}} = {{value}} on {{scope}}';
+// Kind-aware defaults — metric events use metric/value/scope, pushed
+// events use kind + any payload fields the fixture advertises (reason,
+// vmid, unit). Parents can still override via `draft.messageTemplate`.
+const DEFAULT_TEMPLATE_METRIC = 'Nexus alert: {{metric}} = {{value}} on {{scope}}';
+const DEFAULT_TEMPLATE_PUSHED = 'Nexus alert: {{kind}}\n{{reason}}';
+
+function defaultTemplateFor(eventKind: RuleMatch['eventKind']): string {
+  return eventKind === 'metric.threshold.crossed'
+    ? DEFAULT_TEMPLATE_METRIC
+    : DEFAULT_TEMPLATE_PUSHED;
+}
 
 export function AlertRuleModal({ open, onClose, draft }: AlertRuleModalProps) {
   const { data: destinations = [] } = useDestinations();
@@ -58,7 +65,7 @@ export function AlertRuleModal({ open, onClose, draft }: AlertRuleModalProps) {
       title: draft.title,
       match: draft.match,
       destinationId: destinations[0]?.id ?? '',
-      messageTemplate: draft.messageTemplate ?? DEFAULT_TEMPLATE,
+      messageTemplate: draft.messageTemplate ?? defaultTemplateFor(draft.match.eventKind),
     }),
     [draft, destinations],
   );
