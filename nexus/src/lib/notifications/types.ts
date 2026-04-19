@@ -81,6 +81,14 @@ export interface PushedEvent {
   at: number;
   /** Free-form structured payload; rule matcher reads specific keys by kind. */
   payload: Record<string, string | number | boolean | null | undefined>;
+  /**
+   * Internal marker — true for synthetic "cleared" events emitted by the
+   * poll-source or resolve-sweep. The dispatcher propagates this to
+   * `DispatchPayload.resolved` so transports render distinctively
+   * (Discord embed colour, ntfy emoji, email subject, webhook body).
+   * Never set by user-facing emit sites.
+   */
+  __resolve?: true;
 }
 
 /**
@@ -97,6 +105,11 @@ export interface MetricEvent {
   value: number;
   /** Optional resource scope — `node:pve`, `guest:100`, `cluster` for cluster-wide. */
   scope: string;
+  /**
+   * Internal marker — true for synthetic "cleared" events emitted when a
+   * metric rule's predicate stops matching. See PushedEvent.__resolve.
+   */
+  __resolve?: true;
 }
 
 export type NotificationEvent = PushedEvent | MetricEvent;

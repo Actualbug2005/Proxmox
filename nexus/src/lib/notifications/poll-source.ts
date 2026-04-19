@@ -185,15 +185,16 @@ export async function runTick(
     if (prev && !nowMatches && rule.consecutiveFires > 0) {
       if (shouldFireResolve(rule)) {
         // Emit a synthetic resolved event so the dispatcher's usual
-        // path handles the transport. The dispatcher recognises
-        // `payload.__resolve=true` and sets `resolved: true` on the
-        // outgoing payload.
+        // path handles the transport. The dispatcher reads `__resolve`
+        // and sets `resolved: true` on the outgoing DispatchPayload;
+        // transports then render a resolve-flavoured notification.
         emit({
           kind: rule.match.eventKind,
           at: now,
           metric: rule.match.metric ?? '',
           value: 0,
           scope: rule.match.scope ?? 'cluster',
+          __resolve: true,
         });
       }
       await markRuleCleared(rule.id, now);
@@ -228,7 +229,8 @@ export async function sweepPushedClears(now: number = Date.now()): Promise<void>
           'metric.threshold.crossed'
         >,
         at: now,
-        payload: { __resolve: true },
+        payload: {},
+        __resolve: true,
       } as never);
     }
     await markRuleCleared(rule.id, now);

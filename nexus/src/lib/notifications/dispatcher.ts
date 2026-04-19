@@ -175,6 +175,10 @@ async function dispatchOne(
       message,
       title: rule.title,
       scope,
+      // Propagate the internal __resolve marker set by poll-source +
+      // sweepPushedClears. Transports branch on this to render a
+      // resolve-flavoured notification instead of an alert.
+      resolved: event.__resolve === true ? true : undefined,
     },
     fetcher,
   );

@@ -137,6 +137,47 @@ describe('handleEvent', () => {
     await dispatcher.handleEvent(event(), { fetcher });
     assert.equal(captured, 'failed: root@pam');
   });
+
+  it('propagates __resolve from the event to payload.resolved', async () => {
+    await seedRule({ eventKind: 'metric.threshold.crossed' });
+    let captured: Record<string, unknown> = {};
+    const fetcher: DispatchFetcher = async (_url, init) => {
+      captured = JSON.parse(init.body) as Record<string, unknown>;
+      return { ok: true, status: 200, statusText: 'OK' };
+    };
+    const resolveEvt: NotificationEvent = {
+      kind: 'metric.threshold.crossed',
+      at: Date.now(),
+      metric: 'cpu.node.max',
+      value: 0,
+      scope: 'node:pve',
+      __resolve: true,
+    };
+    await dispatcher.handleEvent(resolveEvt, { fetcher });
+    assert.equal(captured.resolved, true, 'webhook body carries resolved:true');
+  });
+
+  it('omits payload.resolved when __resolve is absent', async () => {
+    await seedRule({ eventKind: 'metric.threshold.crossed' });
+    let captured: Record<string, unknown> = {};
+    const fetcher: DispatchFetcher = async (_url, init) => {
+      captured = JSON.parse(init.body) as Record<string, unknown>;
+      return { ok: true, status: 200, statusText: 'OK' };
+    };
+    const firingEvt: NotificationEvent = {
+      kind: 'metric.threshold.crossed',
+      at: Date.now(),
+      metric: 'cpu.node.max',
+      value: 0.95,
+      scope: 'node:pve',
+    };
+    await dispatcher.handleEvent(firingEvt, { fetcher });
+    assert.equal(
+      'resolved' in captured,
+      false,
+      'firing alert body has no resolved key',
+    );
+  });
 });
 
 describe('recentDispatches', () => {
