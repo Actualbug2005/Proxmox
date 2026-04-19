@@ -42,7 +42,9 @@ Give the tickers a real PVE session to use, provided by a dedicated PVE API toke
 
 ## Architecture
 
-One new module — `nexus/src/lib/service-account/` — owns the credential lifecycle. A discriminated union on `PVEAuthSession` adds a `{ kind: 'token', ... }` branch. Existing consumers (`pveFetch`, tickers) take the same type; `pveFetch` branches internally on `kind`. A new settings route + page. A small dashboard banner. No new server-side cron, no scheduler changes.
+One new module — `nexus/src/lib/service-account/` — owns the credential lifecycle. A separate `ServiceAccountSession` type + new `pveFetchWithToken` helper live alongside the existing `PVEAuthSession` / `pveFetch` pair without touching them, because the two auth paths don't intersect at any consumer: operator-facing routes always take a ticket session; background tickers always take a token session. No existing code is rewritten. A new settings route + page. A small dashboard banner. No new server-side cron, no scheduler changes.
+
+**Why separate types over a discriminated union:** the union would force `if (session.kind === 'ticket')` narrowing in ~10 unrelated call-sites that only ever see a ticket session, for a theoretical uniformity win that no consumer today actually benefits from. Separate types keep the diff surgical and the two auth modes legibly distinct.
 
 ## File structure
 
@@ -60,12 +62,13 @@ One new module — `nexus/src/lib/service-account/` — owns the credential life
 - `nexus/src/components/dashboard/service-account-banner.tsx` — dismissible nag.
 
 **Modified:**
-- `nexus/src/types/proxmox.ts` — widen `PVEAuthSession` to discriminated union: `{ kind: 'ticket', ... } | { kind: 'token', ... }`. Existing `ticket`/`csrfToken` fields move under the `ticket` branch.
-- `nexus/src/lib/pve-fetch.ts` — branch on `session.kind` to produce the right headers.
-- `nexus/server.ts` — `await loadServiceAccountAtBoot()` before ticker startup; replace the four stubs with real `getServiceSession()`-backed seams.
-- `nexus/src/lib/pve-fetch.test.ts` — extend to cover both branches.
+- `nexus/src/lib/pve-fetch.ts` — add new `pveFetchWithToken(session, url, init)` helper alongside existing `pveFetch`. Existing `pveFetch` stays untouched.
+- `nexus/server.ts` — `await loadServiceAccountAtBoot()` before ticker startup; replace the four stubs with `getServiceSession()`-backed seams.
+- Three ticker signatures that currently take `PVEAuthSession | undefined` (guest-agent poll source, DRS runner helper, notification poll source helper) — change their type to `ServiceAccountSession | null`. Local to those three files.
 - `nexus/src/app/(app)/dashboard/layout.tsx` (or the component one level below that) — mount `<ServiceAccountBanner />`.
 - `nexus/package.json` — version bump to 0.27.0 (release task only).
+
+No changes to `nexus/src/types/proxmox.ts`. `PVEAuthSession` and its `ticket`/`csrfToken` fields stay exactly as they are.
 
 ## Components
 
@@ -84,15 +87,17 @@ export interface ServiceAccountConfig {
 }
 ```
 
-The `PVEAuthSession` type in `types/proxmox.ts` widens to:
+A new `ServiceAccountSession` type lives in `lib/service-account/types.ts`:
 
 ```ts
-export type PVEAuthSession =
-  | { kind: 'ticket'; ticket: string; csrfToken: string; proxmoxHost: string; userid: string; /* existing fields */ }
-  | { kind: 'token'; tokenId: string; secret: string; proxmoxHost: string };
+export interface ServiceAccountSession {
+  tokenId: string;
+  secret: string;
+  proxmoxHost: string;
+}
 ```
 
-Existing code that destructures `session.ticket` must first narrow with `session.kind === 'ticket'`.
+`PVEAuthSession` is unchanged. The two types never mix — operator routes pass `PVEAuthSession` to `pveFetch`; tickers pass `ServiceAccountSession` to `pveFetchWithToken`.
 
 ### `store.ts`
 
@@ -115,7 +120,7 @@ export async function deleteConfig(): Promise<void>;
 ```ts
 export async function loadServiceAccountAtBoot(): Promise<void>;
 export async function reloadServiceAccount(): Promise<void>;
-export function getServiceSession(): PVEAuthSession | null;
+export function getServiceSession(): ServiceAccountSession | null;
 export function getServiceAccountStatus(): {
   configured: boolean;
   savedAt: number | null;
@@ -126,38 +131,37 @@ export function getServiceAccountStatus(): {
 };
 ```
 
-Internal state: `let current: PVEAuthSession | null = null; let status: ServiceAccountStatus = initial;`. `loadServiceAccountAtBoot` reads the file, constructs a `kind: 'token'` session, runs `probeServiceAccount` with a 5s timeout, updates status. `reloadServiceAccount` is called by the save handler after a successful save; serialises via a `let reloadInFlight: Promise<void> | null` guard so concurrent saves don't race.
+Internal state: `let current: ServiceAccountSession | null = null; let status: ServiceAccountStatus = initial;`. `loadServiceAccountAtBoot` reads the file, constructs a `ServiceAccountSession`, runs `probeServiceAccount` with a 5s timeout, updates status. `reloadServiceAccount` is called by the save handler after a successful save; serialises via a `let reloadInFlight: Promise<void> | null` guard so concurrent saves don't race.
 
 ### `probe.ts`
 
 ```ts
 export async function probeServiceAccount(
-  session: Extract<PVEAuthSession, { kind: 'token' }>
+  session: ServiceAccountSession
 ): Promise<{ ok: true; userid: string } | { ok: false; error: string }>;
 ```
 
-Calls `GET https://{proxmoxHost}:8006/api2/json/access/permissions` via the widened `pveFetch`. Accepts any 2xx response whose body has a truthy `data` map. Reads the token's userid from the tokenId (everything before `!`). Returns `{ ok: false, error }` on HTTP error, network error, or timeout (5s AbortController).
+Calls `GET https://{proxmoxHost}:8006/api2/json/access/permissions` via `pveFetchWithToken`. Accepts any 2xx response whose body has a truthy `data` map. Reads the token's userid from the tokenId (everything before `!`). Returns `{ ok: false, error }` on HTTP error, network error, or timeout (5s AbortController).
 
-### `pve-fetch.ts` diff
+### `pve-fetch.ts` diff — add new `pveFetchWithToken`
 
-Replace the current header-construction block with:
+Existing `pveFetch(url, init)` and its ticket-auth pathway stay exactly as they are.
+
+Add a sibling helper:
 
 ```ts
-const headers = new Headers(init?.headers);
-switch (session.kind) {
-  case 'ticket':
-    headers.set('Cookie', `PVEAuthCookie=${session.ticket}`);
-    if (init?.method && init.method !== 'GET' && init.method !== 'HEAD') {
-      headers.set('CSRFPreventionToken', session.csrfToken);
-    }
-    break;
-  case 'token':
-    headers.set('Authorization', `PVEAPIToken=${session.tokenId}=${session.secret}`);
-    break;
+export async function pveFetchWithToken(
+  session: ServiceAccountSession,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  headers.set('Authorization', `PVEAPIToken=${session.tokenId}=${session.secret}`);
+  return fetch(url, { ...init, headers, /* existing dispatcher for self-signed certs etc. */ });
 }
 ```
 
-All other behaviour (fetch call, error handling, status interpretation) is unchanged.
+The self-signed-cert dispatcher and any other behaviour shared with `pveFetch` should be factored into a shared private helper if trivial; otherwise duplicate the ~5 lines. Don't refactor `pveFetch` to consume the shared helper — keep this change purely additive.
 
 ### Settings API routes
 
@@ -261,9 +265,8 @@ Following house style (`node --test` + `tsx`, no RTL):
 - Corrupt encrypted file → `loadConfig` returns null (no throw).
 
 **`lib/pve-fetch.test.ts` (extend):**
-- Token session → outgoing request has `Authorization: PVEAPIToken=...`, NO `Cookie`, NO `CSRFPreventionToken`.
-- Ticket session + POST → has both `Cookie` and `CSRFPreventionToken` (regression guard on the discriminant).
-- Ticket session + GET → has `Cookie`, no `CSRFPreventionToken`.
+- `pveFetchWithToken` → outgoing request has `Authorization: PVEAPIToken=...`, NO `Cookie`, NO `CSRFPreventionToken`.
+- Existing `pveFetch` tests stay as they are — regression guard that the new helper didn't accidentally rewrite the old one.
 
 **`lib/service-account/probe.test.ts`:**
 - Happy path: 200 with permissions map → `{ ok: true, userid: 'nexus@pve!automation' }`.
@@ -299,12 +302,12 @@ No UI tests. Settings page is thin glue over `useCsrfMutation`.
 
 ## Commit plan
 
-1. `types.ts` + `pve-fetch.ts` widening + test — the discriminated-union foundation.
-2. `store.ts` + tests.
-3. `probe.ts` + tests.
-4. `session.ts` + tests.
+1. `service-account/types.ts` + `pve-fetch.ts` `pveFetchWithToken` addition + tests.
+2. `service-account/store.ts` + tests.
+3. `service-account/probe.ts` + tests.
+4. `service-account/session.ts` + tests.
 5. API routes (`/api/system/service-account` and `/probe`).
 6. Settings page.
 7. Dashboard banner.
-8. `server.ts` ticker replacements + `loadServiceAccountAtBoot` call.
+8. `server.ts` ticker replacements + `loadServiceAccountAtBoot` call; retype ticker seams that currently accept `PVEAuthSession | undefined` to `ServiceAccountSession | null`.
 9. Release chore (version bump + tag + push, gated on manual verification).
