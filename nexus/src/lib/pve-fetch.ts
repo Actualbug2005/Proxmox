@@ -30,6 +30,8 @@
 
 import { Agent, fetch as undiciFetch, type RequestInit as UndiciRequestInit } from 'undici';
 
+import type { ServiceAccountSession } from './service-account/types.ts';
+
 // Single shared Agent — undici pools connections per Agent instance, so one
 // Agent for the whole app keeps connection reuse working (no per-request
 // TCP+TLS handshake overhead).
@@ -61,4 +63,30 @@ export function pveFetch(
     ...init,
     dispatcher: pveAgent,
   });
+}
+
+/**
+ * Service-account variant of {@link pveFetch}. Sends PVE API-token auth via
+ * a single `Authorization: PVEAPIToken=<tokenId>=<secret>` header — no
+ * ticket cookie, no CSRF header (API tokens don't need CSRF since the
+ * secret itself is the credential).
+ *
+ * Uses the global `fetch` so that callers can stub it in tests; the shared
+ * `pveAgent` is passed via the `dispatcher` option, which Node's global
+ * fetch honours (it's undici under the hood), preserving the same scoped
+ * self-signed-cert bypass as {@link pveFetch}.
+ */
+export async function pveFetchWithToken(
+  session: ServiceAccountSession,
+  url: string,
+  init?: RequestInit,
+): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  headers.set('Authorization', `PVEAPIToken=${session.tokenId}=${session.secret}`);
+  const finalInit: RequestInit & { dispatcher?: Agent } = {
+    ...init,
+    headers,
+    dispatcher: pveAgent,
+  };
+  return globalThis.fetch(url, finalInit);
 }
