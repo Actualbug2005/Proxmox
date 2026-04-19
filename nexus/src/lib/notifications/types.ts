@@ -150,6 +150,8 @@ export const METRIC_NAMES = [
   'cluster.mem.avg',
   'node.cpu.max',
   'node.loadavg.per_core',
+  'guest.cpu',
+  'guest.mem',
   'guests.failing.count',
 ] as const;
 export type MetricName = (typeof METRIC_NAMES)[number];

@@ -101,7 +101,57 @@ describe('computeMetrics', () => {
       'cluster.mem.avg',
       'node.cpu.max',
       'node.loadavg.per_core',
+      'guest.cpu',
+      'guest.mem',
       'guests.failing.count',
     ]);
+  });
+});
+
+describe('computeMetrics — per-guest metrics', () => {
+  it('emits guest.cpu for each running guest with a cpu value', () => {
+    const readings = computeMetrics(
+      [
+        node('pve-01', { cpu: 0.3, maxcpu: 4 }),
+        { id: 'qemu/100', type: 'qemu', node: 'pve-01', vmid: 100, status: 'running', cpu: 0.9, mem: 0, maxmem: 0 } as ClusterResourcePublic,
+        { id: 'qemu/101', type: 'qemu', node: 'pve-01', vmid: 101, status: 'stopped', cpu: 0, mem: 0, maxmem: 0 } as ClusterResourcePublic,
+      ],
+      {},
+    );
+    const cpuReadings = readings.filter((r) => r.metric === 'guest.cpu');
+    assert.equal(cpuReadings.length, 1);
+    assert.equal(cpuReadings[0].scope, 'guest:100');
+    assert.equal(cpuReadings[0].value, 0.9);
+  });
+
+  it('emits guest.mem as a fraction for each running guest with mem/maxmem > 0', () => {
+    const readings = computeMetrics(
+      [
+        node('pve-01', { cpu: 0.3, maxcpu: 4 }),
+        {
+          id: 'qemu/100', type: 'qemu', node: 'pve-01', vmid: 100, status: 'running',
+          cpu: 0.1, mem: 512 * 1024 * 1024, maxmem: 1024 * 1024 * 1024,
+        } as ClusterResourcePublic,
+      ],
+      {},
+    );
+    const memReadings = readings.filter((r) => r.metric === 'guest.mem');
+    assert.equal(memReadings.length, 1);
+    assert.equal(memReadings[0].scope, 'guest:100');
+    assert.equal(memReadings[0].value, 0.5);
+  });
+
+  it('skips guests missing cpu/mem or maxmem=0', () => {
+    const readings = computeMetrics(
+      [
+        { id: 'qemu/100', type: 'qemu', node: 'pve-01', vmid: 100, status: 'running', cpu: undefined, mem: 0, maxmem: 0 } as unknown as ClusterResourcePublic,
+        { id: 'qemu/101', type: 'qemu', node: 'pve-01', vmid: 101, status: 'running', cpu: 0.5, mem: 100, maxmem: 0 } as ClusterResourcePublic,
+      ],
+      {},
+    );
+    // vmid 101 has cpu; vmid 100 doesn't.
+    assert.equal(readings.filter((r) => r.metric === 'guest.cpu').length, 1);
+    // Neither has maxmem > 0.
+    assert.equal(readings.filter((r) => r.metric === 'guest.mem').length, 0);
   });
 });

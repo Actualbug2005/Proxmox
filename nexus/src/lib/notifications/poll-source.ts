@@ -58,6 +58,7 @@ export interface MetricReading {
  * Scope convention:
  *   - `cluster`         — cluster-wide scalar (single reading per metric)
  *   - `node:<name>`     — per-node reading (one per online node)
+ *   - `guest:<vmid>`    — per-guest reading (one per running VM/CT)
  */
 export function computeMetrics(
   resources: readonly ClusterResourcePublic[],
@@ -97,6 +98,19 @@ export function computeMetrics(
         value: load1 / cores,
         scope: `node:${name}`,
       });
+    }
+  }
+
+  // ── guest.cpu + guest.mem — per running guest ──────────────────────────
+  // Stopped guests have no real CPU/RAM pressure, so we skip them — a
+  // running VM at 90% CPU is an alert; a stopped VM reporting 0% is noise.
+  const runningGuests = guests.filter((g) => g.status === 'running');
+  for (const g of runningGuests) {
+    if (g.cpu !== undefined) {
+      out.push({ metric: 'guest.cpu', value: g.cpu, scope: `guest:${g.vmid}` });
+    }
+    if (g.mem !== undefined && g.maxmem && g.maxmem > 0) {
+      out.push({ metric: 'guest.mem', value: g.mem / g.maxmem, scope: `guest:${g.vmid}` });
     }
   }
 
