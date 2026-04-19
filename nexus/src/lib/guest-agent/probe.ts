@@ -79,12 +79,20 @@ async function fetchWithTimeout(
   try {
     if (isTokenSession(session)) {
       // Token auth — strip any ticket Cookie/CSRF header the caller tried
-      // to set; pveFetchWithToken owns the Authorization header.
-      const headers = new Headers(init?.headers as HeadersInit | undefined);
-      headers.delete('Cookie');
-      headers.delete('CSRFPreventionToken');
+      // to set; pveFetchWithToken owns the Authorization header. Pass only
+      // method/body/signal through; headers are rebuilt per-call so any
+      // DOM-vs-undici type mismatch on the merged init object is moot.
+      const headers: Record<string, string> = {};
+      if (init?.headers) {
+        const src = new Headers(init.headers as HeadersInit | undefined);
+        src.forEach((value, key) => {
+          if (key.toLowerCase() === 'cookie' || key.toLowerCase() === 'csrfpreventiontoken') return;
+          headers[key] = value;
+        });
+      }
       return await pveFetchWithToken(session, url, {
-        ...(init as RequestInit),
+        method: init?.method,
+        body: init?.body as string | undefined,
         headers,
         signal: ac.signal,
       });
