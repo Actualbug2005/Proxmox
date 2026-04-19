@@ -21,6 +21,12 @@ import { startPollSource as startNotificationPollSource } from './src/lib/notifi
 import { runTick as runDrsTick } from './src/lib/drs/runner.ts';
 import { startPollSource as startGuestPollSource } from './src/lib/guest-agent/poll-source.ts';
 import { runTick as runUpdatesTick } from './src/lib/updates/checker.ts';
+import {
+  loadServiceAccountAtBoot,
+  getServiceSession,
+} from './src/lib/service-account/session.ts';
+import { pveFetchWithToken } from './src/lib/pve-fetch.ts';
+import type { ClusterResourcePublic, NodeStatus, PVETask } from './src/types/proxmox.ts';
 import { readFile as fsReadFile } from 'node:fs/promises';
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -346,30 +352,85 @@ app.prepare().then(async () => {
   // No awaited handler — the bus is fire-and-forget.
   attachNotificationDispatcher();
 
-  // Start the metric polling source. It currently fetches a synthetic
-  // empty snapshot because server-side fetching of `/cluster/resources`
-  // requires an authenticated PVE session, which this boot context
-  // doesn't have. Phase C.2 will bridge a service-account session for
-  // the poll; for now the poll tick runs but yields no metric events,
-  // and the push-emitters cover the five critical ops signals.
-  startNotificationPollSource({
-    fetchState: async () => ({ resources: [], nodeStatuses: {}, tasks: [] }),
-  });
+  // Load the service-account session singleton before any ticker starts.
+  // If no token is configured, getServiceSession() returns null and each
+  // ticker falls through to its empty-shape branch — the tick still runs
+  // so the history-entry contract stays consistent; it just records a
+  // clean "no session" state rather than silent no-op. Operator pastes a
+  // token via /settings/service-account → /api/service-account POST
+  // calls reloadServiceAccount() and the next tick picks it up.
+  await loadServiceAccountAtBoot();
+
+  // Shared snapshot fetcher for the notification & DRS tickers — both
+  // need `/cluster/resources`; DRS additionally needs per-node status
+  // for free-capacity calc, notifications needs loadavg in the same
+  // node-status shape. Fanning out to every node for /status is O(N)
+  // but N is small (homelab <10) and this only runs once per tick.
+  async function fetchClusterSnapshot(): Promise<{
+    resources: ClusterResourcePublic[];
+    nodeStatuses: Record<string, NodeStatus | undefined>;
+    tasks: PVETask[];
+  }> {
+    const session = getServiceSession();
+    if (!session) return { resources: [], nodeStatuses: {}, tasks: [] };
+    try {
+      const host = session.proxmoxHost;
+      const resourcesRes = await pveFetchWithToken(
+        session,
+        `https://${host}:8006/api2/json/cluster/resources`,
+      );
+      if (!resourcesRes.ok) throw new Error(`cluster/resources ${resourcesRes.status}`);
+      const resources =
+        ((await resourcesRes.json()) as { data?: ClusterResourcePublic[] }).data ?? [];
+
+      // Per-node /status — fan out bounded by the node count, swallow
+      // individual failures so one flaky node doesn't blank the whole tick.
+      const nodeStatuses: Record<string, NodeStatus | undefined> = {};
+      const nodes = resources.filter((r) => r.type === 'node' && r.status === 'online');
+      await Promise.all(
+        nodes.map(async (n) => {
+          const name = n.node ?? n.id;
+          try {
+            const res = await pveFetchWithToken(
+              session,
+              `https://${host}:8006/api2/json/nodes/${encodeURIComponent(name)}/status`,
+            );
+            if (!res.ok) return;
+            nodeStatuses[name] = ((await res.json()) as { data?: NodeStatus }).data;
+          } catch { /* per-node best-effort */ }
+        }),
+      );
+
+      // Tasks aren't consumed by the current poll-source logic (the
+      // `_tasks` arg in runTick is intentionally unused today), so skip
+      // the fetch to avoid an extra round-trip every minute.
+      return { resources, nodeStatuses, tasks: [] };
+    } catch (err) {
+      console.error(
+        '[nexus event=cluster_snapshot_failed] reason=%s',
+        err instanceof Error ? err.message : String(err),
+      );
+      return { resources: [], nodeStatuses: {}, tasks: [] };
+    }
+  }
+
+  startNotificationPollSource({ fetchState: fetchClusterSnapshot });
 
   // ── Auto-DRS (5.3) ───────────────────────────────────────────────────────
-  // Standalone 60s ticker. Uses the same "inject a fetchState seam"
-  // pattern as the notification poll source because server-side PVE
-  // queries need an authenticated session that this boot context
-  // doesn't yet have. Until the service-account session wiring lands,
-  // the DRS tick runs but can't reach PVE — it'll record each tick
-  // as `skipped: fetchCluster failed …` in the history, visible in
-  // the /dashboard/cluster/drs UI, so the operator has a single
-  // place to see "DRS is trying but can't auth" on a fresh install.
+  // Standalone 60s ticker. When no service-account session is configured,
+  // fetchClusterSnapshot returns empty — the planner sees no hot nodes
+  // and the runner records `no-action` in history. Operator visibility
+  // via /dashboard/cluster/drs stays coherent.
   const drsTimer = setInterval(() => {
     void (async () => {
       try {
+        const snap = await fetchClusterSnapshot();
         await runDrsTick({
-          fetchCluster: async () => ({ resources: [], nodeStatuses: {} }),
+          fetchCluster: async () => ({
+            resources: snap.resources,
+            nodeStatuses: snap.nodeStatuses,
+          }),
+          session: getServiceSession(),
         });
       } catch (err) {
         console.error(
@@ -382,15 +443,50 @@ app.prepare().then(async () => {
   drsTimer.unref?.();
 
   // ── Guest-agent probes (5.2) ─────────────────────────────────────────────
-  // Same boot-context caveat as DRS: without a service-account session
-  // the probes no-op. Once that session seeding lands, `getSession()`
-  // returns the live PVEAuthSession and `fetchGuests` enumerates the
-  // fleet from cluster/resources. Starting the timer now keeps the
-  // snapshot shape defined (empty) for the bento widget from the first
-  // request.
+  // fetchGuests enumerates QEMU guests that have the agent enabled in
+  // their runtime config — PVE reports `agent` as 0|1 on running VMs in
+  // cluster/resources. LXC deferred (see probe module header).
   startGuestPollSource({
-    getSession: () => undefined,
-    fetchGuests: async () => [],
+    getSession: () => getServiceSession(),
+    fetchGuests: async () => {
+      const session = getServiceSession();
+      if (!session) return [];
+      try {
+        const res = await pveFetchWithToken(
+          session,
+          `https://${session.proxmoxHost}:8006/api2/json/cluster/resources?type=vm`,
+        );
+        if (!res.ok) throw new Error(`cluster/resources ${res.status}`);
+        const data =
+          ((await res.json()) as {
+            data?: Array<{
+              type: string;
+              status?: string;
+              template?: 0 | 1;
+              node?: string;
+              vmid?: number;
+              agent?: number | string;
+            }>;
+          }).data ?? [];
+        return data
+          .filter(
+            (g) =>
+              g.type === 'qemu' &&
+              g.template !== 1 &&
+              g.status === 'running' &&
+              (g.agent === 1 || g.agent === '1') &&
+              typeof g.node === 'string' &&
+              typeof g.vmid === 'number',
+          )
+          .map((g) => ({ node: g.node as string, vmid: g.vmid as number }));
+      } catch (err) {
+        console.error(
+          '[nexus event=guest_fleet_fetch_failed] reason=%s',
+          err instanceof Error ? err.message : String(err),
+        );
+        return [];
+      }
+    },
   });
 
   // ── Auto-update checker ─────────────────────────────────────────────────

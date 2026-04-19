@@ -13,12 +13,25 @@
  * to do with the result.
  */
 
-import { pveFetch } from '../pve-fetch.ts';
+import { pveFetch, pveFetchWithToken } from '../pve-fetch.ts';
 import type { PVEAuthSession } from '../../types/proxmox.ts';
+import type { ServiceAccountSession } from '../service-account/types.ts';
 import type { GuestFilesystem, GuestProbe } from './types.ts';
 
+/**
+ * The probe accepts either a user-auth PVE ticket session (used by the
+ * on-demand HTTP route via `withAuth`) or the background service-account
+ * session (used by the scheduled poll source). They're discriminated by
+ * presence of `tokenId` — API tokens don't need CSRF, tickets do.
+ */
+type ProbeSession = PVEAuthSession | ServiceAccountSession;
+
+function isTokenSession(s: ProbeSession): s is ServiceAccountSession {
+  return (s as ServiceAccountSession).tokenId !== undefined;
+}
+
 interface ProbeArgs {
-  session: PVEAuthSession;
+  session: ProbeSession;
   node: string;
   vmid: number;
   /** Request timeout in ms. QMP agents can hang for a long time if the
@@ -56,13 +69,26 @@ function normaliseFs(raw: RawFsinfo): GuestFilesystem | null {
 }
 
 async function fetchWithTimeout(
+  session: ProbeSession,
   url: string,
   init: Parameters<typeof pveFetch>[1],
   timeoutMs: number,
-): Promise<Awaited<ReturnType<typeof pveFetch>>> {
+): Promise<Response | Awaited<ReturnType<typeof pveFetch>>> {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   try {
+    if (isTokenSession(session)) {
+      // Token auth — strip any ticket Cookie/CSRF header the caller tried
+      // to set; pveFetchWithToken owns the Authorization header.
+      const headers = new Headers(init?.headers as HeadersInit | undefined);
+      headers.delete('Cookie');
+      headers.delete('CSRFPreventionToken');
+      return await pveFetchWithToken(session, url, {
+        ...(init as RequestInit),
+        headers,
+        signal: ac.signal,
+      });
+    }
     return await pveFetch(url, { ...init, signal: ac.signal });
   } finally {
     clearTimeout(timer);
@@ -81,15 +107,21 @@ export async function probeGuest({
   timeoutMs = 5000,
 }: ProbeArgs): Promise<GuestProbe> {
   const base = `https://${session.proxmoxHost}:8006/api2/json/nodes/${encodeURIComponent(node)}/qemu/${vmid}/agent`;
-  const headers = {
-    Cookie: `PVEAuthCookie=${session.ticket}`,
-    CSRFPreventionToken: session.csrfToken,
-  };
+  // Ticket-auth needs Cookie + CSRF; token-auth paths ignore these because
+  // fetchWithTimeout strips them and calls pveFetchWithToken (Authorization
+  // header only, no CSRF since the secret IS the credential).
+  const headers: Record<string, string> = isTokenSession(session)
+    ? {}
+    : {
+        Cookie: `PVEAuthCookie=${session.ticket}`,
+        CSRFPreventionToken: session.csrfToken,
+      };
 
   // Step 1 — ping. Cheap, tells us the agent is up before we spend time
   // on fsinfo. `ping` is a POST with an empty body in PVE's agent API.
   try {
     const pingRes = await fetchWithTimeout(
+      session,
       `${base}/ping`,
       {
         method: 'POST',
@@ -123,7 +155,7 @@ export async function probeGuest({
   // list with the reason attached, so the UI distinguishes "stale data"
   // from "unreachable agent".
   try {
-    const res = await fetchWithTimeout(`${base}/get-fsinfo`, { headers }, timeoutMs);
+    const res = await fetchWithTimeout(session, `${base}/get-fsinfo`, { headers }, timeoutMs);
     if (!res.ok) {
       return {
         vmid,

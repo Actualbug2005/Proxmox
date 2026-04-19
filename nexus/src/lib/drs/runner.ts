@@ -18,7 +18,7 @@
  */
 
 import { matchesCron } from '../cron-match.ts';
-import type { PVEAuthSession } from '../../types/proxmox.ts';
+import type { ServiceAccountSession } from '../service-account/types.ts';
 import { emit } from '../notifications/event-bus.ts';
 import { planMove, type PlannerInput } from './planner.ts';
 import {
@@ -27,7 +27,7 @@ import {
   noteMigrated,
 } from './store.ts';
 import type { DrsHistoryEntry, DrsPolicy } from './types.ts';
-import { pveFetch } from '../pve-fetch.ts';
+import { pveFetchWithToken } from '../pve-fetch.ts';
 
 export interface TickDeps {
   fetchCluster: () => Promise<{
@@ -40,12 +40,12 @@ export interface TickDeps {
    * verify the dry-run / enabled branching without spinning up PVE.
    */
   migrate?: (args: {
-    session: PVEAuthSession;
+    session: ServiceAccountSession;
     vmid: number;
     sourceNode: string;
     targetNode: string;
   }) => Promise<{ ok: boolean; upid?: string; reason?: string }>;
-  session?: PVEAuthSession;
+  session?: ServiceAccountSession | null;
   now?: () => number;
 }
 
@@ -70,11 +70,9 @@ const defaultMigrate: NonNullable<TickDeps['migrate']> = async ({
     // failure cleanly.
   });
   try {
-    const res = await pveFetch(url, {
+    const res = await pveFetchWithToken(session, url, {
       method: 'POST',
       headers: {
-        Cookie: `PVEAuthCookie=${session.ticket}`,
-        CSRFPreventionToken: session.csrfToken,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: body.toString(),

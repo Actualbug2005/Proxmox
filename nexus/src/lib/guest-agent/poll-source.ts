@@ -21,7 +21,7 @@ import { emit } from '../notifications/event-bus.ts';
 import { probeGuest } from './probe.ts';
 import { setSnapshot } from './snapshot.ts';
 import type { DiskPressure, GuestProbe } from './types.ts';
-import type { PVEAuthSession } from '../../types/proxmox.ts';
+import type { ServiceAccountSession } from '../service-account/types.ts';
 
 const DEFAULT_TICK_MS = 60_000;
 const DEFAULT_PRESSURE_THRESHOLD = 0.85;
@@ -67,8 +67,10 @@ export interface PollSourceOptions {
   /** Enumerate guests to probe. Returns the cluster-wide fleet each tick
    *  so config changes (agent toggled off, new VMs) are picked up. */
   fetchGuests: () => Promise<GuestTarget[]>;
-  /** PVE session used for every probe. Must be the service-account session. */
-  getSession: () => PVEAuthSession | undefined;
+  /** PVE session used for every probe. The service-account session
+   *  (API token) — background probes can't use a user ticket since
+   *  tickets expire and aren't bound to the boot lifecycle. */
+  getSession: () => ServiceAccountSession | null;
 }
 
 /**
@@ -77,7 +79,7 @@ export interface PollSourceOptions {
  */
 async function probeFleet(
   guests: GuestTarget[],
-  session: PVEAuthSession,
+  session: ServiceAccountSession,
 ): Promise<GuestProbe[]> {
   const out: GuestProbe[] = new Array(guests.length);
   let cursor = 0;
