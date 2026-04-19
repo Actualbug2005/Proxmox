@@ -2,7 +2,7 @@ import { loadConfig } from './store.ts';
 import { probeServiceAccount } from './probe.ts';
 import type { ServiceAccountSession } from './types.ts';
 
-interface Status {
+export interface ServiceAccountStatus {
   configured: boolean;
   savedAt: number | null;
   userid: string | null;
@@ -11,7 +11,7 @@ interface Status {
   lastProbeAt: number | null;
 }
 
-const INITIAL_STATUS: Status = {
+const INITIAL_STATUS: ServiceAccountStatus = {
   configured: false,
   savedAt: null,
   userid: null,
@@ -21,7 +21,7 @@ const INITIAL_STATUS: Status = {
 };
 
 let current: ServiceAccountSession | null = null;
-let status: Status = { ...INITIAL_STATUS };
+let status: ServiceAccountStatus = { ...INITIAL_STATUS };
 let reloadInFlight: Promise<void> | null = null;
 
 async function doReload(): Promise<void> {
@@ -66,6 +66,6 @@ export function getServiceSession(): ServiceAccountSession | null {
   return current;
 }
 
-export function getServiceAccountStatus(): Status {
+export function getServiceAccountStatus(): ServiceAccountStatus {
   return { ...status };
 }
