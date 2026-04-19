@@ -17,6 +17,7 @@ import { HardDrive, MoreHorizontal, Plus } from 'lucide-react';
 import { parseVolume, formatVolumeSize, type VolumeDescriptor } from '@/lib/disk/parse';
 import { ResizeDiskDialog } from './ResizeDiskDialog';
 import { AddDiskDialog } from './AddDiskDialog';
+import { RemoveDiskDialog } from './RemoveDiskDialog';
 
 export interface DisksSectionProps {
   type: 'qemu' | 'lxc';
@@ -28,7 +29,8 @@ export interface DisksSectionProps {
 type DialogState =
   | { kind: 'closed' }
   | { kind: 'resize'; volume: VolumeDescriptor }
-  | { kind: 'add' };
+  | { kind: 'add' }
+  | { kind: 'remove'; volume: VolumeDescriptor };
 
 /** Stable sort key so rootfs leads CT volumes, then slot alpha. */
 function slotLabel(v: VolumeDescriptor): string {
@@ -150,9 +152,17 @@ export function DisksSection({ type, node, vmid, config }: DisksSectionProps) {
                       <button
                         type="button"
                         role="menuitem"
-                        disabled
-                        title="Coming in Task 5"
-                        className="w-full text-left px-3 py-1.5 text-xs text-[var(--color-fg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed"
+                        disabled={volume.kind === 'ct-rootfs'}
+                        title={
+                          volume.kind === 'ct-rootfs'
+                            ? 'Rootfs cannot be removed'
+                            : undefined
+                        }
+                        onClick={() => {
+                          setMenuFor(null);
+                          setDialog({ kind: 'remove', volume });
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs text-[var(--color-err)] hover:bg-[var(--color-border-subtle)]/40 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Remove…
                       </button>
@@ -184,6 +194,17 @@ export function DisksSection({ type, node, vmid, config }: DisksSectionProps) {
           node={node}
           vmid={vmid}
           config={config}
+        />
+      )}
+
+      {dialog.kind === 'remove' && (
+        <RemoveDiskDialog
+          open
+          onClose={() => setDialog({ kind: 'closed' })}
+          type={type}
+          node={node}
+          vmid={vmid}
+          volume={dialog.volume}
         />
       )}
     </>
