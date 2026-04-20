@@ -133,3 +133,15 @@ export async function requireVmMigrate(
 ): Promise<boolean> {
   return userHasPrivilege(session, `/vms/${vmid}`, 'VM.Migrate');
 }
+
+/**
+ * Sys.Modify on `/` gates the "admin-ish" operations that touch Nexus-level
+ * configuration (service-account creds, federation registry). Root@pam
+ * satisfies this implicitly; other users need the explicit grant on the
+ * datacenter root in PVE's permissions.
+ */
+export async function requireRootSysModify(
+  session: PVEAuthSession,
+): Promise<boolean> {
+  return userHasPrivilege(session, '/', 'Sys.Modify');
+}

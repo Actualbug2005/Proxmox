@@ -55,6 +55,7 @@ mock.module('@/lib/csrf', {
 mock.module('@/lib/permissions', {
   namedExports: {
     userHasPrivilege: async () => privilegeOk,
+    requireRootSysModify: async () => privilegeOk,
   },
 });
 
@@ -103,13 +104,13 @@ function buildReq(method: string, body?: unknown): Request {
 describe('GET /api/federation/clusters', () => {
   it('401 when unauthenticated', async () => {
     currentSessionId = null;
-    const res = await GET();
+    const res = await GET(buildReq('GET') as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 401);
   });
 
   it('returns clusters with tokenSecret redacted', async () => {
     await addCluster(validBody);
-    const res = await GET();
+    const res = await GET(buildReq('GET') as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 200);
     const body = (await res.json()) as { clusters: Array<Record<string, unknown>> };
     assert.equal(body.clusters.length, 1);
@@ -137,7 +138,7 @@ describe('GET /api/federation/clusters', () => {
       lastProbedAt: Date.now(),
       lastError: null,
     });
-    const res = await GET();
+    const res = await GET(buildReq('GET') as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 200);
     const body = (await res.json()) as { clusters: Array<Record<string, unknown>> };
     assert.equal(body.clusters.length, 1);
@@ -148,13 +149,13 @@ describe('GET /api/federation/clusters', () => {
 describe('POST /api/federation/clusters', () => {
   it('401 when unauthenticated', async () => {
     currentSessionId = null;
-    const res = await POST(buildReq('POST', validBody) as never);
+    const res = await POST(buildReq('POST', validBody) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 401);
   });
 
   it('403 when user lacks Sys.Modify on /', async () => {
     privilegeOk = false;
-    const res = await POST(buildReq('POST', validBody) as never);
+    const res = await POST(buildReq('POST', validBody) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 403);
     const body = (await res.json()) as { error: string };
     assert.match(body.error, /forbidden/i);
@@ -162,14 +163,14 @@ describe('POST /api/federation/clusters', () => {
 
   it('403 on missing CSRF', async () => {
     csrfOk = false;
-    const res = await POST(buildReq('POST', validBody) as never);
+    const res = await POST(buildReq('POST', validBody) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 403);
     const body = (await res.json()) as { error: string };
     assert.match(body.error, /csrf/i);
   });
 
   it('201 + redacted record on valid input', async () => {
-    const res = await POST(buildReq('POST', validBody) as never);
+    const res = await POST(buildReq('POST', validBody) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 201);
     const body = (await res.json()) as Record<string, unknown>;
     assert.equal(body.id, 'prod-west');
@@ -184,7 +185,7 @@ describe('POST /api/federation/clusters', () => {
 
   it('409 on duplicate id', async () => {
     await addCluster(validBody);
-    const res = await POST(buildReq('POST', validBody) as never);
+    const res = await POST(buildReq('POST', validBody) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 409);
     const body = (await res.json()) as { error: string };
     assert.match(body.error, /already registered/i);
@@ -192,14 +193,14 @@ describe('POST /api/federation/clusters', () => {
 
   it('400 on validation failure (http:// endpoint)', async () => {
     const bad = { ...validBody, endpoints: ['http://insecure.example.com:8006'] };
-    const res = await POST(buildReq('POST', bad) as never);
+    const res = await POST(buildReq('POST', bad) as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 400);
     const body = (await res.json()) as { error: string };
     assert.match(body.error, /https/i);
   });
 
   it('400 on malformed JSON body', async () => {
-    const res = await POST(buildReq('POST', '{not json') as never);
+    const res = await POST(buildReq('POST', '{not json') as never, { params: Promise.resolve({}) });
     assert.equal(res.status, 400);
     const body = (await res.json()) as { error: string };
     assert.match(body.error, /invalid json/i);

@@ -49,6 +49,7 @@ mock.module('@/lib/csrf', {
 mock.module('@/lib/permissions', {
   namedExports: {
     userHasPrivilege: async () => privilegeOk,
+    requireRootSysModify: async () => privilegeOk,
   },
 });
 
