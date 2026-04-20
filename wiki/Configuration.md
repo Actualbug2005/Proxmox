@@ -85,3 +85,36 @@ Three places to update when moving off 3000:
 3. Any reverse-proxy config (nginx, Caddy, Cloudflare Tunnel) pointing at Nexus.
 
 Restart with `systemctl restart nexus` and check `ss -lnt | grep 8080` to confirm.
+
+## Security headers
+
+As of **v0.33.0**, Nexus emits a conservative set of security response headers on every route (Next pages, API, static assets) via a single choke-point in the custom HTTP server. There is nothing to configure — the defaults are safe for both plain-HTTP LAN use and public ingress behind TLS.
+
+Header footprint:
+
+| Header | Value | Notes |
+| --- | --- | --- |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'` | `unsafe-inline`/`unsafe-eval` are required by Next 16 RSC + Tailwind v4. Nonce-based tightening is planned for Tier 8. `ws:`/`wss:` covers noVNC + xterm. |
+| `Strict-Transport-Security` | `max-age=15552000; includeSubDomains` | **Only emitted over TLS** (direct TLS socket or `X-Forwarded-Proto: https`). Plain-HTTP dev traffic never gets this header, so a `localhost` test won't brick your browser. 180 days — reasonable for a non-preload-list tool. |
+| `Content-Security-Policy` (TLS) | `… ; upgrade-insecure-requests` | Appended under the same TLS condition as HSTS. Inline `http://` asset URLs are upgraded rather than failing closed. |
+| `X-Content-Type-Options` | `nosniff` | Stops MIME-sniffing attacks on user-uploaded ISO/content. |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Doesn't leak node/VM paths to third-party sites. |
+| `X-Frame-Options` | `SAMEORIGIN` | Legacy belt-and-braces alongside `frame-ancestors 'self'`. |
+
+### Proxy allowlist
+
+The catch-all `/api/proxmox/[...path]` proxy only forwards requests to six top-level PVE resource families: `cluster`, `nodes`, `storage`, `access`, `pools`, `version`. Anything else returns `403 {"error":"Resource not proxied"}`. If you integrate a custom PVE endpoint outside those families, extend `ALLOWED_TOP_LEVEL` in `src/app/api/proxmox/[...path]/route.ts` — it's a conscious widening rather than incidental scope creep.
+
+### Reverse-proxy checklist
+
+If you front Nexus with nginx/Caddy/Cloudflare, make sure the proxy sets `X-Forwarded-Proto: https` on TLS-terminated connections. That's the signal Nexus uses to gate HSTS emission.
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $host;
+}
+```
+
+Without the header, browsers over your TLS ingress won't receive HSTS and the upgrade-insecure-requests CSP directive won't fire. No actual security is lost — you're just missing two defence layers.

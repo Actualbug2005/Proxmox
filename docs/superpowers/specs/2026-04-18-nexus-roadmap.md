@@ -1,9 +1,9 @@
 # Nexus Roadmap — Tiers 5 → 9 and Backlog
 
-**Date:** 2026-04-18
-**Status:** In progress — Top-10 items #1-8 shipped (v0.10.0–v0.22.0)
+**Date:** 2026-04-18 (updated 2026-04-20)
+**Status:** In progress — Top-10 items #1-8 + #10 shipped (v0.10.0–v0.33.0). #9 Remote Cluster Registry is the last Top-10 item and opens Tier 6.
 
-**Shipped so far (8 of the Top-10):**
+**Shipped so far (9 of the Top-10):**
 - ✅ **#2 — Unit picker primitive (7.2)** → `v0.10.0` (UnitInput in VM/CT create)
 - ✅ **#3 — Audit Log Explorer UI (8.1)** → `v0.11.0` (`/dashboard/cluster/audit`)
 - ✅ **#1 — Tag/Folder Resource View (7.1)** → `v0.12.0` (`/dashboard/resources` + Segmented toggle)
@@ -12,8 +12,9 @@
 - ✅ **#8 — Guest-Internal Health (5.2)** → `v0.21.0` (QEMU agent probe: disk pressure + agent liveness; LXC + service-down deferred)
 - ✅ **#7 — Drag-and-drop dashboards (7.4)** → `v0.22.0` (native DnD on 4-col grid, per-user JSON prefs)
 - ✅ **#6 — Next-fire + run-history (7.6)** → `v0.22.0` (chip list on cron editor, persistent `run-history.jsonl` + inline last-20 table)
+- ✅ **#10 — Security hardening pass (8.3)** → `v0.33.0` (proxy top-level allowlist, CSP/HSTS/nosniff/referrer-policy headers, rehype-raw dep-lock invariant, safe-regex CI gate, community-scripts SSRF invariant)
 
-**Next up (from the Top-10):** #9 Remote Cluster Registry (4d, unlocks Tier 6), #10 Security hardening pass (2d).
+**Next up (from the Top-10):** #9 Remote Cluster Registry (4d, unlocks Tier 6) — the final Top-10 item.
 **Source material:** session audit 2026-04-18 covering roadmap completion, feature review, and community-gap research (Proxmox forums, PDM roadmap, SDN threads, VMware-migration commentary).
 
 This document rolls up three analyses from today's session:
@@ -364,9 +365,22 @@ Ordered by recommended sequencing, not strict priority:
 | 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | ✅ v0.22.0 | Registry is ready; 1-day ship. |
 | 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | ✅ v0.21.0 (disk + agent; services deferred) | Completes the "intelligence" loop with 5.1 + 5.3. |
 | 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | pending | Unlocks all of Tier 6. |
-| 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | pending | Bundle SSRF guard + CSP headers + safe-regex audit as one PR. |
+| 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | ✅ v0.33.0 | Proxy allowlist + CSP/HSTS + rehype-raw lock + safe-regex gate + community-scripts SSRF test, bundled. |
 
-After #10, re-evaluate. The federation track (6.2–6.4) is the likely Tier-6 sprint; WebAuthn (8.2) and Granular Nexus Roles (8.4) are the Tier-8 sprint; local scripts (9.1) and PBS widgets (9.3) are the Tier-9 kickoff.
+After #9, re-evaluate. The federation track (6.2–6.4) is the likely Tier-6 sprint; WebAuthn (8.2) and Granular Nexus Roles (8.4) are the Tier-8 sprint; local scripts (9.1) and PBS widgets (9.3) are the Tier-9 kickoff.
+
+---
+
+## Release history
+
+- **v0.33.0** (2026-04-20) — 8.3 security hardening pass. Five deltas in one bundle:
+  1. Proxy top-level resource allowlist (`cluster`, `nodes`, `storage`, `access`, `pools`, `version`) — everything else returns 403.
+  2. `applySecurityHeaders(req, res)` in `src/lib/security-headers.ts` applied via the custom HTTP server: CSP (RSC + Tailwind v4 compatible, `connect-src ws: wss:` for noVNC/xterm), HSTS (TLS-gated via `socket.encrypted` or `x-forwarded-proto: https`, with `upgrade-insecure-requests` under the same gate), X-Content-Type-Options, Referrer-Policy, X-Frame-Options.
+  3. `rehype-raw` absence locked by `src/tests/security/markdown-pipeline.test.ts` (direct dep + transitive lockfile scan).
+  4. `safe-regex` CI gate via `scripts/audit-unsafe-regex.ts` (TypeScript compiler-API walker) + `src/tests/security/regex-audit.test.ts`. Baseline across 101 regex patterns: zero unsafe. 10 pre-existing bounded-but-safe-regex-flagged patterns rewritten in the same ship (IPv4, semver, size parsers — semantics preserved).
+  5. Community-scripts SSRF invariant locked by `src/tests/security/community-scripts-ssrf.test.ts` — slug validator rejects path traversal, full URLs, length/case/hyphen-prefix violations, whitespace, quote/backslash/null/newline injection.
+- **v0.32.1** (2026-04-20) — damped Holt's trend fix; forecast chart overlay clamping.
+- **v0.32.0** (2026-04-20) — Tier 5.5 Holt's-linear capacity forecast (closes Tier 5).
 
 ---
 

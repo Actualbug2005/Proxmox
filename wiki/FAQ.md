@@ -48,6 +48,25 @@ For the reverse proxy itself: forward to `localhost:3000`, terminate TLS at the 
 
 Every alert rule has an **Enabled** toggle on its edit page. Flip it off and the rule stops evaluating. If you want alerts entirely gone: delete every rule from the alerts page.
 
+## Is Nexus safe behind a public ingress?
+
+With v0.33.0 it's much closer to safe than before, but there are still boundaries to understand before you expose `:3000` to the internet.
+
+**What v0.33.0 hardens automatically:**
+- **Content-Security-Policy** on every response — blocks cross-origin script injection into the Nexus UI.
+- **HSTS + upgrade-insecure-requests** when the request arrives over TLS (direct or via `X-Forwarded-Proto`). Stops silent HTTP downgrades.
+- **X-Frame-Options `SAMEORIGIN` + CSP `frame-ancestors 'self'`** — the UI can't be clickjacked into a third-party iframe.
+- **Proxy allowlist** — the `/api/proxmox` proxy only forwards to six PVE resource families (cluster/nodes/storage/access/pools/version). Other PVE trees (experimental `/proxy`, `/config`, etc.) are unreachable through Nexus.
+- **SSRF + injection invariants locked by tests** — community-scripts fetch origin and slug shape, markdown renderer's absence of `rehype-raw`, and a zero-unsafe-regex CI gate.
+
+**What v0.33.0 does NOT do — you still need the usual public-ingress hygiene:**
+- **Authentication to your ingress.** Nexus relies on PVE's `pam`/`pve` realms for identity. If an attacker can reach `/login`, they get a PVE password prompt, but they still get to guess. Put Nexus behind WireGuard, Cloudflare Access, or a static-IP allowlist if you want to deny anonymous reach entirely.
+- **WAF / rate-limiting.** Nexus has no built-in request-rate cap. A determined attacker can brute-force the login endpoint as fast as their bandwidth allows. Your ingress should cap it.
+- **PVE itself on port 8006.** The `/api2/json` endpoint is what Nexus proxies; anyone who can reach port 8006 directly bypasses Nexus's allowlist. Firewall 8006 off from the public internet.
+- **noVNC/xterm WebSocket.** The `/api/ws-relay` endpoint requires an authenticated session to produce a session ID — but the session ID itself travels over whatever transport your ingress provides. Use TLS all the way to the browser.
+
+Short version: v0.33.0 closes the low-hanging browser-side fruit. The perimeter still has to be yours.
+
 ## How do I report a bug?
 
 Open an issue on the main repo: <https://github.com/Actualbug2005/Proxmox/issues>. Include your Nexus version (from `/api/health`), your PVE version (`pveversion`), and whatever logs `journalctl -u nexus --since '10 min ago'` produced.
