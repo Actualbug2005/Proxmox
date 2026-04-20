@@ -129,10 +129,11 @@ async function handler(
     }
   }
   // ── Top-level resource allowlist (8.3) ──────────────────────────────────
-  // Narrow the catch-all from "any /api2/json/<anything>" to only the PVE
-  // resource families Nexus actually consumes. Defense in depth: even if a
-  // future routing bug threads a crafted path past the segment validator,
-  // it cannot reach non-allowlisted PVE trees.
+  // Primary authorization boundary for resource scope. The invalidSegment
+  // loop above guards malformed paths (control chars, "..", etc.); this
+  // list guards well-formed paths into PVE subtrees Nexus does not consume
+  // (/config, /version2, experimental /proxy trees, etc.). Adding a family
+  // here is a conscious widening decision.
   if (path.length === 0 || !ALLOWED_TOP_LEVEL.has(path[0])) {
     return hardenedJson(
       { error: 'Resource not proxied' },
