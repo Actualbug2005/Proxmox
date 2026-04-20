@@ -70,6 +70,7 @@ export const sections: NavSection[] = [
       { href: '/dashboard/storage', label: 'Storage', icon: HardDrive },
       { href: '/dashboard/cluster/ha', label: 'HA & Status', icon: HeartPulse },
       { href: '/dashboard/cluster/firewall', label: 'Firewall', icon: Shield },
+      { href: '/dashboard/federation', label: 'Federation', icon: Network },
       { href: '/dashboard/cluster/pools', label: 'Pools', icon: FolderTree },
       { href: '/dashboard/cluster/backups', label: 'Backups', icon: Archive },
       { href: '/dashboard/cluster/drs', label: 'Auto-DRS', icon: Sliders },
