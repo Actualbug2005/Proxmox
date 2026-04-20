@@ -58,7 +58,7 @@ describe('probeCluster', () => {
     const calls: string[] = [];
     const fetchFn: typeof fetch = async (url) => {
       calls.push(String(url));
-      if (String(url).startsWith('https://pve-1.lab')) {
+      if (new URL(String(url)).hostname === 'pve-1.lab') {
         throw new Error('connect ECONNREFUSED');
       }
       if (String(url).endsWith('/version')) {
@@ -186,15 +186,15 @@ describe('probeCluster', () => {
     // both targeting pve-2 (version then cluster/status). If the code
     // regressed to probe both endpoints, calls.length would exceed 2.
     assert.equal(calls.length, 2);
-    assert.ok(calls[0].startsWith('https://pve-2.lab'));
-    assert.ok(calls[1].startsWith('https://pve-2.lab'));
+    assert.equal(new URL(calls[0]).hostname, 'pve-2.lab');
+    assert.equal(new URL(calls[1]).hostname, 'pve-2.lab');
   });
 
   it('falls back from a failing sticky endpoint to the rest, in order', async () => {
     const calls: string[] = [];
     const fetchFn: typeof fetch = async (url) => {
       calls.push(String(url));
-      if (String(url).startsWith('https://pve-2.lab')) {
+      if (new URL(String(url)).hostname === 'pve-2.lab') {
         throw new Error('connect ECONNREFUSED');
       }
       if (String(url).endsWith('/version')) {
@@ -210,7 +210,7 @@ describe('probeCluster', () => {
     assert.equal(result.reachable, true);
     assert.equal(result.activeEndpoint, 'https://pve-1.lab:8006');
     // Sticky tried first (failed), then fell back to pve-1.
-    assert.ok(calls[0].startsWith('https://pve-2.lab'));
-    assert.ok(calls[1].startsWith('https://pve-1.lab'));
+    assert.equal(new URL(calls[0]).hostname, 'pve-2.lab');
+    assert.equal(new URL(calls[1]).hostname, 'pve-1.lab');
   });
 });
