@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { useNodeRRD } from '@/hooks/use-cluster';
-import type { Timeframe, SeriesSpec } from './rrd-chart';
+import type { Timeframe, SeriesSpec, ForecastHorizon } from './rrd-chart';
 
 // Lazy-load — see vm-metrics-chart.tsx for the rationale (recharts ~100KB).
 const RRDChart = dynamic(() => import('./rrd-chart').then((m) => ({ default: m.RRDChart })), {
@@ -22,6 +22,7 @@ interface NodeMetricsChartProps {
 
 export function NodeMetricsChart({ nodeName }: NodeMetricsChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('hour');
+  const [forecastHorizon, setForecastHorizon] = useState<ForecastHorizon>('off');
   const { data, isLoading } = useNodeRRD(nodeName, timeframe);
 
   const series = useMemo<SeriesSpec[]>(
@@ -58,6 +59,8 @@ export function NodeMetricsChart({ nodeName }: NodeMetricsChartProps) {
       timeframe={timeframe}
       onTimeframeChange={setTimeframe}
       series={series}
+      forecastHorizon={forecastHorizon}
+      onForecastHorizonChange={setForecastHorizon}
     />
   );
 }

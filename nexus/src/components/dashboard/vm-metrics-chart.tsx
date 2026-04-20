@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { api } from '@/lib/proxmox-client';
-import type { Timeframe, SeriesSpec } from './rrd-chart';
+import type { Timeframe, SeriesSpec, ForecastHorizon } from './rrd-chart';
 import { POLL_INTERVALS } from '@/hooks/use-cluster';
 
 // Lazy-load the recharts-heavy implementation. recharts is ~100KB gz; this
@@ -28,6 +28,7 @@ interface VMMetricsChartProps {
 
 export function VMMetricsChart({ node, vmid, type }: VMMetricsChartProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('hour');
+  const [forecastHorizon, setForecastHorizon] = useState<ForecastHorizon>('off');
 
   const { data, isLoading } = useQuery({
     queryKey: [type === 'qemu' ? 'vm' : 'ct', node, vmid, 'rrd', timeframe],
@@ -82,6 +83,8 @@ export function VMMetricsChart({ node, vmid, type }: VMMetricsChartProps) {
       timeframe={timeframe}
       onTimeframeChange={setTimeframe}
       series={series}
+      forecastHorizon={forecastHorizon}
+      onForecastHorizonChange={setForecastHorizon}
     />
   );
 }
