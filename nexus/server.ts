@@ -25,7 +25,14 @@ import {
   loadServiceAccountAtBoot,
   getServiceSession,
 } from './src/lib/service-account/session.ts';
-import { pveFetchWithToken } from './src/lib/pve-fetch.ts';
+import { pveFetch, pveFetchWithToken } from './src/lib/pve-fetch.ts';
+import {
+  loadFederationAtBoot,
+  __getClusters,
+  __getProbeStates,
+} from './src/lib/federation/session.ts';
+import { probeCluster } from './src/lib/federation/probe.ts';
+import { runProbeTick } from './src/lib/federation/probe-runner.ts';
 import type { ClusterResourcePublic, NodeStatus, PVETask } from './src/types/proxmox.ts';
 import { readFile as fsReadFile } from 'node:fs/promises';
 import { execFile as execFileCb } from 'node:child_process';
@@ -392,6 +399,13 @@ if (isMain) {
   // calls reloadServiceAccount() and the next tick picks it up.
   await loadServiceAccountAtBoot();
 
+  // ── Federation registry (6.1) ───────────────────────────────────────────
+  // Decrypt and prime the in-memory cluster + probe-state maps before any
+  // request handlers run. Probe runner starts below; until its first tick
+  // completes, the proxy falls back to endpoints[0] for any ?cluster=<id>
+  // resolution.
+  await loadFederationAtBoot();
+
   // Shared snapshot fetcher for the notification & DRS tickers — both
   // need `/cluster/resources`; DRS additionally needs per-node status
   // for free-capacity calc, notifications needs loadavg in the same
@@ -624,5 +638,51 @@ if (isMain) {
     })();
   }, 60_000);
   updatesTimer.unref?.();
+
+  // ── Federation probe runner (6.1) ───────────────────────────────────────
+  // 60s fan-out probe across every registered cluster. Single-flight lock
+  // inside runProbeTick coalesces overlapping invocations. Fire an immediate
+  // first tick so operators don't wait 60s after boot to see probe state.
+  // pveFetch is undici-typed (Response, RequestInit from undici/types). The
+  // probe only reads structurally-compatible members (res.ok, res.status,
+  // res.json()), so we cast through unknown to satisfy typeof fetch at the
+  // seam. Using undici here (not global fetch) keeps the scoped self-signed
+  // TLS dispatcher and sidesteps the Node 22.x global-fetch dispatcher bug.
+  const federationProbeFn = (async (url: string | URL | Request, init?: RequestInit) =>
+    pveFetch(
+      typeof url === 'string' ? url : url instanceof URL ? url : String(url),
+      init as unknown as Parameters<typeof pveFetch>[1],
+    )) as unknown as typeof fetch;
+
+  const federationTickOnce = async (): Promise<void> => {
+    await runProbeTick({
+      listClusters: async () => __getClusters(),
+      probeOne: async (c, { lastActiveEndpoint }) =>
+        probeCluster(c, {
+          fetchFn: federationProbeFn,
+          now: () => Date.now(),
+          lastActiveEndpoint,
+        }),
+      state: __getProbeStates(),
+    });
+  };
+
+  const federationTimer = setInterval(() => {
+    void federationTickOnce().catch((err) => {
+      console.error(
+        '[nexus event=federation_probe_tick_failed] reason=%s',
+        err instanceof Error ? err.message : String(err),
+      );
+    });
+  }, 60_000);
+  federationTimer.unref?.();
+
+  // Immediate first tick — unawaited, errors logged.
+  void federationTickOnce().catch((err) => {
+    console.error(
+      '[nexus event=federation_probe_initial_failed] reason=%s',
+      err instanceof Error ? err.message : String(err),
+    );
+  });
   });
 }
