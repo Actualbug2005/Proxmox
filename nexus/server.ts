@@ -8,7 +8,6 @@
  *    ingress in front of Nexus — loopback is plain, edge-facing is TLS.
  */
 import { createServer } from 'node:http';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import next from 'next';
 // Node's --experimental-strip-types needs explicit extensions on relative
 // imports (no webpack/Next.js resolver in the custom-server entry point).
@@ -31,6 +30,9 @@ import type { ClusterResourcePublic, NodeStatus, PVETask } from './src/types/pro
 import { readFile as fsReadFile } from 'node:fs/promises';
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
+import { applySecurityHeaders } from './src/lib/security-headers.ts';
 // False positive — this imports the `ws` library; the actual connection
 // we open below uses wss:// (see pveWsUrl). The rule matches on the
 // literal string 'ws' in the module specifier.
@@ -42,48 +44,6 @@ import type { ClientOptions } from 'ws';
 // itself is never used — only the path + query get read — so this constant
 // is safe to hard-code.
 const URL_BASE = 'http://localhost';
-
-// ── Security response headers (spec §2.2) ────────────────────────────────────
-// Strict CSP is a Tier 8 follow-up (requires Next 16 RSC nonce plumbing).
-// Current directives allow Tailwind v4 + RSC inline hydration and the
-// noVNC/xterm websocket relay. See spec §2.2 for per-directive rationale.
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self' ws: wss:",
-  "frame-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'self'",
-].join('; ');
-
-export function applySecurityHeaders(
-  req: IncomingMessage,
-  res: ServerResponse,
-): void {
-  res.setHeader('Content-Security-Policy', CSP);
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-
-  // HSTS only when the request actually arrived over TLS (directly or via
-  // an ingress that set X-Forwarded-Proto). Emitting HSTS on plain-HTTP
-  // dev traffic would brick localhost testing in browsers that cache it.
-  const socket = req.socket as unknown as { encrypted?: boolean };
-  const secure =
-    (socket && socket.encrypted === true) ||
-    req.headers['x-forwarded-proto'] === 'https';
-  if (secure) {
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=15552000; includeSubDomains',
-    );
-  }
-}
 
 // TLS verification for PVE's self-signed cert is scoped inside the process:
 //   - HTTP calls go through pveFetch (undici Agent with rejectUnauthorized: false)
@@ -233,12 +193,21 @@ _relayCleanupTimer.unref?.();
 // ── Start server ──────────────────────────────────────────────────────────────
 // Only bootstrap when invoked as the entry point, not when imported by tests.
 // `npm start` runs `node --experimental-strip-types server.ts`, so
-// process.argv[1] resolves to this file. The env-var escape hatch covers
-// weirder launchers (pm2 wrappers, container entrypoints) where argv[1]
-// might not match.
-const isMain =
-  import.meta.url === `file://${process.argv[1]}` ||
-  process.env.NEXUS_RUN_SERVER === '1';
+// process.argv[1] resolves to this file. Both sides are resolved through
+// realpath so a symlinked deployment (install.sh creates /opt/nexus/current)
+// still matches. `NEXUS_RUN_SERVER=1` is the documented escape hatch for
+// launchers that rewrite argv (pm2, systemd unit with ExecStart wrappers).
+function resolveMainEntry(): boolean {
+  if (process.env.NEXUS_RUN_SERVER === '1') return true;
+  try {
+    const modulePath = realpathSync(fileURLToPath(import.meta.url));
+    const argvPath = process.argv[1] ? realpathSync(process.argv[1]) : '';
+    return modulePath === argvPath;
+  } catch {
+    return false;
+  }
+}
+const isMain = resolveMainEntry();
 
 if (isMain) {
   app.prepare().then(async () => {

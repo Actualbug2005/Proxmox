@@ -1,16 +1,10 @@
 /**
- * Security response headers for the custom Next.js HTTP server.
- *
- * Tests exercise `applySecurityHeaders` directly with mock req/res objects —
- * the helper is pure (calls setHeader on res) so we don't need a real socket.
- *
- * `server.ts` has module-level side effects (scheduler tickers, WebSocket
- * upgrade handler, etc.); the implementation guards those behind a main-entry
- * check so this import stays cheap.
+ * Security response headers. The helper is pure — call setHeader on res —
+ * so we exercise it with mock req/res objects, not a real HTTP server.
  */
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { applySecurityHeaders } from '../../../server.ts';
+import { applySecurityHeaders } from '../../lib/security-headers.ts';
 
 interface MockRes {
   headers: Record<string, string>;
