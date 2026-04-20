@@ -61,10 +61,17 @@ interface PveFetchCall {
   init: { method?: string; headers?: Record<string, string>; body?: string } | undefined;
 }
 const pveFetchCalls: PveFetchCall[] = [];
+/** Per-test override: when set, pveFetch returns this response instead of
+ *  the default empty-data 200. Cleared in beforeEach. Also supports
+ *  throwing by setting `pveFetchShouldThrow` to a truthy Error. */
+let pveFetchResponse: Response | null = null;
+let pveFetchShouldThrow: Error | null = null;
 mock.module('@/lib/pve-fetch', {
   namedExports: {
     pveFetch: async (url: string, init?: PveFetchCall['init']) => {
       pveFetchCalls.push({ url, init });
+      if (pveFetchShouldThrow) throw pveFetchShouldThrow;
+      if (pveFetchResponse) return pveFetchResponse;
       return new Response(JSON.stringify({ data: [] }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -98,6 +105,17 @@ function buildProxyRequest(pathSegments: string[]) {
   // NextRequest isn't trivially constructable in a unit context; the
   // handler only touches .url, .method, .headers.get, and .text. A
   // plain Request is a structural match for those surfaces.
+  const req = new Request(url, { method: 'GET' });
+  const params = Promise.resolve({ path: pathSegments });
+  return { req, params };
+}
+
+/** Variant of buildProxyRequest that preserves a real query string.
+ *  The handler reads req.url directly for the ?cluster= extraction.
+ *  Module-scoped so both the federation describe and the 401-gating
+ *  describe can use it. */
+function buildWithQuery(pathSegments: string[], query: string) {
+  const url = `http://localhost/api/proxmox/${pathSegments.join('/')}${query ? '?' + query : ''}`;
   const req = new Request(url, { method: 'GET' });
   const params = Promise.resolve({ path: pathSegments });
   return { req, params };
@@ -151,14 +169,7 @@ describe('proxy route — federation rewrite (?cluster=<id>)', () => {
     delete process.env.NEXUS_DATA_DIR;
   });
 
-  /** Variant of buildProxyRequest that preserves a real query string.
-   *  The handler reads req.url directly for the ?cluster= extraction. */
-  function buildWithQuery(pathSegments: string[], query: string) {
-    const url = `http://localhost/api/proxmox/${pathSegments.join('/')}${query ? '?' + query : ''}`;
-    const req = new Request(url, { method: 'GET' });
-    const params = Promise.resolve({ path: pathSegments });
-    return { req, params };
-  }
+  // buildWithQuery is now module-scoped above — inner definition removed.
 
   it('400 on malformed cluster id', async () => {
     // URL-encoded space + mixed case — fails the slug regex.
@@ -259,5 +270,77 @@ describe('proxy route — federation rewrite (?cluster=<id>)', () => {
     assert.match(String(body.error), /not proxied/i);
     // And crucially: pveFetch was never called.
     assert.equal(pveFetchCalls.length, 0);
+  });
+});
+
+describe('proxy route — 401 session-nuke gating (v0.34.0 follow-up)', () => {
+  beforeEach(() => {
+    pveFetchCalls.length = 0;
+    pveFetchResponse = null;
+    pveFetchShouldThrow = null;
+  });
+
+  it('clears local session cookies on a LOCAL 401 with "ticket expired" body', async () => {
+    pveFetchResponse = new Response('401 ticket expired', {
+      status: 401,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+    const { req, params } = buildProxyRequest(['cluster', 'resources']);
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 401);
+    // Set-Cookie header(s) must clear nexus_session and nexus_csrf.
+    const setCookie = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie') ?? ''];
+    const asString = setCookie.join('\n');
+    assert.match(asString, /nexus_session=;/i);
+    assert.match(asString, /nexus_csrf=;/i);
+  });
+
+  it('does NOT clear cookies on a FEDERATED 401 with adversarial "ticket expired" body', async () => {
+    __resetForTests();
+    const tmp = mkdtempSync(join(tmpdir(), 'nexus-fed-401-'));
+    process.env.NEXUS_DATA_DIR = tmp;
+    try {
+      await addCluster({
+        id: 'lab',
+        name: 'Lab',
+        endpoints: ['https://pve-lab:8006'],
+        tokenId: 'nexus@pve!fed',
+        tokenSecret: 'aaaaaaaaaaaa',
+      });
+      await reloadFederation();
+      // Adversarial: remote cluster returns "invalid ticket" text. Pre-patch
+      // this would nuke the local Nexus session.
+      pveFetchResponse = new Response('401 invalid ticket', {
+        status: 401,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+      const { req, params } = buildWithQuery(['cluster', 'resources'], 'cluster=lab');
+      const res = await GET(req as never, { params } as never);
+      assert.equal(res.status, 401);
+      const setCookie = res.headers.getSetCookie?.() ?? [res.headers.get('set-cookie') ?? ''];
+      const asString = setCookie.join('\n');
+      // Neither cookie should be cleared — local session is not at fault.
+      assert.ok(!/nexus_session=;/i.test(asString), 'nexus_session must NOT be cleared on federated 401');
+      assert.ok(!/nexus_csrf=;/i.test(asString), 'nexus_csrf must NOT be cleared on federated 401');
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+      delete process.env.NEXUS_DATA_DIR;
+      __resetForTests();
+    }
+  });
+
+  it('502 on transport failure does NOT include err stringification in response', async () => {
+    pveFetchShouldThrow = new Error('connect ECONNREFUSED 10.0.0.5:8006');
+    const { req, params } = buildProxyRequest(['cluster', 'resources']);
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 502);
+    const body = (await res.json()) as Record<string, unknown>;
+    assert.ok(!('detail' in body), 'detail field must not leak internal error strings');
+    // And the internal IP must not appear in the body.
+    assert.equal(
+      JSON.stringify(body).includes('10.0.0.5'),
+      false,
+      'internal endpoint IP must not surface in 502 response',
+    );
   });
 });

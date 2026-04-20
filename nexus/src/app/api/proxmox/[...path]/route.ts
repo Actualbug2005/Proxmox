@@ -253,7 +253,15 @@ async function handler(
           'Cache-Control': 'no-store, private',
         },
       });
-      if (isTicketExpiryBody(pveRes.headers.get('Content-Type'), text)) {
+      // Session-nuke is scoped to LOCAL-path 401s. Federated 401s come from
+      // a remote cluster's PVEAPIToken auth, not the Nexus ticket — clearing
+      // the local session on a remote auth failure would be a
+      // cross-cluster-logout vector if an adversarial/misconfigured remote
+      // endpoint returned "invalid ticket" text.
+      if (
+        clusterId === null &&
+        isTicketExpiryBody(pveRes.headers.get('Content-Type'), text)
+      ) {
         response.cookies.set('nexus_session', '', { httpOnly: true, maxAge: 0, path: '/' });
         response.cookies.set('nexus_csrf', '', { httpOnly: false, maxAge: 0, path: '/' });
       }
@@ -272,9 +280,13 @@ async function handler(
       },
     });
   } catch (err) {
+    // Server-side log keeps the full error for operator correlation.
+    // Client response is generic so we never leak remote endpoint IPs,
+    // undici internals, or (if undici's error shape ever changes) any
+    // request headers that could include PVEAPIToken values.
     console.error('[Proxmox Proxy Error]', err);
     return hardenedJson(
-      { error: 'Failed to reach Proxmox API', detail: String(err) },
+      { error: 'Failed to reach Proxmox API' },
       { status: 502 },
     );
   }
