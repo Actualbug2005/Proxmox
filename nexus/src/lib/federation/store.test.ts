@@ -163,4 +163,14 @@ describe('federation store', () => {
     // asserted here; the invariant test suite checks that separately).
     assert.deepEqual(list, []);
   });
+
+  it('getCluster returns the record for a known id and null for unknown', async () => {
+    const { addCluster, getCluster } = await import('./store.ts');
+    await addCluster({ ...validCluster });
+    const hit = await getCluster('prod-east');
+    assert.ok(hit);
+    assert.equal(hit.id, 'prod-east');
+    const miss = await getCluster('not-there');
+    assert.equal(miss, null);
+  });
 });

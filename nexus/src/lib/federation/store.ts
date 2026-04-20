@@ -26,6 +26,9 @@ import type {
 const ID_RE = /^[a-z][a-z0-9-]{0,31}$/;
 /** PVE token id shape: user@realm!tokenname (shared with service-account). */
 const TOKEN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+![A-Za-z0-9._-]+$/;
+// `local` would collide with the proxy's default (no ?cluster= = local
+// service-account) path. Reserving it here prevents an operator from
+// shadowing the local cluster by registering a remote with that id.
 const RESERVED_IDS = new Set(['local']);
 
 function resolveDataDir(): string {
@@ -51,6 +54,10 @@ function validateInput(input: CreateClusterInput): void {
   if (!Array.isArray(input.endpoints) || input.endpoints.length === 0) {
     throw new Error('endpoints must be a non-empty array');
   }
+  // Upper bound of 4 endpoints matches real PVE cluster footprints
+  // (homelab 3-node HA + one failover VIP is the largest realistic
+  // shape). More entries dilute the probe tick's time budget per
+  // cluster without gaining reachability insurance.
   if (input.endpoints.length > 4) {
     throw new Error('endpoints may contain at most 4 entries');
   }
