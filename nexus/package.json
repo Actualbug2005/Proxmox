@@ -9,7 +9,7 @@
     "build": "next build --webpack",
     "start": "node --experimental-strip-types server.ts",
     "lint": "eslint",
-    "test": "node --import tsx --test 'src/**/*.test.ts'"
+    "test": "node --import tsx --experimental-test-module-mocks --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@novnc/novnc": "^1.5.0",

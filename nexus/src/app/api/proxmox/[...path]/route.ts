@@ -47,6 +47,12 @@ const ALLOWED_CONTENT_TYPES = new Set([
   // the generic proxy with multipart bodies are rejected.
 ]);
 
+/** Top-level PVE resource families Nexus consumes. Anything else is 403.
+ *  Adding a new family here is a conscious widening decision. */
+export const ALLOWED_TOP_LEVEL = new Set([
+  'cluster', 'nodes', 'storage', 'access', 'pools', 'version',
+]);
+
 /** Reject a path segment if it contains ANY of:
  *   - control chars (including \r, \n, NUL)
  *   - colon (could split scheme when URL-parsed downstream)
@@ -121,6 +127,17 @@ async function handler(
         { status: 400 },
       );
     }
+  }
+  // ── Top-level resource allowlist (8.3) ──────────────────────────────────
+  // Narrow the catch-all from "any /api2/json/<anything>" to only the PVE
+  // resource families Nexus actually consumes. Defense in depth: even if a
+  // future routing bug threads a crafted path past the segment validator,
+  // it cannot reach non-allowlisted PVE trees.
+  if (path.length === 0 || !ALLOWED_TOP_LEVEL.has(path[0])) {
+    return hardenedJson(
+      { error: 'Resource not proxied' },
+      { status: 403 },
+    );
   }
   const pathStr = path.join('/');
 
