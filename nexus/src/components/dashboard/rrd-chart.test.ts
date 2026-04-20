@@ -1,7 +1,14 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { extractForecastSamples, HORIZON_SECONDS } from './rrd-chart';
+import type { ForecastSample } from '@/lib/forecast';
+
+import {
+  clampForecastValue,
+  extractForecastSamples,
+  hasForecastSignal,
+  HORIZON_SECONDS,
+} from './rrd-chart';
 
 describe('extractForecastSamples', () => {
   it('returns [] for empty input', () => {
@@ -49,5 +56,57 @@ describe('HORIZON_SECONDS', () => {
     assert.equal(HORIZON_SECONDS['24h'], 86400);
     assert.equal(HORIZON_SECONDS['7d'], 86400 * 7);
     assert.equal(HORIZON_SECONDS['30d'], 86400 * 30);
+  });
+});
+
+describe('clampForecastValue', () => {
+  it('clamps CPU values to [0, 1]', () => {
+    assert.equal(clampForecastValue(-0.5, 'CPU'), 0);
+    assert.equal(clampForecastValue(1.99, 'CPU'), 1);
+    assert.equal(clampForecastValue(0.7, 'CPU'), 0.7);
+  });
+
+  it('clamps Memory values to [0, upperBound]', () => {
+    assert.equal(clampForecastValue(-1e9, 'Memory', 2e9), 0);
+    assert.equal(clampForecastValue(5e9, 'Memory', 2e9), 2e9);
+    assert.equal(clampForecastValue(1.5e9, 'Memory', 2e9), 1.5e9);
+  });
+
+  it('passes Memory through when no upper bound set', () => {
+    assert.equal(clampForecastValue(1e9, 'Memory'), 1e9);
+    assert.equal(clampForecastValue(-100, 'Memory'), 0);
+  });
+});
+
+describe('hasForecastSignal', () => {
+  it('returns false for empty', () => {
+    assert.equal(hasForecastSignal([], 'CPU'), false);
+  });
+
+  it('returns false for all-zero Memory', () => {
+    const samples: ForecastSample[] = [
+      { t: 0, v: 0 },
+      { t: 60, v: 0 },
+      { t: 120, v: 0 },
+    ];
+    assert.equal(hasForecastSignal(samples, 'Memory'), false);
+  });
+
+  it('returns false for a perfectly flat series', () => {
+    const samples: ForecastSample[] = [
+      { t: 0, v: 0.5 },
+      { t: 60, v: 0.5 },
+      { t: 120, v: 0.5 },
+    ];
+    assert.equal(hasForecastSignal(samples, 'CPU'), false);
+  });
+
+  it('returns true for a varying CPU series', () => {
+    const samples: ForecastSample[] = [
+      { t: 0, v: 0.2 },
+      { t: 60, v: 0.4 },
+      { t: 120, v: 0.3 },
+    ];
+    assert.equal(hasForecastSignal(samples, 'CPU'), true);
   });
 });

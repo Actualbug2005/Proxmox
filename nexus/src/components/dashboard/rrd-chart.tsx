@@ -111,6 +111,44 @@ export function extractForecastSamples(
   return out;
 }
 
+/**
+ * Clamp a raw forecast value into the chart's meaningful range before it hits
+ * recharts. Keeps Holt's-linear extrapolation (which can swing wildly negative
+ * or unboundedly positive for noisy short windows) from distorting the Y-axis.
+ * The raw forecast model itself is intentionally unbounded — clamping is a
+ * rendering concern, applied here at the presentation boundary.
+ */
+export function clampForecastValue(
+  v: number,
+  metric: 'CPU' | 'Memory',
+  memoryUpperBound?: number,
+): number {
+  if (metric === 'CPU') return Math.max(0, Math.min(1, v));
+  if (metric === 'Memory') {
+    const upper = memoryUpperBound && memoryUpperBound > 0 ? memoryUpperBound : v;
+    return Math.max(0, Math.min(upper, v));
+  }
+  return v;
+}
+
+/**
+ * Decide whether a series carries enough signal to be worth forecasting.
+ * Flat / all-zero windows (stopped guest, unreported metric) would draw a
+ * misleading horizontal projection — skip them instead.
+ */
+export function hasForecastSignal(
+  samples: ReadonlyArray<ForecastSample>,
+  metric: 'CPU' | 'Memory',
+): boolean {
+  if (samples.length < 2) return false;
+  const values = samples.map((s) => s.v);
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  if (metric === 'Memory' && max === 0) return false;
+  if (max - min < 1e-9) return false;
+  return true;
+}
+
 interface TooltipPoint {
   name: string;
   value: number;
@@ -226,10 +264,15 @@ export function RRDChart({
             const metricKey: 'CPU' | 'Memory' | null = isCpu ? 'CPU' : isMem ? 'Memory' : null;
             const rrdField: 'cpu' | 'memused' | null = isCpu ? 'cpu' : isMem ? 'memused' : null;
 
+            const samples = rrdField ? extractForecastSamples(rrdPoints, rrdField) : [];
+            const memoryUpperBound = isMem
+              ? Math.max(...rrdPoints.map((d) => d.memused ?? 0), 0) * 2
+              : undefined;
+            const hasSignal = metricKey ? hasForecastSignal(samples, metricKey) : false;
+
             let fSeries: ReturnType<typeof forecast> = null;
-            if (forecastEligible && rrdField) {
-              const samples = extractForecastSamples(rrdPoints, rrdField);
-              const threshold = metricKey && forecastThresholds?.[metricKey];
+            if (forecastEligible && metricKey && hasSignal) {
+              const threshold = forecastThresholds?.[metricKey];
               fSeries = forecast({
                 samples,
                 horizonSeconds: HORIZON_SECONDS[forecastHorizon],
@@ -246,13 +289,17 @@ export function RRDChart({
               if (bridgeIdx >= 0) {
                 const lastHistorical = combinedData[bridgeIdx][metricKey];
                 if (typeof lastHistorical === 'number') {
-                  combinedData[bridgeIdx][forecastKey] = lastHistorical;
+                  combinedData[bridgeIdx][forecastKey] = clampForecastValue(
+                    lastHistorical,
+                    metricKey,
+                    memoryUpperBound,
+                  );
                 }
               }
               for (const p of fSeries.points) {
                 combinedData.push({
                   time: formatTime(p.t, timeframe),
-                  [forecastKey]: p.v,
+                  [forecastKey]: clampForecastValue(p.v, metricKey, memoryUpperBound),
                 });
               }
             }
@@ -280,6 +327,7 @@ export function RRDChart({
                       tickLine={false}
                       tickFormatter={formatter}
                       domain={yDomain}
+                      allowDataOverflow={!!yDomain}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     {s.showLegend && <Legend wrapperStyle={{ fontSize: '11px', color: '#9ca3af' }} />}
@@ -301,8 +349,8 @@ export function RRDChart({
                         type="monotone"
                         dataKey={forecastKey}
                         stroke={overlayStroke}
-                        strokeWidth={1.5}
-                        strokeDasharray="4 4"
+                        strokeWidth={1}
+                        strokeDasharray="3 3"
                         strokeOpacity={overlayOpacity}
                         fill="transparent"
                         dot={false}
