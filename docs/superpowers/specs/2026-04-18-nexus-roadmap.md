@@ -1,9 +1,9 @@
 # Nexus Roadmap — Tiers 5 → 9 and Backlog
 
 **Date:** 2026-04-18 (updated 2026-04-20)
-**Status:** In progress — Top-10 items #1-8 + #10 shipped (v0.10.0–v0.33.0). #9 Remote Cluster Registry is the last Top-10 item and opens Tier 6.
+**Status:** ALL 10 Top-10 items shipped (v0.10.0–v0.34.0). Tier 6 federation now open; next up is 6.2 Federated Resource Tree.
 
-**Shipped so far (9 of the Top-10):**
+**Shipped so far (all 10 of the Top-10):**
 - ✅ **#2 — Unit picker primitive (7.2)** → `v0.10.0` (UnitInput in VM/CT create)
 - ✅ **#3 — Audit Log Explorer UI (8.1)** → `v0.11.0` (`/dashboard/cluster/audit`)
 - ✅ **#1 — Tag/Folder Resource View (7.1)** → `v0.12.0` (`/dashboard/resources` + Segmented toggle)
@@ -13,8 +13,9 @@
 - ✅ **#7 — Drag-and-drop dashboards (7.4)** → `v0.22.0` (native DnD on 4-col grid, per-user JSON prefs)
 - ✅ **#6 — Next-fire + run-history (7.6)** → `v0.22.0` (chip list on cron editor, persistent `run-history.jsonl` + inline last-20 table)
 - ✅ **#10 — Security hardening pass (8.3)** → `v0.33.0` (proxy top-level allowlist, CSP/HSTS/nosniff/referrer-policy headers, rehype-raw dep-lock invariant, safe-regex CI gate, community-scripts SSRF invariant)
+- ✅ **#9 — Remote Cluster Registry (6.1)** → `v0.34.0` (encrypted federation.json store, 60s probe runner with sticky active-endpoint failover, `/api/federation/clusters` REST routes with Sys.Modify + CSRF gates, proxy `?cluster=<id>` rewrite using PVEAPIToken auth, `/dashboard/federation` UI with 4-step add-cluster wizard)
 
-**Next up (from the Top-10):** #9 Remote Cluster Registry (4d, unlocks Tier 6) — the final Top-10 item.
+**Next up (Tier 6 continuation):** #6.2 Federated Resource Tree, #6.3 Cross-Cluster Console, #6.4 Cross-Cluster Migration.
 **Source material:** session audit 2026-04-18 covering roadmap completion, feature review, and community-gap research (Proxmox forums, PDM roadmap, SDN threads, VMware-migration commentary).
 
 This document rolls up three analyses from today's session:
@@ -364,7 +365,7 @@ Ordered by recommended sequencing, not strict priority:
 | 6 | **Next-fire + run-history on schedules** (7.6) | 7 | 2d | M | ✅ v0.22.0 | Hugely improves existing scheduled-jobs UX. |
 | 7 | **Drag-and-drop widget layout** (7.4) | 7 | 1d | M | ✅ v0.22.0 | Registry is ready; 1-day ship. |
 | 8 | **Guest-Internal Health Monitoring** (5.2) | 5 | 1w | H | ✅ v0.21.0 (disk + agent; services deferred) | Completes the "intelligence" loop with 5.1 + 5.3. |
-| 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | pending | Unlocks all of Tier 6. |
+| 9 | **Remote Cluster Registry** (6.1) | 6 | 4d | H | ✅ v0.34.0 | Encrypted registry + 60s probe runner + API + proxy `?cluster=<id>` + UI. Token-auth only (ticket-mode reserved). Opens Tier 6. |
 | 10 | **Security hardening pass** (8.3) | 8 | 2d | L/H | ✅ v0.33.0 | Proxy allowlist + CSP/HSTS + rehype-raw lock + safe-regex gate + community-scripts SSRF test, bundled. |
 
 After #9, re-evaluate. The federation track (6.2–6.4) is the likely Tier-6 sprint; WebAuthn (8.2) and Granular Nexus Roles (8.4) are the Tier-8 sprint; local scripts (9.1) and PBS widgets (9.3) are the Tier-9 kickoff.
@@ -373,6 +374,17 @@ After #9, re-evaluate. The federation track (6.2–6.4) is the likely Tier-6 spr
 
 ## Release history
 
+- **v0.34.0** (2026-04-20) — 6.1 Remote Cluster Registry. Closes the Top-10; opens Tier 6. Five-module bundle:
+  1. `src/lib/federation/store.ts` — AES-GCM-encrypted `federation.json` with schema-version 1, slug-id validation (reserved `local`), https-only endpoints, dedup, 1–4 per-cluster endpoint bound, TOKEN_ID_RE + 8–256 char secret bounds.
+  2. `src/lib/federation/probe.ts` — pure probe function. Walks the ordered endpoint list (sticky failover via `lastActiveEndpoint`), authenticates with `Authorization: PVEAPIToken=<id>=<secret>`, fetches `/version` for reachability + `/cluster/status` for quorum. Prefers PVE's native `quorate` flag on the type:'cluster' entry; falls back to strict-majority heuristic.
+  3. `src/lib/federation/session.ts` + `probe-runner.ts` — in-memory resolver + 60s fan-out tick with single-flight lock, stale-entry cleanup for deregistered clusters, `__resetForTests` for isolation.
+  4. `/api/federation/clusters` + `/api/federation/clusters/[id]` — GET (auth), POST (Sys.Modify + CSRF), DELETE (idempotent), PATCH (rotate creds, bumps `rotatedAt`). Uses project-wide `withAuth`/`withCsrf` middleware + new `requireRootSysModify` helper. Response goes through `src/lib/federation/serialize.ts` — `tokenSecret` elided at the single boundary.
+  5. `/api/proxmox/[...path]?cluster=<id>` rewrite — routes to the registered cluster's active endpoint with PVEAPIToken auth (no Cookie). Malformed id → 400, unknown → 404. Allowlist from v0.33.0 runs first so federation can't widen resource scope. Cluster param stripped from the forwarded query.
+  6. `/dashboard/federation` — TanStack Query list (30s refresh) with severity-mapped status dots; `AddClusterDialog` is a 4-step wizard (identity → endpoints → token → confirm); rotate + remove are single-modal with confirmation-phrase pattern. All mutations through `useCsrfMutation`.
+  7. Server bootstrap in `server.ts` — `loadFederationAtBoot()` after `loadServiceAccountAtBoot()`, 60s probe ticker with immediate first tick. Timer `.unref?.()` for test-import safety.
+  8. Security invariants at `src/tests/security/federation-invariants.test.ts` — reserved `local`, https-only, schema-version-fail-open, redactCluster never emits `tokenSecret`.
+  
+  Token-auth only; ticket-mode `authMode` field reserved. Federated resource tree (6.2), cross-cluster console (6.3), cross-cluster migration (6.4), HA pair (6.5) deferred to later Tier 6 releases.
 - **v0.33.0** (2026-04-20) — 8.3 security hardening pass. Five deltas in one bundle:
   1. Proxy top-level resource allowlist (`cluster`, `nodes`, `storage`, `access`, `pools`, `version`) — everything else returns 403.
   2. `applySecurityHeaders(req, res)` in `src/lib/security-headers.ts` applied via the custom HTTP server: CSP (RSC + Tailwind v4 compatible, `connect-src ws: wss:` for noVNC/xterm), HSTS (TLS-gated via `socket.encrypted` or `x-forwarded-proto: https`, with `upgrade-insecure-requests` under the same gate), X-Content-Type-Options, Referrer-Policy, X-Frame-Options.

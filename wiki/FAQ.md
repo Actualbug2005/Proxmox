@@ -67,6 +67,12 @@ With v0.33.0 it's much closer to safe than before, but there are still boundarie
 
 Short version: v0.33.0 closes the low-hanging browser-side fruit. The perimeter still has to be yours.
 
+## How do I add a remote cluster?
+
+As of **v0.34.0**, Nexus can manage multiple PVE clusters from one install. Go to `/dashboard/federation`, click **Add cluster**, and follow the four-step wizard (identity → endpoints → API token → confirm). Credentials are PVE API tokens (not passwords) and are encrypted at rest in `federation.json`.
+
+Full walk-through, severity-status meanings, and troubleshooting tips live on the dedicated [Federation](Federation) wiki page. Note that v0.34.0 lands the plumbing — the resource tree doesn't aggregate remote clusters yet (that's §6.2, coming in v0.35+); cross-cluster console and live migration land in later Tier 6 releases.
+
 ## How do I report a bug?
 
 Open an issue on the main repo: <https://github.com/Actualbug2005/Proxmox/issues>. Include your Nexus version (from `/api/health`), your PVE version (`pveversion`), and whatever logs `journalctl -u nexus --since '10 min ago'` produced.

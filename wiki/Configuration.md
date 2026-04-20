@@ -49,6 +49,8 @@ The persistent data directory holds:
 
 - `scheduled-jobs.json` — one-shot and recurring script jobs
 - `scheduled-chains.json` — [script chains](Script-Chains) and their state (including the `consecutiveFailures` counter that triggers auto-disable)
+- `service-account.json` — encrypted PVE API token for the local cluster's background tickers (DRS, guest-agent probes, notifications)
+- `federation.json` — encrypted list of registered remote PVE clusters (v0.34.0+). Mode `0600`, AES-256-GCM, key derived from `JWT_SECRET`. See [Federation](Federation) for details.
 
 On a fresh install, `NEXUS_DATA_DIR` defaults to `$TMPDIR/nexus-data` — **`/tmp` on most Linuxes, wiped on reboot**. For any real deployment, override it:
 
