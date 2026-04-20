@@ -49,9 +49,13 @@
 
 - **v0.31.0** — bell-icon affordance on VM-page CPU / Memory / Disk metric cards + `GuestAgentCard` failed-services section. Clicking the bell opens a pre-filled rule editor; saving lands the rule in the existing `/dashboard/notifications` surface. New per-guest metrics (`guest.cpu`, `guest.mem`) emitted by the poll source with `scope: guest:<vmid>`. Rule matcher got a boundary-aware `scopeMatches` helper so numeric vmids don't silently collide (`guest:100` no longer matches `guest:1000`). Primitives (`AlertBell`, `AlertRuleModal`, `useRuleCount`, `countMatchingRules`) are reusable — cluster-wide and node-detail bells are deferred follow-ups.
 
-### Predictive capacity planner — v0.32.0 (closes 5.5, closes Tier 5)
+### Predictive capacity planner — v0.32.0 → v0.32.1 (closes 5.5, closes Tier 5)
 
 - **v0.32.0** — Holt's-linear smoothing (`nexus/src/lib/forecast.ts`) generalises `trend.ts` from storage-only to any time-series. New opt-in forecast overlay on the shared `RRDChart` primitive, wired through `VMMetricsChart` + `NodeMetricsChart`: a second pill-row in the chart header (`off / 24h / 7d / 30d`) toggles a dashed forecast line on CPU + Memory series. Opacity keyed to the model's confidence heuristic (low/medium/high based on residual noise), with `<ReferenceLine>` markers where the extrapolation crosses a threshold. `trend.ts` untouched — the storage "days until full" path remains authoritative for the NOC view. Tier 5 (Intelligence) is now complete; seasonal forecasting (Holt-Winters) explicitly deferred as **5.5.1** until homelab workloads show clear daily/weekly cycles.
+- **v0.32.1** — two rendering fixes + one algorithm fix once the overlay was dogfooded:
+  - Clamp the CPU Y-axis at `[0, 1]` via `allowDataOverflow`; clamp forecast values in-memory so tooltips don't show `-199%` on sharply-falling series.
+  - Suppress the overlay entirely on zero-variance or all-zero series (flat idle CPU, stopped guest with `memused=0`). Exported `clampForecastValue` + `hasForecastSignal` helpers.
+  - Upgraded `forecast()` from plain Holt's to **damped-trend Holt's** (new `phi` parameter, default 0.9) and re-tuned defaults to `α=0.15, β=0.05` for the multi-hour horizons this UI uses. Plain Holt's produced linear extrapolations that looked "exponential-ish" on long horizons when the recent slope shifted sharply. Damping geometrically decays the trend contribution so long-range projections approach a horizontal asymptote (`level + trend * phi / (1 - phi)`) instead of running off to infinity. Threshold-crossing math updated for the damped case: thresholds beyond the asymptote are correctly skipped rather than producing imaginary crossings.
 
 ### Tier 9 — **zero items shipped.** Verified: no PBS module, no local script library, no plugin system, no log search, no SR-IOV UI, no FRR wizard, no restore-test automation.
 
