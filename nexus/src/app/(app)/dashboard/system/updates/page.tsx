@@ -183,6 +183,9 @@ export default function UpdatesPage() {
             )}
           </div>
           <div className="mt-3 text-sm leading-relaxed text-[var(--color-fg-secondary)]">
+            {/* Security: no rehype-raw in the pipeline — react-markdown escapes
+                raw HTML by default, so GitHub release bodies render text-only.
+                Invariant locked by src/tests/security/markdown-pipeline.test.ts. */}
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
