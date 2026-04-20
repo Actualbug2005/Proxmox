@@ -1,6 +1,13 @@
 /**
  * Holt's linear exponential smoothing for short-horizon capacity forecasting.
  *
+ * Uses damped-trend Holt's (aka additive Holt's with a damping parameter
+ * phi ∈ (0, 1]). Damping decays the trend's contribution geometrically over
+ * the forecast horizon so long-range projections approach a horizontal
+ * asymptote (level + trend * phi / (1 - phi)) instead of running off to
+ * infinity. This matters for bounded metrics like CPU fraction, where an
+ * unbounded linear projection can easily produce nonsense like -199%.
+ *
  * Plain least-squares (see trend.ts) works well for the storage exhaustion
  * widget — RRD storage series drift slowly and the ~70 samples over a week
  * give a stable fit. For CPU/RAM/disk telemetry the series is much noisier
@@ -30,10 +37,16 @@ export interface ForecastInput {
   horizonSeconds: number;
   /** Optional thresholds to mark crossings for. */
   thresholds?: ReadonlyArray<number>;
-  /** Level-smoothing factor. Default 0.3. */
+  /** Level-smoothing factor (0..1]. Default 0.15 — favours history over
+   *  the most recent sample, tuned for multi-hour horizons. */
   alpha?: number;
-  /** Trend-smoothing factor. Default 0.1. */
+  /** Trend-smoothing factor (0..1]. Default 0.05 — trend updates slowly
+   *  so a single shock doesn't dominate 24h projections. */
   beta?: number;
+  /** Trend-damping factor (0..1]. Default 0.9. At phi=1 this collapses
+   *  to plain Holt's (unbounded linear extrapolation); lower values
+   *  make the forecast approach a horizontal asymptote faster. */
+  phi?: number;
 }
 
 export type ForecastConfidence = 'low' | 'medium' | 'high';
@@ -57,17 +70,19 @@ function median(values: number[]): number {
 }
 
 /**
- * Run Holt's-linear smoothing over `samples` and emit a point-forecast out to
- * `horizonSeconds`. Returns null when there aren't enough samples (<10) to
- * form a credible trend. See module docstring for algorithm rationale.
+ * Run damped-trend Holt's smoothing over `samples` and emit a point-forecast
+ * out to `horizonSeconds`. Returns null when there aren't enough samples
+ * (<10) to form a credible trend. See module docstring for algorithm
+ * rationale.
  */
 export function forecast(input: ForecastInput): ForecastResult | null {
   const {
     samples,
     horizonSeconds,
     thresholds = [],
-    alpha = 0.3,
-    beta = 0.1,
+    alpha = 0.15,
+    beta = 0.05,
+    phi = 0.9,
   } = input;
 
   if (samples.length < 10) return null;
@@ -81,8 +96,11 @@ export function forecast(input: ForecastInput): ForecastResult | null {
   const medianGap = gaps.length > 0 ? median(gaps) : 0;
   const gap = medianGap > 0 ? medianGap : 60;
 
-  // Holt's-linear pass. Seed level with the first observation and trend with
-  // the first inter-sample delta; iterate from i=1 so the seed is consumed.
+  // Damped Holt's-linear pass. Seed level with the first observation and
+  // trend with the first inter-sample delta; iterate from i=1 so the seed
+  // is consumed. The phi multiplier on `trend` decays its contribution
+  // geometrically both within the smoothing recurrence and in the
+  // projection below.
   let level = samples[0].v;
   let trend = samples[1].v - samples[0].v;
 
@@ -97,14 +115,14 @@ export function forecast(input: ForecastInput): ForecastResult | null {
     if (x < minV) minV = x;
     if (x > maxV) maxV = x;
 
-    const predicted = level + trend;
+    const predicted = level + phi * trend;
     const err = x - predicted;
     sqErrSum += err * err;
     residualCount += 1;
 
     const prevLevel = level;
-    level = alpha * x + (1 - alpha) * (level + trend);
-    trend = beta * (level - prevLevel) + (1 - beta) * trend;
+    level = alpha * x + (1 - alpha) * (level + phi * trend);
+    trend = beta * (level - prevLevel) + (1 - beta) * phi * trend;
   }
 
   const rmse = residualCount > 0 ? Math.sqrt(sqErrSum / residualCount) : 0;
@@ -119,18 +137,50 @@ export function forecast(input: ForecastInput): ForecastResult | null {
   const last = samples[samples.length - 1];
   const steps = Math.max(1, Math.floor(horizonSeconds / gap));
   const points: ForecastSample[] = [];
+
+  // Damped-trend k-step forecast. Closed-form so we don't accumulate floating
+  // error over 1000+ steps. When phi is exactly 1 this degenerates to k*trend
+  // via a L'Hôpital-style fallback (we handle it explicitly to avoid the
+  // divide-by-zero).
+  const damping = (k: number): number => {
+    if (phi >= 1) return k;
+    // phi + phi^2 + ... + phi^k = phi * (1 - phi^k) / (1 - phi)
+    return (phi * (1 - Math.pow(phi, k))) / (1 - phi);
+  };
+
   for (let k = 1; k <= steps; k++) {
-    points.push({ t: last.t + k * gap, v: level + k * trend });
+    points.push({ t: last.t + k * gap, v: level + damping(k) * trend });
   }
 
-  // Threshold crossings: solve `level + ((t - last.t) / gap) * trend = thr`
-  // for t, expressed in seconds. A zero trend can't cross anything.
+  // Threshold crossings: solve `level + damping(k) * trend = threshold` for
+  // k. When phi < 1 the forecast has a horizontal asymptote at
+  // `level + trend * phi / (1 - phi)`; thresholds beyond that asymptote are
+  // unreachable and get skipped. A zero trend can't cross anything.
   const crossings: Array<{ threshold: number; at: number }> = [];
   if (trend !== 0) {
     for (const threshold of thresholds) {
-      // Forecast value k*gap seconds past `last.t` is `level + k*trend`.
-      // Solve level + k*trend = threshold → k = (threshold - level) / trend.
-      const k = (threshold - level) / trend;
+      const target = (threshold - level) / trend;
+      let k: number | null;
+      if (phi >= 1) {
+        // damping(k) = k → k = target directly (plain Holt's path).
+        k = target;
+      } else {
+        const asymptote = phi / (1 - phi);
+        if (Math.abs(target) > asymptote) {
+          k = null;
+        } else {
+          // damping(k) = phi * (1 - phi^k) / (1 - phi) = target
+          // => phi^k = 1 - (1 - phi) * target / phi
+          // => k = ln(inner) / ln(phi)
+          const inner = 1 - ((1 - phi) * target) / phi;
+          if (inner <= 0) {
+            k = null;
+          } else {
+            k = Math.log(inner) / Math.log(phi);
+          }
+        }
+      }
+      if (k === null || k <= 0) continue;
       const tCross = last.t + k * gap;
       if (tCross > last.t && tCross <= last.t + horizonSeconds) {
         crossings.push({ threshold, at: tCross });
