@@ -49,6 +49,10 @@
 
 - **v0.31.0** — bell-icon affordance on VM-page CPU / Memory / Disk metric cards + `GuestAgentCard` failed-services section. Clicking the bell opens a pre-filled rule editor; saving lands the rule in the existing `/dashboard/notifications` surface. New per-guest metrics (`guest.cpu`, `guest.mem`) emitted by the poll source with `scope: guest:<vmid>`. Rule matcher got a boundary-aware `scopeMatches` helper so numeric vmids don't silently collide (`guest:100` no longer matches `guest:1000`). Primitives (`AlertBell`, `AlertRuleModal`, `useRuleCount`, `countMatchingRules`) are reusable — cluster-wide and node-detail bells are deferred follow-ups.
 
+### Predictive capacity planner — v0.32.0 (closes 5.5, closes Tier 5)
+
+- **v0.32.0** — Holt's-linear smoothing (`nexus/src/lib/forecast.ts`) generalises `trend.ts` from storage-only to any time-series. New opt-in forecast overlay on the shared `RRDChart` primitive, wired through `VMMetricsChart` + `NodeMetricsChart`: a second pill-row in the chart header (`off / 24h / 7d / 30d`) toggles a dashed forecast line on CPU + Memory series. Opacity keyed to the model's confidence heuristic (low/medium/high based on residual noise), with `<ReferenceLine>` markers where the extrapolation crosses a threshold. `trend.ts` untouched — the storage "days until full" path remains authoritative for the NOC view. Tier 5 (Intelligence) is now complete; seasonal forecasting (Holt-Winters) explicitly deferred as **5.5.1** until homelab workloads show clear daily/weekly cycles.
+
 ### Tier 9 — **zero items shipped.** Verified: no PBS module, no local script library, no plugin system, no log search, no SR-IOV UI, no FRR wizard, no restore-test automation.
 
 ---
@@ -63,7 +67,10 @@
 | 5.2 | Guest-Internal Health | ✅ Done + services probes in v0.30.0 | Disk-pressure + agent-liveness (v0.21.0) + systemd failed-unit probes (v0.30.0) at 1/3 cadence with edge-triggered `guest.service.failed` events and a VM-page `GuestAgentCard` surface. |
 | 5.3 | Auto-DRS Loop | ✅ Done + live-unblocked in v0.27.0 | |
 | 5.4 | Alerting-Rule UI on pressure widgets | ✅ Done in v0.31.0 | Bell icon on VM page CPU / Memory / Disk cards + GuestAgentCard failed-services section opens a pre-filled rule editor. Per-guest `guest.cpu` / `guest.mem` metrics emitted by the poll source; rule-matcher got a boundary-aware `scopeMatches` so `guest:100` no longer silently matches `guest:1000`. Reusable `AlertBell` + `AlertRuleModal` + `useRuleCount` primitives for future surfaces (cluster-wide + node-detail bells deferred). |
-| 5.5 | Predictive Capacity Planner | ◯ Not started | `trend.ts` exists for storage only. Extend to CPU/RAM. |
+| 5.5 | Predictive Capacity Planner | ✅ Done in v0.32.0 | Holt's-linear `forecast.ts` generalises `trend.ts` to any time-series. Opt-in dashed forecast overlay on `RRDChart` CPU + Memory series, horizon selector (`24h / 7d / 30d`), confidence-keyed opacity, threshold-crossing `ReferenceLine` markers. `trend.ts` untouched (storage still uses linear regression). |
+| 5.5.1 | Seasonal forecasting (Holt-Winters) | ◯ Deferred from 5.5 v1 | Upgrade path if homelab workloads show strong daily/weekly cycles. Current heuristic deliberately underfits rather than faking confidence on chaotic series. |
+
+**Tier 5 summary: ✅ Complete (all items shipped in v0.13.0 → v0.32.0; 5.5.1 deferred upgrade).**
 
 ### Tier 6 — Federation
 

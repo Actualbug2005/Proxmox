@@ -34,6 +34,10 @@ Per-VM and per-CT pages cover everything the stock UI does: start/stop/shutdown/
 
 Per-node, per-VM, and per-CT RRD charts cover CPU, RAM, network, and disk I/O, with selectable windows (hour / day / week / month / year). Polling is throttled and stale-while-revalidate so idle tabs don't hammer the PVE API.
 
+### Capacity forecast overlay (v0.32.0)
+
+Every CPU and Memory chart has an opt-in **forecast** pill row: `off / 24h / 7d / 30d`. Flip it on and a dashed projection extends from the most recent sample out to the chosen horizon, using Holt's-linear smoothing (level + trend EWMA) — the same algorithm the storage exhaustion widget uses, generalised to any time-series. The dashed line's opacity tracks the model's confidence (low / medium / high, derived from residual noise), so a chaotic series fades out instead of falsely implying certainty. If a pressure widget's alert rule threshold is crossed within the horizon, a red `ReferenceLine` marks the projected crossing time. Seasonal decomposition (daily/weekly cycles) is deliberately not modelled yet — homelab workloads tend to be chaotic and underfitting beats overfitting.
+
 ## Embedded xterm console
 
 ![In-browser xterm console attached to a VM's VNC websocket](images/console.png)
