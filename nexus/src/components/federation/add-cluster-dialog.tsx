@@ -90,7 +90,10 @@ export function AddClusterDialog({ onClose }: AddClusterDialogProps) {
   const effectiveId = idTouched ? id : derivedId;
 
   const nameValid = name.trim().length >= 1 && name.trim().length <= 64;
-  const idValid = /^[a-z0-9-]{1,32}$/.test(effectiveId);
+  // Matches the server-side ID_RE in lib/federation/store.ts — first char
+  // MUST be a lowercase letter. Keeping client in sync means the wizard
+  // surfaces validation errors before POST, not after.
+  const idValid = /^[a-z][a-z0-9-]{0,31}$/.test(effectiveId);
   const identityValid = nameValid && idValid;
 
   const endpointsTrimmed = endpoints.map((e) => e.trim()).filter(Boolean);
@@ -335,8 +338,8 @@ function StepIdentity({
           className={cn(inputCls, 'font-mono')}
           maxLength={32}
         />
-        <Hint>Lowercase alphanumerics and hyphens only, max 32 chars. Used in proxy URLs.</Hint>
-        {!idValid && <Hint variant="error">Id must match <code>[a-z0-9-]{'{1,32}'}</code>.</Hint>}
+        <Hint>Lowercase alphanumerics and hyphens, must start with a letter, max 32 chars. Used in proxy URLs.</Hint>
+        {!idValid && <Hint variant="error">Id must match <code>[a-z][a-z0-9-]{'{0,31}'}</code>.</Hint>}
       </div>
     </div>
   );
