@@ -22,6 +22,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession, getSessionId, refreshPVESessionIfStale } from '@/lib/auth';
 import { validateCsrf } from '@/lib/csrf';
 import { pveFetch } from '@/lib/pve-fetch';
+import { resolveRegisteredCluster, getClusterProbeState } from '@/lib/federation/session';
 
 const PVE_BASE = process.env.PROXMOX_HOST
   ? `https://${process.env.PROXMOX_HOST}:8006/api2/json`
@@ -55,6 +56,11 @@ const ALLOWED_CONTENT_TYPES = new Set([
 const ALLOWED_TOP_LEVEL = new Set([
   'cluster', 'nodes', 'storage', 'access', 'pools', 'version',
 ]);
+
+/** Matches a registered cluster's slug id; shared with the federation
+ *  store's ID_RE. Kept local to the proxy so federation module is not
+ *  on the proxy's critical-path import chain unnecessarily. */
+const CLUSTER_ID_RE = /^[a-z][a-z0-9-]{0,31}$/;
 
 /** Reject a path segment if it contains ANY of:
  *   - control chars (including \r, \n, NUL)
@@ -143,11 +149,46 @@ async function handler(
       { status: 403 },
     );
   }
-  const pathStr = path.join('/');
 
-  // Preserve query string.
+  // ── Federation rewrite (6.1) ────────────────────────────────────────────
+  // ?cluster=<id> routes to a registered remote cluster via API-token auth.
+  // No cluster param → unchanged local path. The allowlist above runs first
+  // so federation is additive to existing hardening, not replacing any of it.
   const url = new URL(req.url);
-  const targetUrl = `${PVE_BASE}/${pathStr}${url.search}`;
+  const clusterId = url.searchParams.get('cluster');
+
+  let targetBase: string;
+  let upstreamHeaders: Record<string, string>;
+
+  if (clusterId !== null) {
+    if (!CLUSTER_ID_RE.test(clusterId)) {
+      return hardenedJson({ error: 'Invalid cluster id' }, { status: 400 });
+    }
+    const resolved = resolveRegisteredCluster(clusterId);
+    if (!resolved) {
+      return hardenedJson({ error: 'Cluster not registered' }, { status: 404 });
+    }
+    const probe = getClusterProbeState(clusterId);
+    const endpoint = probe?.activeEndpoint ?? resolved.endpoints[0];
+    targetBase = `${endpoint}/api2/json`;
+    // PVEAPIToken=<id>=<secret> — both fields are restricted to URL-safe
+    // character classes at write time, so direct interpolation is safe.
+    upstreamHeaders = {
+      Authorization: `PVEAPIToken=${resolved.tokenId}=${resolved.tokenSecret}`,
+    };
+  } else {
+    targetBase = PVE_BASE;
+    upstreamHeaders = {
+      Cookie: `PVEAuthCookie=${session.ticket}`,
+      CSRFPreventionToken: session.csrfToken,
+    };
+  }
+
+  const pathStr = path.join('/');
+  // Strip the cluster param so remote PVE never sees it in its own logs.
+  url.searchParams.delete('cluster');
+  const forwardedQuery = url.searchParams.toString();
+  const targetUrl = `${targetBase}/${pathStr}${forwardedQuery ? '?' + forwardedQuery : ''}`;
 
   // ── Content-Type allow-list (M4) ─────────────────────────────────────────
   const rawContentType = req.headers.get('content-type');
@@ -164,10 +205,7 @@ async function handler(
     forwardedContentType = rawContentType;
   }
 
-  const headers: Record<string, string> = {
-    Cookie: `PVEAuthCookie=${session.ticket}`,
-    CSRFPreventionToken: session.csrfToken,
-  };
+  const headers: Record<string, string> = { ...upstreamHeaders };
   if (forwardedContentType) headers['Content-Type'] = forwardedContentType;
 
   // ── Body size cap (M5) ───────────────────────────────────────────────────

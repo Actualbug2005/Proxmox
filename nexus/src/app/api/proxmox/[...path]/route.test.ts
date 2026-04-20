@@ -53,18 +53,40 @@ mock.module('@/lib/csrf', {
 // Mock pve-fetch so the allowed-path case doesn't try to hit localhost:8006.
 // It returns a minimal Response; all we care about is that the handler
 // reached this call instead of short-circuiting on the allowlist.
+// The mock captures the outbound URL + init so federation-routing
+// assertions can verify the rewrite targeted the remote endpoint with
+// PVEAPIToken auth instead of the local cookie path.
+interface PveFetchCall {
+  url: string;
+  init: { method?: string; headers?: Record<string, string>; body?: string } | undefined;
+}
+const pveFetchCalls: PveFetchCall[] = [];
 mock.module('@/lib/pve-fetch', {
   namedExports: {
-    pveFetch: async () =>
-      new Response(JSON.stringify({ data: [] }), {
+    pveFetch: async (url: string, init?: PveFetchCall['init']) => {
+      pveFetchCalls.push({ url, init });
+      return new Response(JSON.stringify({ data: [] }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
-      }),
+      });
+    },
   },
 });
 
 // Import AFTER the mocks so the route binds to the stubbed modules.
 const { GET } = await import('./route.ts');
+
+// Federation modules for the federation-rewrite describe block below.
+// Imported at the module top so the inner describe callback doesn't
+// need top-level await (node:test rejects that pattern).
+const { mkdtempSync, rmSync } = await import('node:fs');
+const { tmpdir } = await import('node:os');
+const { join } = await import('node:path');
+const { beforeEach, afterEach } = await import('node:test');
+const { addCluster } = await import('@/lib/federation/store.ts');
+const { reloadFederation, __resetForTests } = await import(
+  '@/lib/federation/session.ts'
+);
 
 /**
  * Build a NextRequest-shaped object and a params Promise for the handler.
@@ -104,5 +126,138 @@ describe('proxy route — top-level resource allowlist (8.3)', () => {
     const { req, params } = buildProxyRequest(['..', 'etc', 'passwd']);
     const res = await GET(req as never, { params } as never);
     assert.equal(res.status, 400);
+  });
+});
+
+// ── Federation rewrite (6.1) ──────────────────────────────────────────────
+//
+// These cases exercise the ?cluster=<id> routing branch. Registry
+// persistence is exercised end-to-end via the real federation store
+// (encrypted on-disk), so each test gets its own NEXUS_DATA_DIR and the
+// in-memory session module is reset between cases.
+
+describe('proxy route — federation rewrite (?cluster=<id>)', () => {
+  let tmp: string;
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'nexus-fed-proxy-'));
+    process.env.NEXUS_DATA_DIR = tmp;
+    pveFetchCalls.length = 0;
+    __resetForTests();
+  });
+
+  afterEach(() => {
+    rmSync(tmp, { recursive: true, force: true });
+    delete process.env.NEXUS_DATA_DIR;
+  });
+
+  /** Variant of buildProxyRequest that preserves a real query string.
+   *  The handler reads req.url directly for the ?cluster= extraction. */
+  function buildWithQuery(pathSegments: string[], query: string) {
+    const url = `http://localhost/api/proxmox/${pathSegments.join('/')}${query ? '?' + query : ''}`;
+    const req = new Request(url, { method: 'GET' });
+    const params = Promise.resolve({ path: pathSegments });
+    return { req, params };
+  }
+
+  it('400 on malformed cluster id', async () => {
+    // URL-encoded space + mixed case — fails the slug regex.
+    const { req, params } = buildWithQuery(
+      ['cluster', 'resources'],
+      'cluster=Not%20A%20Slug',
+    );
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 400);
+    const body = await res.json();
+    assert.match(String(body.error), /Invalid cluster id/i);
+  });
+
+  it('404 on unknown but well-formed cluster id', async () => {
+    const { req, params } = buildWithQuery(
+      ['cluster', 'resources'],
+      'cluster=nope',
+    );
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 404);
+    const body = await res.json();
+    assert.match(String(body.error), /Cluster not registered/i);
+  });
+
+  it('routes to registered cluster and uses PVEAPIToken header (not cookie)', async () => {
+    await addCluster({
+      id: 'lab',
+      name: 'Lab',
+      endpoints: ['https://pve-lab:8006'],
+      tokenId: 'nexus@pve!fed',
+      tokenSecret: 'aaaaaaaaaaaa',
+    });
+    await reloadFederation();
+
+    const { req, params } = buildWithQuery(
+      ['cluster', 'resources'],
+      'cluster=lab',
+    );
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 200);
+
+    assert.equal(pveFetchCalls.length, 1);
+    const call = pveFetchCalls[0];
+    assert.ok(
+      call.url.startsWith('https://pve-lab:8006/api2/json/'),
+      `expected remote base, got ${call.url}`,
+    );
+    const headers = call.init?.headers ?? {};
+    assert.equal(
+      headers.Authorization,
+      'PVEAPIToken=nexus@pve!fed=aaaaaaaaaaaa',
+    );
+    // Local cookie path MUST NOT leak into the remote request.
+    assert.equal(headers.Cookie, undefined);
+    assert.equal(headers.CSRFPreventionToken, undefined);
+  });
+
+  it('strips the cluster param from the forwarded query string', async () => {
+    await addCluster({
+      id: 'lab',
+      name: 'Lab',
+      endpoints: ['https://pve-lab:8006'],
+      tokenId: 'nexus@pve!fed',
+      tokenSecret: 'aaaaaaaaaaaa',
+    });
+    await reloadFederation();
+
+    const { req, params } = buildWithQuery(
+      ['cluster', 'resources'],
+      'cluster=lab&type=vm',
+    );
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 200);
+
+    assert.equal(pveFetchCalls.length, 1);
+    const outbound = pveFetchCalls[0].url;
+    assert.equal(
+      outbound,
+      'https://pve-lab:8006/api2/json/cluster/resources?type=vm',
+      `forwarded URL should drop cluster= and keep type=vm, got ${outbound}`,
+    );
+  });
+
+  it('allowlist runs before federation — non-allowlisted top-level with a valid cluster id still 403', async () => {
+    await addCluster({
+      id: 'lab',
+      name: 'Lab',
+      endpoints: ['https://pve-lab:8006'],
+      tokenId: 'nexus@pve!fed',
+      tokenSecret: 'aaaaaaaaaaaa',
+    });
+    await reloadFederation();
+
+    const { req, params } = buildWithQuery(['evil'], 'cluster=lab');
+    const res = await GET(req as never, { params } as never);
+    assert.equal(res.status, 403);
+    const body = await res.json();
+    assert.match(String(body.error), /not proxied/i);
+    // And crucially: pveFetch was never called.
+    assert.equal(pveFetchCalls.length, 0);
   });
 });
