@@ -111,21 +111,22 @@ describe('probeCluster', () => {
   });
 
   it('sends Authorization PVEAPIToken header, no cookie', async () => {
-    let seenHeaders: Headers | null = null;
+    const captured: { headers: Headers | null } = { headers: null };
     const fetchFn: typeof fetch = async (url, init) => {
-      seenHeaders = new Headers(init?.headers);
+      captured.headers = new Headers(init?.headers);
       if (String(url).endsWith('/version')) {
         return okResponse({ data: { version: '8.2.4' } });
       }
       return okResponse({ data: [] });
     };
     await probeCluster(cluster, { fetchFn, now: () => 0 });
-    assert.ok(seenHeaders);
+    assert.ok(captured.headers);
+    const h = captured.headers;
     assert.match(
-      seenHeaders!.get('authorization') ?? '',
+      h.get('authorization') ?? '',
       /^PVEAPIToken=nexus@pve!probe=aaaaaaaaaaaaaaaa$/,
     );
-    assert.equal(seenHeaders!.get('cookie'), null);
+    assert.equal(h.get('cookie'), null);
   });
 
   it('tries previous activeEndpoint first when supplied (sticky failover)', async () => {

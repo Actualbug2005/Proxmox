@@ -28,13 +28,15 @@ afterEach(() => {
   delete process.env.NEXUS_DATA_DIR;
 });
 
-const validCluster = {
+import type { CreateClusterInput } from './types.ts';
+
+const validCluster: CreateClusterInput = {
   id: 'prod-east',
   name: 'Production East',
   endpoints: ['https://pve-east-1.example.com:8006', 'https://pve-east-2.example.com:8006'],
   tokenId: 'nexus@pve!federate',
   tokenSecret: 'deadbeef-1234-5678-9abc-def012345678',
-} as const;
+};
 
 describe('federation store', () => {
   it('round-trips a single cluster through encrypt/decrypt', async () => {
