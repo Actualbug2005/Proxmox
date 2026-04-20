@@ -17,10 +17,15 @@ interface ParsedSemver {
   patch: number;
 }
 
-const SEMVER_RE = /^v?(\d+)\.(\d+)\.(\d+)(?:-[A-Za-z0-9.-]+)?$/;
+// Split into core + optional pre-release match to keep the pattern
+// safe-regex clean. Pre-release body bounded at 64 chars (SemVer spec
+// allows arbitrary length but real tags are short).
+const SEMVER_CORE_RE = /^v?(\d+)\.(\d+)\.(\d+)$/;
+const SEMVER_PRERELEASE_RE = /^v?(\d+)\.(\d+)\.(\d+)-[A-Za-z0-9.-]{1,64}$/;
 
 export function parseSemver(s: string): ParsedSemver | null {
-  const m = SEMVER_RE.exec(s.trim());
+  const trimmed = s.trim();
+  const m = trimmed.match(SEMVER_CORE_RE) ?? trimmed.match(SEMVER_PRERELEASE_RE);
   if (!m) return null;
   return {
     major: Number.parseInt(m[1], 10),

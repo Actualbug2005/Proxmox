@@ -28,7 +28,9 @@ import type { ServiceAccountConfig } from './types.ts';
  */
 const TOKEN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+![A-Za-z0-9._-]+$/;
 const HOSTNAME_RE = /^[A-Za-z0-9.-]+$/;
-const IPV4_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
+// Explicit 4-octet form (not \d{1,3}(\.\d{1,3}){3}) — safe-regex flags
+// the shorter form's nested quantifier even though it's bounded.
+const IPV4_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
 const IPV6_BRACKETED_RE = /^\[[0-9A-Fa-f:]+\]$/;
 
 function resolveDataDir(): string {

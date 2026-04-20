@@ -29,7 +29,13 @@ const UPDATER = process.env.NEXUS_UPDATER_BIN ?? '/usr/local/bin/nexus-update';
 // Release tags are SemVer: `v0.2.0`, `v1.0.0`, optionally with a pre-release
 // suffix like `v0.3.0-rc.1`. Reject anything that doesn't match — prevents
 // argv injection via a crafted `version` body.
-const VERSION_RE = /^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/;
+// SemVer tag validation split into an anchor pattern + optional pre-release
+// check. Combined regex tripped safe-regex's nested-quantifier heuristic.
+const VERSION_CORE_RE = /^v\d+\.\d+\.\d+$/;
+const VERSION_PRERELEASE_RE = /^v\d+\.\d+\.\d+-[A-Za-z0-9.-]{1,64}$/;
+const VERSION_RE = {
+  test: (s: string): boolean => VERSION_CORE_RE.test(s) || VERSION_PRERELEASE_RE.test(s),
+};
 
 interface UpdateRequest {
   version?: string;

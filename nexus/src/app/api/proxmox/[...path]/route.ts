@@ -49,7 +49,10 @@ const ALLOWED_CONTENT_TYPES = new Set([
 
 /** Top-level PVE resource families Nexus consumes. Anything else is 403.
  *  Adding a new family here is a conscious widening decision. */
-export const ALLOWED_TOP_LEVEL = new Set([
+// Not exported: Next 16 route files may only export the well-known handler
+// names (GET/POST/config/…). Adding `export` here fails the generated
+// `.next/types/.../route.ts` constraint.
+const ALLOWED_TOP_LEVEL = new Set([
   'cluster', 'nodes', 'storage', 'access', 'pools', 'version',
 ]);
 

@@ -45,7 +45,10 @@ async function fetchQuotas(node: string, shareId: string): Promise<QuotaReport> 
 function parseSize(s: string): number | null {
   const trimmed = s.trim();
   if (trimmed === '' || trimmed === '0') return 0;
-  const m = /^(\d+(?:\.\d+)?)\s*([KMGTP]?)B?$/i.exec(trimmed);
+  // RegExp.prototype.exec — two-branch capture (\d+\.\d+|\d+) keeps the
+  // pattern safe-regex clean without changing semantics.
+  const sizeRe = /^(\d+\.\d+|\d+)\s*([KMGTP]?)B?$/i;
+  const m = sizeRe.exec(trimmed);
   if (!m) return null;
   const n = Number(m[1]);
   const suffix = m[2]?.toUpperCase() ?? '';

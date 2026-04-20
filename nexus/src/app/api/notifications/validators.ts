@@ -85,12 +85,22 @@ function isPlausibleEmailAddress(s: string): boolean {
 // Parse a hostname. Allows DNS names + IPv4 literals + bracketed IPv6.
 // Rejects control chars, spaces, and the path / protocol separators
 // that would suggest the operator pasted a URL instead of a host.
-const HOSTNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9.\-]{0,253}[a-zA-Z0-9])?$/;
-const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+// Bounded linear patterns (safe-regex clean). HOSTNAME's trailing char
+// check is done in isPlausibleHost rather than in the regex to avoid the
+// nested-quantifier shape safe-regex heuristically rejects.
+const HOSTNAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9.\-]{0,253}$/;
+const IPV4_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
 
 function isPlausibleHost(s: string): boolean {
   if (s.startsWith('[') && s.endsWith(']')) return s.length > 2; // IPv6 literal
-  return HOSTNAME_RE.test(s) || IPV4_RE.test(s);
+  // DNS RFC 1034 forbids hostnames that end in `.` or `-`; the HOSTNAME_RE
+  // above allows them because removing the trailing-char check was
+  // necessary to keep the pattern safe-regex clean.
+  if (HOSTNAME_RE.test(s)) {
+    const last = s[s.length - 1];
+    return last !== '.' && last !== '-';
+  }
+  return IPV4_RE.test(s);
 }
 
 function parseEmailConfig(cfg: Record<string, unknown>): Result<EmailDestination> {

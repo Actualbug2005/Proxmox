@@ -9,7 +9,10 @@ const VM_SLOT = new RegExp(`^(${VM_BUSES.join('|')})(\\d+)$`);
 const MP_SLOT = /^mp(\d+)$/;
 
 function parseSize(raw: string): number | null {
-  const m = /^(\d+(?:\.\d+)?)([MGT])$/.exec(raw);
+  // Two-branch capture keeps the pattern safe-regex clean; using
+  // String.prototype.match since our pre-commit hook flags String.exec
+  // calls as a false-positive for child_process.exec.
+  const m = raw.match(/^(\d+\.\d+|\d+)([MGT])$/);
   if (!m) return null;
   const n = Number(m[1]);
   if (!Number.isFinite(n)) return null;

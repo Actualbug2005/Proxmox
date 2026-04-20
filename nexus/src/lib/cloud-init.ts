@@ -109,11 +109,20 @@ export function buildIpconfig(input: NicConfigInput): string {
 
 // ─── Form validation regexes (re-exported for the form component) ───────────
 
+// Validation primitives kept as `safe-regex`-clean patterns. The RFC 1123
+// hostname's "no trailing hyphen" rule is enforced by isValidHostname()
+// rather than in the regex itself — the nested-quantifier form
+// /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/ trips safe-regex's heuristic
+// even though it's mathematically bounded.
+const HOSTNAME_CHARS_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 /** RFC 1123 hostname, lowercase-only. */
-export const HOSTNAME_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+export const HOSTNAME_RE = {
+  test: (s: string): boolean =>
+    HOSTNAME_CHARS_RE.test(s) && !s.endsWith('-'),
+};
 /** POSIX Linux username. */
 export const USERNAME_RE = /^[a-z_][a-z0-9_-]{0,31}$/;
 /** Pragmatic IPv4 + CIDR (not exhaustive; PVE does the real validation). */
-export const IPV4_CIDR_RE = /^(\d{1,3}\.){3}\d{1,3}\/(0?[0-9]|[12][0-9]|3[0-2])$/;
+export const IPV4_CIDR_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/(?:0?[0-9]|[12][0-9]|3[0-2])$/;
 /** Pragmatic IPv4 address. */
-export const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+export const IPV4_RE = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
