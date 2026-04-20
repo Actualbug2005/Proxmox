@@ -11,6 +11,8 @@
  */
 import type { ClusterProbeState, RegisteredCluster } from './types.ts';
 
+/** Per-HTTP-request timeout. Each endpoint attempt makes two requests
+ *  (version + cluster/status), so each endpoint gets up to ~10s total. */
 const PROBE_TIMEOUT_MS = 5000;
 
 interface ProbeOptions {
@@ -68,12 +70,22 @@ export async function probeCluster(
         });
         if (sres.ok) {
           const sbody = (await sres.json()) as {
-            data?: Array<{ type: string; online?: 0 | 1 }>;
+            data?: Array<{ type: string; online?: 0 | 1; quorate?: 0 | 1 }>;
           };
-          const nodes = (sbody.data ?? []).filter((e) => e.type === 'node');
-          if (nodes.length > 0) {
-            const online = nodes.filter((n) => n.online === 1).length;
-            quorate = online * 2 > nodes.length; // strict majority
+          const entries = sbody.data ?? [];
+          // Prefer PVE's own `quorate` flag on the type:'cluster' entry —
+          // Corosync's view honours two_node, expected_votes, etc., which a
+          // naive majority heuristic misses. Fall back to strict majority
+          // of the type:'node' entries only if the cluster entry is absent.
+          const clusterEntry = entries.find((e) => e.type === 'cluster');
+          if (clusterEntry?.quorate !== undefined) {
+            quorate = clusterEntry.quorate === 1;
+          } else {
+            const nodes = entries.filter((e) => e.type === 'node');
+            if (nodes.length > 0) {
+              const online = nodes.filter((n) => n.online === 1).length;
+              quorate = online * 2 > nodes.length; // strict majority
+            }
           }
         }
       } catch {
