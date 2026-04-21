@@ -38,3 +38,13 @@ export default function AutomationPage() {
     </div>
   );
 }
+
+// Compile-time exhaustiveness guard. If a new id is added to TAB_IDS without
+// a matching `tab === '<id>'` branch in the render, Exclude returns the new
+// member (non-never), the conditional resolves to `false`, and assigning
+// `true` to it fails at type-check time. Conditional types distribute over
+// unions, which is why a naked `TabId extends …` would absorb the new case
+// into the union and silently pass — Exclude-then-extends-never is the
+// exhaustiveness-safe shape. Pairs with the runtime regex in page.test.ts.
+const _exhaustiveTabRender: Exclude<TabId, 'library' | 'scheduled' | 'chains'> extends never ? true : false = true;
+void _exhaustiveTabRender;

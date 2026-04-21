@@ -839,11 +839,24 @@ function NoteCallout({ note }: { note: ScriptNote }) {
 // ─── Tab body ────────────────────────────────────────────────────────────────
 
 /**
- * Library tab body. Includes its feature-specific header bar (icon + title
- * + catalogue-count subtitle) because that copy is driven by this tab's
- * React Query state. The outer fullscreen height container is page-level
- * chrome and lives on the /scripts route shell — when hosted inside a
- * tabbed /dashboard/automation shell the parent will provide its own.
+ * Library tab body.
+ *
+ * Owns its own bounded-height flex-column contract: the inner two-pane relies
+ * on `flex-1 min-h-0` which only works when an ancestor caps the height.
+ * When hosted inside /dashboard/automation (which lays out its shell as a
+ * normal `p-6 space-y-6` block), this wrapper is what makes the sticky
+ * sidebar and the scrollable detail pane behave.
+ *
+ * The outer shell already renders an <h1>Automation</h1> and the tab bar —
+ * we deliberately do NOT render a second <h1>Community Scripts</h1> here.
+ * The catalogue meta line (count / category count / source) is preserved as
+ * a small flex-shrink-0 status strip above the two-pane so load-bearing copy
+ * isn't lost.
+ *
+ * The `calc(100dvh - spacing.56)` offset accounts for the outer top bar,
+ * shell padding, shell header, tab bar, and `space-y-6` gaps between them.
+ * The `-mt-4` tightens the visual gap above the two-pane since the shell's
+ * `space-y-6` already contributes 1.5rem between the TabBar and this tab.
  */
 export function LibraryTab() {
   const [search, setSearch] = useState('');
@@ -859,24 +872,16 @@ export function LibraryTab() {
   const totalCount = data?.meta.count ?? 0;
 
   return (
-    <>
-      <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-white/5 text-indigo-400 flex items-center justify-center">
-          <Code2 className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-base font-semibold text-[var(--color-fg)]">Community Scripts</h1>
-          <p className="text-xs text-[var(--color-fg-subtle)]">
-            {isLoading
-              ? 'Loading catalogue from community-scripts.org…'
-              : data
-                ? `${totalCount} scripts · ${data.meta.categoryCount} categories · sourced from ${data.meta.source}`
-                : 'Catalogue unavailable'}
-          </p>
-        </div>
+    <div className="-mt-4 h-[calc(100dvh-theme(spacing.56))] flex flex-col">
+      <div className="flex-shrink-0 px-1 pb-2 text-xs text-[var(--color-fg-subtle)]">
+        {isLoading
+          ? 'Loading catalogue from community-scripts.org…'
+          : data
+            ? `${totalCount} scripts · ${data.meta.categoryCount} categories · sourced from ${data.meta.source}`
+            : 'Catalogue unavailable'}
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row border border-[var(--color-border-subtle)] rounded-lg overflow-hidden">
         <Sidebar
           categories={categories}
           search={search}
@@ -889,6 +894,6 @@ export function LibraryTab() {
         />
         {selected ? <ScriptDetail key={selected.slug} script={selected} /> : <EmptyDetail />}
       </div>
-    </>
+    </div>
   );
 }
