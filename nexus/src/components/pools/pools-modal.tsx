@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { ModalShell } from '@/components/ui/modal-shell';
 import { PoolsPageBody } from './pools-page-body';
 
 interface Props {
@@ -8,21 +9,19 @@ interface Props {
   onClose: () => void;
 }
 
+/**
+ * Pools management modal. Builds on `ModalShell` to inherit ESC-to-close
+ * and the scrim `target === currentTarget` guard that prevents a drag
+ * ending outside the card from dismissing. The dialog `role` and label
+ * live on the inner content div because `ModalShell`'s own card is a
+ * generic visual container shared by every modal in the app.
+ */
 export function PoolsModal({ open, onClose }: Props) {
   if (!open) return null;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Manage pools"
-    >
-      <div
-        className="liquid-glass rounded-[24px] w-[min(900px,95vw)] max-h-[85vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 pt-5">
+    <ModalShell size="5xl" onClose={onClose}>
+      <div role="dialog" aria-modal="true" aria-label="Manage pools">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-[var(--color-fg)]">Pools</h2>
           <button
             aria-label="Close"
@@ -34,6 +33,6 @@ export function PoolsModal({ open, onClose }: Props) {
         </div>
         <PoolsPageBody />
       </div>
-    </div>
+    </ModalShell>
   );
 }

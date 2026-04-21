@@ -43,7 +43,10 @@ export function PoolsPageBody() {
   const selectedPool = pools?.find((p) => p.poolid === selected) ?? null;
 
   return (
-    <div className="p-6 space-y-6">
+    // No `p-6` on the root — host (modal or future page) owns outer padding.
+    // `space-y-6` stays as rhythm between the header row, status summary,
+    // and the grid; that's body chrome, not page chrome.
+    <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-white">Pools</h1>
