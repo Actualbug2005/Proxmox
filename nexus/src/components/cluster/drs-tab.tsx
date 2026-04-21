@@ -21,7 +21,7 @@
  */
 import { useState } from 'react';
 import {
-  Loader2, Sliders, AlertTriangle, ArrowRight, CheckCircle2, XCircle, MinusCircle,
+  Loader2, AlertTriangle, ArrowRight, CheckCircle2, XCircle, MinusCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -73,22 +73,14 @@ export function DrsTab() {
     if (data) setDraft(data.policy);
   }
 
+  // Page chrome (<h1>Auto-DRS</h1> + description) lives in the host
+  // (thin-shell route or future /dashboard/cluster shell), not here — so
+  // this tab body doesn't double-stack a heading when mounted inside a
+  // tabbed shell that already renders its own <h1>. Matches the Plan A
+  // Library regression lesson and the StatusTab/BackupsTab/FirewallTab
+  // pattern.
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-xl font-semibold text-[var(--color-fg)] flex items-center gap-2">
-          <Sliders className="w-5 h-5 text-[var(--color-fg-muted)]" />
-          Auto-DRS
-        </h1>
-        <p className="text-sm text-[var(--color-fg-subtle)] mt-1">
-          Distributed Resource Scheduler. Watches cluster pressure and
-          migrates a single guest per tick when a node is clearly hotter
-          than the cluster mean. Dry-run mode emits events via the
-          notification engine so you can see what it <em>would</em> have
-          done before flipping to Enabled.
-        </p>
-      </header>
-
       {isLoading && (
         <div className="studio-card p-10 flex items-center justify-center text-[var(--color-fg-subtle)]">
           <Loader2 className="w-4 h-4 animate-spin" />

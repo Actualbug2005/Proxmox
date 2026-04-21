@@ -61,7 +61,10 @@ export function BackupsTab() {
   const setSub = (id: Sub) => {
     const next = new URLSearchParams(sp);
     next.set('sub', id);
-    router.replace(`?${next.toString()}`);
+    // scroll: false — sub-tab switches shouldn't yank the page to top; the
+    // old useState toggle preserved scroll, Next's router.replace defaults
+    // to scroll: true.
+    router.replace(`?${next.toString()}`, { scroll: false });
   };
 
   const { data: resources } = useQuery({ queryKey: ['cluster', 'resources'], queryFn: () => api.cluster.resources() });
