@@ -47,14 +47,16 @@ export function PoolsPageBody() {
     // `space-y-6` stays as rhythm between the header row, status summary,
     // and the grid; that's body chrome, not page chrome.
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Pools</h1>
-          <p className="text-sm text-[var(--color-fg-subtle)]">Resource pools group VMs, CTs, and storages for ACL scoping</p>
-        </div>
+      {/* Host (PoolsModal) owns the "Pools" title in its own dialog header —
+          we only render a one-line caption + the "New pool" action here so
+          the heading isn't doubled. */}
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-sm text-[var(--color-fg-subtle)]">
+          Resource pools group VMs, CTs, and storages for ACL scoping.
+        </p>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-cta)] hover:bg-[var(--color-cta-hover)] text-[var(--color-cta-fg)] text-sm rounded-lg transition shrink-0"
         >
           <Plus className="w-4 h-4" /> New pool
         </button>

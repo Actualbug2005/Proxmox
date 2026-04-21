@@ -17,7 +17,10 @@ export default function AutomationPage() {
   const setTab = (id: TabId) => {
     const next = new URLSearchParams(sp);
     next.set('tab', id);
-    router.replace(`/dashboard/automation?${next.toString()}`);
+    next.delete('sub'); // no sub-tabs today, but future-proofs alongside cluster + system shells
+    // scroll: false keeps the page header + tab bar in view on switch; without it
+    // Next's router.replace defaults to scroll: true and yanks to the top.
+    router.replace(`/dashboard/automation?${next.toString()}`, { scroll: false });
   };
 
   return (
