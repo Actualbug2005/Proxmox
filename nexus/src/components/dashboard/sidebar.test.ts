@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { sections } from './sidebar';
+import { sections, isActive, ALL_HREFS } from './sidebar';
 
 const flat = () => sections.flatMap((s) => s.items);
 
@@ -78,5 +78,50 @@ describe('sidebar — post-consolidation layout', () => {
     ]) {
       assert.equal(hrefs.has(removed), false, `${removed} should no longer be in the sidebar`);
     }
+  });
+});
+
+describe('sidebar — isActive longest-match disambiguation', () => {
+  // Regression guard for the v0.39.0-rc1 bug where /dashboard/cluster/access
+  // lit up BOTH the Cluster entry (via startsWith) and the Users & ACL
+  // entry. Same pattern for /cluster/audit and /system/updates.
+
+  it('exact /dashboard/cluster highlights only Cluster', () => {
+    assert.equal(isActive('/dashboard/cluster', '/dashboard/cluster'), true);
+    assert.equal(isActive('/dashboard/cluster', '/dashboard/cluster/access'), false);
+    assert.equal(isActive('/dashboard/cluster', '/dashboard/cluster/audit'), false);
+  });
+
+  it('/dashboard/cluster/access highlights only Users & ACL (not Cluster)', () => {
+    assert.equal(isActive('/dashboard/cluster/access', '/dashboard/cluster/access'), true);
+    assert.equal(isActive('/dashboard/cluster/access', '/dashboard/cluster'), false);
+  });
+
+  it('/dashboard/cluster/audit highlights only Audit Log (not Cluster)', () => {
+    assert.equal(isActive('/dashboard/cluster/audit', '/dashboard/cluster/audit'), true);
+    assert.equal(isActive('/dashboard/cluster/audit', '/dashboard/cluster'), false);
+  });
+
+  it('/dashboard/system/updates highlights only Updates (not Node Settings)', () => {
+    assert.equal(isActive('/dashboard/system/updates', '/dashboard/system/updates'), true);
+    assert.equal(isActive('/dashboard/system/updates', '/dashboard/system'), false);
+  });
+
+  it('Cluster still lights up on tab deep-links (/dashboard/cluster?tab=firewall)', () => {
+    // The query string is parsed out of pathname by Next; pathname is just
+    // '/dashboard/cluster' here. So tabs inside the shell still highlight
+    // the parent correctly.
+    assert.equal(isActive('/dashboard/cluster', '/dashboard/cluster'), true);
+  });
+
+  it('/dashboard (root) is exact-only — sub-routes do not keep Overview active', () => {
+    assert.equal(isActive('/dashboard', '/dashboard'), true);
+    assert.equal(isActive('/dashboard/tasks', '/dashboard'), false);
+  });
+
+  it('every sidebar href appears in ALL_HREFS', () => {
+    const declared = new Set(sections.flatMap((s) => s.items.map((i) => i.href)));
+    assert.equal(ALL_HREFS.length, declared.size);
+    for (const h of declared) assert.ok(ALL_HREFS.includes(h), `${h} missing from ALL_HREFS`);
   });
 });
