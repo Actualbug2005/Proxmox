@@ -406,16 +406,21 @@ git commit -m "feat(resources): PoolsModal + redirect /cluster/pools to Resource
 
 ---
 
-## Task 4 — Redirect `/dashboard/{nodes,vms,cts}` list pages
+## Task 4 — ~~Redirect `/dashboard/{nodes,vms,cts}` list pages~~ DEFERRED
 
-**Files:**
-- Modify: `nexus/src/app/(app)/dashboard/nodes/page.tsx`
-- Modify: `nexus/src/app/(app)/dashboard/vms/page.tsx`
-- Modify: `nexus/src/app/(app)/dashboard/cts/page.tsx`
+**Status:** Deferred after the Step 4.1 safety scan. The three list pages host real functionality absent from `ResourceTree`:
 
-- [ ] **Step 4.1: Confirm the list pages don't host unique functionality**
+- `/dashboard/nodes` — `NodeMetricsChart` historical timeseries + `NodeDetailPanel` (CPU model, cores, RAM, uptime, kernel, PVE version)
+- `/dashboard/vms` — per-row lifecycle actions (Start / Shutdown / Reboot / Force-stop), sortable columns, free-text search, summary counts, Create-VM CTA
+- `/dashboard/cts` — symmetric to VMs for containers
 
-Read each — if any has a "bulk lifecycle" affordance that the Resources tree does *not*, STOP and report. Otherwise continue.
+Redirecting them to `/dashboard/resources?type=<id>` would be a net regression until those affordances are ported into Resources (which is a larger scope than this plan).
+
+**Revised scope for Plan B:** Tasks 1–3 ship. Task 4 is deferred. The sidebar trim in Plan F still removes the three sidebar entries, but the routes stay live as power-user destinations accessible via direct URL. Future work (a new plan) can port per-row actions + metrics into Resources and re-attempt the redirects.
+
+**Files NOT modified in Plan B:** `nexus/src/app/(app)/dashboard/nodes/page.tsx`, `.../vms/page.tsx`, `.../cts/page.tsx`. Detail routes under `[node]/[vmid]/` also remain intact.
+
+- [ ] **Step 4.1: Confirm the list pages don't host unique functionality** — ❌ FAILED, see above. Task deferred.
 
 - [ ] **Step 4.2: Write redirect tests**
 

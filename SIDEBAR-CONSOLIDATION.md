@@ -146,9 +146,9 @@ Not every CRUD surface earns a page. Candidates for promotion to modal/drawer:
 
 None are pure dead code — every route backs real functionality — but these **sidebar entries** go away (the underlying pages either merge into tabs on another page, or become modal-launched):
 
-1. `/dashboard/nodes` — subsumed by Resources (detail pages stay)
-2. `/dashboard/vms` — subsumed by Resources (detail pages stay)
-3. `/dashboard/cts` — subsumed by Resources (detail pages stay)
+1. `/dashboard/nodes` — sidebar entry removed; route stays live (hosts per-node metrics chart + detail panel not yet in Resources)
+2. `/dashboard/vms` — sidebar entry removed; route stays live (hosts per-row lifecycle actions + sort/search not yet in Resources)
+3. `/dashboard/cts` — sidebar entry removed; route stays live (symmetric to VMs)
 4. `/dashboard/cluster/pools` — becomes a modal
 5. `/dashboard/schedules` — becomes Automation tab
 6. `/dashboard/chains` — becomes Automation tab
