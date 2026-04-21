@@ -68,9 +68,36 @@ export const sections: NavSection[] = [
   },
 ];
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === '/dashboard') return pathname === '/dashboard';
-  return pathname === href || pathname.startsWith(href + '/');
+/**
+ * Decide which single sidebar entry should render as active.
+ *
+ * The naive `pathname.startsWith(href + '/')` rule works as long as no
+ * sibling entry has a path that starts with another entry's path. After
+ * the v0.39 consolidation this is no longer true — `/dashboard/cluster`
+ * (Cluster) is a prefix of `/dashboard/cluster/access` (Users & ACL) and
+ * `/dashboard/cluster/audit` (Audit Log), and `/dashboard/system`
+ * (Node Settings) is a prefix of `/dashboard/system/updates` (Updates).
+ * Both parent and child would light up together.
+ *
+ * Longest-matching-href-wins disambiguates: the active entry is the one
+ * whose href is the most specific prefix of the current pathname. Exact
+ * matches beat prefix matches (same length breaks in favour of the
+ * first, which is fine since `allHrefs` is deduplicated by construction).
+ * `/dashboard` stays exact-only so visiting any sub-route doesn't
+ * permanently highlight Overview.
+ */
+// Flattened sidebar hrefs used by isActive — exported so the test file
+// can assert against the authoritative list rather than hard-coding it.
+export const ALL_HREFS: readonly string[] = sections.flatMap((s) => s.items.map((i) => i.href));
+
+export function isActive(pathname: string, href: string, allHrefs: readonly string[] = ALL_HREFS): boolean {
+  const matches = allHrefs.filter((h) => {
+    if (h === '/dashboard') return pathname === '/dashboard';
+    return pathname === h || pathname.startsWith(h + '/');
+  });
+  if (matches.length === 0) return false;
+  const winner = matches.reduce((a, b) => (a.length >= b.length ? a : b));
+  return winner === href;
 }
 
 interface SidebarProps {
@@ -149,7 +176,7 @@ export function Sidebar({ username, open = false, onClose }: SidebarProps) {
             </p>
             <div className="space-y-0.5">
               {section.items.map(({ href, label, icon: Icon }) => {
-                const active = isActive(pathname, href);
+                const active = isActive(pathname, href, ALL_HREFS);
                 return (
                   <Link
                     key={href}
