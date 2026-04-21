@@ -4,21 +4,20 @@ import { describe, it } from 'node:test';
 import { sections } from './sidebar';
 
 describe('sidebar sections', () => {
-  it('exposes a Service Account entry under the System section', () => {
-    const system = sections.find((s) => s.label === 'System');
-    assert.ok(system, 'expected a "System" section in the sidebar');
-
-    const entry = system.items.find((i) => i.label === 'Service Account');
-    assert.ok(entry, 'expected a "Service Account" nav entry in the System section');
-    assert.equal(entry.href, '/dashboard/system/service-account');
+  it('has no dedicated Service Account entry (folded into Users & ACL)', () => {
+    const all = sections.flatMap((s) => s.items);
+    const sa = all.find((i) => i.label === 'Service Account');
+    assert.equal(
+      sa,
+      undefined,
+      'Service Account now lives under /dashboard/cluster/access?tab=service-account',
+    );
   });
 
-  it('does not place Service Account under Core or Infrastructure', () => {
-    for (const label of ['Core', 'Infrastructure'] as const) {
-      const section = sections.find((s) => s.label === label);
-      assert.ok(section, `expected a "${label}" section in the sidebar`);
-      const misplaced = section.items.find((i) => i.label === 'Service Account');
-      assert.equal(misplaced, undefined, `"Service Account" should not appear in ${label}`);
-    }
+  it('exposes a Users & ACL entry that owns service-account', () => {
+    const all = sections.flatMap((s) => s.items);
+    const access = all.find((i) => i.href === '/dashboard/cluster/access');
+    assert.ok(access, 'expected Users & ACL in the sidebar');
+    assert.equal(access.label, 'Users & ACL');
   });
 });
