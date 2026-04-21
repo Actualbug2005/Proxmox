@@ -70,7 +70,7 @@ export function PowerTab() {
         />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="studio-card p-5">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-[var(--color-fg-subtle)]" />
